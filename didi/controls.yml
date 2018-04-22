@@ -1,0 +1,883 @@
+# html controls
+---
+accordion:
+  tag: div
+  text: $tabs
+  create: accordion
+  header: "> div > h3"
+  autoHeight: false
+  collapsible: true
+  tabs:
+    - template: accordion_tab
+
+accordion_tab:
+  templates: div
+  text: <h3>$name</h3>$field
+
+actioner:
+  tag: button
+  attr: { action: $id, id: "", title: $desc }
+  action: redirect
+
+alert_message:
+  classes: div
+  class: [center-text]
+  style: [height_watermark]
+  text: $message
+
+anchor: { tag: a }
+
+background_image:
+  background-image: url("$image_path/$id.png")
+
+bar:
+  tag: div
+  attr: { value: $value }
+  graph:
+    tag: div
+    class: [green,text-black,tallest,pad pad-min]
+    derive: [value]
+    width: $value%
+    name: $value%
+  text: $graph
+
+blank:
+  type: plain_text
+  mutable: false
+  text: "b"
+  class: [inline-block,transparent]
+
+block_text:
+  type: plain_text
+  class: [block]
+
+bookmark:
+  tag: div
+  title: $id
+  link: $id
+  text: $anchor
+  attr: { id: ""}
+  anchor:
+    derive: [link,title]
+    tag: a
+    attr: { href: "#$link", id: ""}
+    name: $title
+
+button:
+  type: actioner
+  class: [action]
+  tag: button
+  attr: { title: $desc }
+  action: redirect
+
+button_image:
+  class: [action]
+  text: <input type="image" src="$src">
+  attr: { title: $desc }
+  src: $image_path/$id.png
+
+captcha_image:
+  type: image
+  src: /?action=action&path=/controls/captcha_image
+  post: [show_captcha]
+
+
+captioned_image:
+  type: container
+  contents: [$image, $caption]
+  source: $image_path/$id.png
+  title: $name
+  image:
+    derive: [source,title]
+    type: image
+    src: $source
+    attr: { title: $title}
+  caption:
+    type: label
+    derive: [title]
+    name: $title
+
+captioned_input:
+  type: label_top
+  styles: [widest,block,vspaced]
+  space: 20
+  label:
+    derive: [caption]
+    text: $caption
+  text: $field $label
+
+categorized:
+  type: input_page
+  tag: fieldset
+  text: $legend $synopsis $inputs $controls
+  title: $name
+  legend:
+    tag: legend
+    derive: [title]
+    text: $title
+
+char_spaced:
+  char_spacing: 8px
+  letter-spacing: $char_spacing
+
+checkbox:
+  type: input
+  values: ""
+  immutable: [width]
+  format: checkbox
+  attr: { values: $values }
+  class: [inline-block]
+
+
+checkgroup:
+  classes: div
+  text: $options
+  layout:
+    type: label_right
+  option:
+    type: checkbox
+    value: 0
+    name: $2
+    attr: { id: "", name: "", check: $id }
+  options:
+    - template: $layout
+    - type: $option
+
+container:
+  tag: div
+  text: $contents
+  contents: []
+  tooltip: false
+
+control:
+  html: <$tag>$text</$tag>
+  tag: div
+  desc: ""
+  attr: { id: $id, title: $desc }
+  class: [didi]
+  text: $name
+
+date:
+  type: datetime
+  timepicker: false
+  format: Y-m-d
+
+date_future:
+  type: date
+  minDate: 0
+
+datetime:
+  type: input
+  create: datetimepicker
+  script: [/common/jquery.datetimepicker.js]
+  css: [/common/jquery.datetimepicker.css]
+  format: Y-m-d H:i
+  validateOnBlur: false
+  allowBlanks: false
+
+datetime_future:
+  type: datetime
+  minDate: 0
+
+date_time:
+  type: date_time
+
+disabled_input:
+  type: input
+  attr: { disabled: disabled }
+
+disabled_text_input:
+  type: disabled_input
+
+dropdown:
+  tag: select
+  text: $options
+  option:
+    tag: option
+    value: $id
+    immutable: [name,value,text]
+    attr: { value: $id }
+  default_option:
+    tag: option
+    name: --Select $parent_name--
+    attr: { value: "", id: ""}
+  options:
+    - $default_option
+    - type: $option
+
+
+dropdown_collection:
+  type: dropdown
+  options: [collection.data]
+  valid: collection.exists($name,$value)
+
+element:
+  text: ""
+  html: <$tag>$text</$tag>
+
+email_input:
+  type: input
+  format: email
+
+empty:
+  tag: div
+  text: ""
+
+fanthom:
+  attr: { name: "", id: "", value: ""}
+
+font_awesome:
+  tag: i
+  icon: $id
+  class: [fa,fa-$icon]
+  text: ""
+
+font_awesome_text:
+  type: font_awesome
+  text: $name
+
+fieldset:
+  templates: fieldset
+  style: { display: table-column}
+  text: $legend $field
+  title: $name
+  legend:
+    tag: legend
+    derive: [title]
+    text: $title
+
+
+file_input:
+  type: input
+  format: file
+
+filled:
+  background-color: $fill
+  color: $color
+
+form:
+  tag: form
+
+flag_icon:
+  tag: span
+  class: [flag-icon flag-icon-$country]
+  css: [/flag-icon-css/css/flag-icon.min.css]
+  country: $id
+  text: " "
+
+
+filled_page:
+  type: input_page
+  inputs: $lines
+  lines:
+    - type: filled_text
+    - template: label_left
+
+filled_text:
+  classes: label
+  value: ""
+  text: $value
+
+google_icon:
+  tag: i
+  class: [material-icons]
+  css: [/common/google-material-icons.css]
+  icon: $id
+  text: $icon
+
+google_map:
+  tag: div
+  create: mapper
+  zoom: 5
+  pin: blue_map_marker
+  icon_path: $image_path
+  icon_ext: .png
+  colors:
+   - blue
+   - green
+   - yellow
+   - orange
+   - pink
+
+h1:
+  type: heading
+
+h2:
+  type: heading
+  tag: h2
+
+h3:
+  type: heading
+  tag: h3
+
+half_width:
+  type: template
+  style:
+    display: inline-block
+    width: 48%
+    margin-left: 1%
+
+heading:
+  tag: h1
+  name: $id
+
+height_watermark:
+  type: watermark
+  background-size: auto 100%
+
+hidden:
+  type: input
+  format: hidden
+
+
+hspace:
+  mutable: false
+  width: 0
+  type: blank
+  space: 6
+  styles: [hspaced]
+
+hspaced:
+  space: 10px
+  margin-right: $space
+
+iframe:
+  tag: iframe
+  src: /$id
+  attr: { src: $src }
+
+iframe_pdf:
+  type: iframe
+  class: [biggest]
+  src: /$id.pdf
+
+image:
+  tag: img
+  attr: {src: "$src"}
+  text: ""
+  src_type: png
+  file_name: $id
+  file_ext: $src_type
+  file_dir: $image_path
+  file_path: $file_dir/$file_name.$file_ext
+  src: $file_path
+
+image_button:
+  type: button
+  text: $pic $name
+  src_type: png
+  image: $image_path/$id.$src_type
+  pic:
+    type: input
+    derive: [image]
+    attr: { type: image, src: "$image"}
+
+info_page:
+  type: page
+  text: $lines $actions_pane
+  lines:
+    - type: plain_text
+  actions_pane:
+    type: container
+    derive: [actions]
+    contents: $actions
+  actions:
+    - type: button
+
+inplace_input:
+  type: label_inside
+
+input:
+  tag: input
+  text: ""
+  value: ""
+  immutable: [format]
+  format: text
+  attr:
+    type: $format
+    value: $value
+    name: $id
+    parseHtml: 0
+
+input_page:
+  type: page
+  text: $synopsis $inputs
+  layout: { type: label_left }
+  synopsis:
+    derive: [desc]
+    type: p
+    class: [center-text]
+    name: $desc
+  inputs:
+    - template: $layout
+    - $actions_pane: { push: last }
+    - type: input
+  actions_pane:
+    type: container
+    label: ""
+    derive: [actions]
+    class: [actions]
+    contents: $actions
+  actions:
+    - type: submit
+
+label: { tag: label }
+
+labelled:
+  templates: div
+  sow: [name]
+  label:
+    classes: label
+    class: [inline-block,vertical-top]
+  subject:
+    attr: { title: $desc }
+
+labelled_input:
+  type: label_left
+
+labelled_input_page:
+  type: input_page
+
+label_inside:
+  label: { text: ""}
+  subject:
+    label: $name
+    attr: { placeholder: $label, title: $desc}
+  text: $label $field
+
+labelled_inside:
+  type: label_inside
+
+labelled_inside_image:
+  type: labelled_inside
+  subject:
+    styles: [height_watermark,centered_text]
+
+label_bottom:
+  type: labelled
+  class: [inline-block]
+  label:
+    class: [widest]
+  subject:
+    class: [widest]
+  text: $field$label
+
+label_left:
+  type: labelled
+  class: [clear-after]
+  label:
+    tag: div
+    suffix: ":"
+    text: $name$suffix
+  subject: { class: [float-right] }
+  text: $label$field
+
+label_mobile:
+  type: labelled
+  styles: [widest]
+  style:
+    margin-right: $side_spacing
+    margin-bottom: $line_spacing
+  label:
+    suffix: ""
+    text: $name$suffix
+  subject:
+    styles: [block]
+  text: $label$field
+
+label_right:
+  type: labelled
+  label:
+    text: $name
+    class: [left-text]
+  subject:
+    attr: { title: $desc }
+  text: $field $label
+
+label_top:
+  type: label_bottom
+  text: $label$field
+
+left_text:
+  text-align: left
+
+letter_spaced:
+  type: char_spaced
+
+line:
+  mutable: false
+  tag: hr
+  text: ""
+
+
+link:
+  class: [pointer-cursor]
+  tag: a
+  attr: { title: $desc, template: $url }
+  text: $name
+  immutable: [url]
+  url: /$id
+  action: redirect
+  valid: ignore
+
+link_underlined:
+  type: link
+  style: { text-decoration: underline }
+
+list_item:
+  tag: li
+
+list_text:
+  type: plain_text
+  tag: li
+  style: { margin-left: 16 }
+
+loading:
+  type: font_awesome
+  icon: spinner
+  class: [spin]
+
+multi_input:
+  classes: div
+  class: [error-sink, grid fit]
+  attr: { id: ""}
+  text: $inputs
+  layout: { type: label_top}
+  inputs:
+    - template: $layout
+    - type: input
+
+navigate:
+  - type: submit
+
+number_input:
+  type: input
+  format: number
+
+numbered_document:
+  type: multi_input
+  inputs:
+    - types: [number_input,link]
+
+one_cell_row:
+  templates: div
+  text: <td>$field</td>
+
+one_column_table:
+  type: container
+  tag: table
+  contents: $items
+  items:
+    - template: one_cell_row
+
+one_row_table: { type: silos }
+
+
+option_panel:
+  tag: div
+  text: $header $body
+  header:
+    type: container
+    name: $parent_name
+    contents:
+      - label: { derive: [desc], name: $parent_name, class: [inline-block] }
+      - chosen_$parent_id: { derive: [desc], type: checkbox, class: [float-right] }
+  body:
+    id: body_$parent_id
+    tag: div
+    derive: [contents]
+    text: $contents
+    show: ~chosen_$parent_id
+
+
+p: { tag: p}
+
+page:
+  classes: div
+  attr: { title: $name }
+  sub_page: true
+  tooltip: false
+
+page_title:
+  tag: title
+  text: $name
+
+panel:
+  tag: div
+  title:
+    desc: ""
+    tag: div
+    name: $parent_name
+  text: $panes
+  panes:
+    - $title
+
+paragraph:
+  type: p
+
+password_input:
+  type: input
+  format: password
+
+plain:
+  tag: div
+  value: $name
+  text: $value
+
+plain_text:
+  tag: span
+  name: $id
+  attr: { id: ""}
+
+plot:
+  tag: div
+  fixed_xaxis: yes
+  script:
+    - /common/jquery.jqplot.min.js
+    - /common/jquery.jqplot.canvasTextRenderer.min.js
+    - /common/jquery.jqplot.canvasAxisTickRenderer.min.js
+    - /common/jquery.jqplot.dateAxisRenderer.min.js
+    - /common/jquery.jqplot.highlighter.min.js
+    - /common/plot.js
+  css: [/common/jquery.jqplot.min.css]
+  text: ""
+  create: plotter
+
+processing:
+  classes: span
+  style: { display: none, z-index: 1000 }
+
+question_input:
+  type: label_top
+  styles: [widest,block]
+  label:
+    styles: [widest,left_text]
+    derive: [question]
+    text: $question
+  subject:
+    styles: [widest]
+
+question_input_page:
+  type: input_page
+  inputs:
+    - template: question_input
+
+radiobox:
+  type: input
+  value: $id
+  immutable: [value]
+  attr: { type: radio, value: $value, id: "", name: $parent_id}
+
+
+radiogroup:
+  templates: div
+  class: radio
+  text: $options
+  layout: { type: label_left }
+  options:
+    - template: $layout
+    - type: radiobox
+
+
+row_input:
+  html: <tr><td>$name</td><td>$field</td></tr>
+
+row_inputs:
+  tag: table
+  class: [data]
+  text: $head $inputs
+  heading: $name
+  sow: [heading,inputs]
+  head:
+    html: <thead><th colspan=2>$heading</th></thead>
+  inputs:
+    - template: row_inputr
+    - type: input
+
+
+side_spacer:
+  space: 2px
+  subject:
+    style:
+      display: inline-block
+      margin-bottom: $space
+
+silos:
+  tag: table
+  text: $row
+  cell_width: 33%
+  sow: [cell_width]
+  row:
+    templates: tr
+    derive: [items]
+    sow: [cell_width]
+    field: $items
+  items:
+    - template: table_cell
+
+span:
+  tag: span
+
+source:
+  tag: div
+  file: $id.html
+  jquery: load
+  params: [$file]
+
+
+story:
+  type: control
+  text: $heading $body
+  title: $name
+  sow: [title]
+  heading:
+    type: plain_text
+    tag: h1
+    class: [heading]
+    text: $title
+  body:
+    - type: plain_text
+
+
+submit:
+  type: button
+  selector: "#page *"
+  call: $class::$invoker($key)
+  action: post
+  valid: ignore
+
+table:
+  tag: table
+  head: { type: table_head }
+  body: { type: table_body }
+  text: $head $body
+
+table_head: { templates: thead }
+
+table_body:
+  templates: tbody
+  field: $rows
+
+table_cell:
+  templates: td
+  cell_width: 20%
+  style:
+    width: $cell_width
+    vertical-align: top
+
+table_input:
+  templates: tr
+  class: [input]
+  text: |
+    <td style="width:25%;">$name</td>
+    <td>
+      <a class=input style="width:98%">
+        $field
+        <span>$desc</span>
+      </a>
+    </td>
+
+table_input_page:
+  type: input_page
+  text: |
+    $processing
+    $synopsis
+    $form
+  sow: [inputs,actions]
+  form:
+    type: table
+    class: [form]
+    text: $inputs $actions
+  inputs:
+    - template: table_input
+
+table_page:
+  type: page
+  tag: table
+  text: $children
+  children: [template: one_cell_row]
+
+table_row:
+  tag: tr
+  text: $columns
+  columns:
+    - template: table_cell
+
+tabular:
+  type: container
+  sow: [col_width]
+  contents:
+    - default:
+        style: { width: $col_width, display: inline-block, vertical-align: top }
+
+template:
+  tag: div
+  text: $field
+  attr: { id: ""}
+
+textarea:
+  type: input
+  tag: textarea
+  text: $value
+  attr: { value: "" }
+
+text_input: {type: input }
+
+time:
+  type: input
+  create: datetimepicker
+  datepicker: false
+  format: H:i
+
+titled_paragraph:
+  tag: div
+  class: [titled_paragraph]
+  text: $heading $phrase
+  title: $name
+  body: $name
+  heading:
+    derive: [title]
+    type: plain_text
+    text: $title
+    class: [block]
+  phrase:
+    derive: [body]
+    type: plain_text
+    text: $body
+  space: 30
+
+tri_input:
+  type: multi_input
+  split: 32.5%
+  spacing: 0.5%
+
+
+twin_input:
+  type: multi_input
+  split: half
+
+vspace:
+  mutable: false
+  tag: div
+  text: ""
+  space: 20
+  template: none
+  attr: { id: "" }
+  class: [clear widest block]
+  style: {padding-bottom: $space}
+
+vspaced:
+  space: 6px
+  margin-bottom: $space
+
+watermark:
+  image_type: png
+  image: $id.$src_type
+  image_src: $image_path/$image
+  background-image: url("$image_src")
+
+window:
+  type: container
+  is_body: true
+
+...

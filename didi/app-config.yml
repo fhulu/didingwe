@@ -1,0 +1,78 @@
+site_config: .site-config.yml
+brand_name: $program_name
+brand_path: ../$brand_name
+image_path: $brand_link/images
+landing:
+  page: /index
+  path: /home
+  content: $path
+authenticated:
+  page: /index
+  path: /home
+  content: $path
+log_dir: ../log
+log_file: $brand_name.log
+upload_dir: ../uploads
+start_page: /home
+css:
+  - /common/font-awesome/css/font-awesome.min.css
+  - /common/didi.css
+scripts:
+  - /common/jquery/jquery-3.2.1.min.js
+  - /common/jquery/jquery-ui-1.12.1/jquery-ui.min.js
+  - /common/enquire.min.js
+  - /common/mukoni.jquery.js
+  - /common/mkn.js
+  - /common/mkn.render.js
+  - /common/page.js
+modules:
+  - auth
+  - collection
+  - emailer
+  - sms
+  - document
+
+search_paths: [../common/,.,$brand_path]
+collections:
+  default: collection
+  auth: [user,partner,user_group,user_group_member]
+  session: [session,audit,token]
+  billing: [rate,payment,credit,transaction,country_rate]
+  document: [document]
+  trigger: [trigger,hook,promo_entry]
+use_triggers: no
+
+
+registrar: Mukoni Software
+registrar_role: admin
+
+registrant_partner: Mukoni Software
+registrant_role: registrant
+
+email_new_registration: yes
+
+email_otp: yes
+sms_otp: yes
+self_activation_validity: 48 hour
+
+request_method: post
+smtp_host: smtp.example.com
+smtp_user: email@example.com
+smtp_password: mypassword
+sms.send:
+  protocol: http
+  port: 80
+  host: www.qmessenger.co.za
+  user: minime
+  password: mypassword
+  cellphone: $cellphone
+  path: web2sms/submit?uid=$user&pw=$password&sms=$message&da=$msisdn
+emailer.send:
+  smtp:
+    host: smtp.example.com
+    user: me@example.com
+    password: mypassword
+
+paygate_id: 10011072130
+paygate_secret: secret
+paygate_url: https://secure.paygate.co.za/payweb3/initiate.trans
