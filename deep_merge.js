@@ -1,6 +1,12 @@
 "use strict";
 
+function is_primitive(x) {
+  return ["number","string","boolean"].indexOf(typeof x)>=0;
+}
+
+
 function clone(x, option) {
+  if (is_primitive(x)) return x;
   if (option && option.clone === false) return x;
   return JSON.parse(JSON.stringify({x:x})).x;
 }
@@ -18,10 +24,6 @@ function init_options(options) {
   }, options);
 }
 
-function is_primitive(x) {
-  return ["number","string","boolean"].indexOf(typeof x)>=0;
-}
-
 function do_merge(x, y, options) {
   // if (!options.is_mergeable(y)) return clone(y);
 
@@ -30,21 +32,28 @@ function do_merge(x, y, options) {
   if (!same_type) return clone(y);
   if (is_array) return options.array_merger(x,y);
 
-  y = clone(y);
+  var r = {};
   for (var key in x) {
+    if (!x.hasOwnProperty(key)) continue;
     var vy = y[key];
-    if (is_primitive(vy) || !x.hasOwnProperty(x))
-      continue;
-
-    var vx = x[key];
-    if (vy === undefined) {
-      y[key] = vx;
+    if (is_primitive(vy)) {
+      r[key] = vy;
       continue;
     }
 
-    y[key] = do_merge(vx, vy, options);
+    var vx = x[key];
+    if (vy === undefined) {
+      r[key] = vx;
+      continue;
+    }
+
+    r[key] = do_merge(vx, vy, options);
   }
-  return y;
+
+  for (var key in y) {
+    if (!(key in r)) r[key] = clone(y[key]);
+  }
+  return r;
 }
 
 

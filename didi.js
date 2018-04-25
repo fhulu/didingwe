@@ -5,40 +5,53 @@ const yaml = require("yamljs");
 const merge = require("./deep_merge.js");
 const fs = require("fs");
 const after = require("./after.js");
+// const Request = require("./request.js");
+var async = require("async");
 
 class Didi {
   constructor() {
     this.files = {};
-    this.read_config();
-    var controls = this.load_terms("controls");
-    var fields = this.load_terms("fields");
-    this.terms = controls;//this.merge(controls, fields);
+    this.read_config()
+      .then(config=>this.init_server(config))
   }
 
   load_terms(name, paths) {
     var loaded = this.files[name];
     if (loaded)
-      return loaded;
+      return Promise.resolve(loaded);
     paths = paths || ['./didi', '.'];
-    var terms = {};
     if (!/\.\w+$/.test(name)) name += ".yml";
-    paths.forEach(path => {
-      var file = `${path}/${name}`;
-      if (!fs.existsSync(file)) return;
-      console.log(`loading ${file} ...`);
-      var file_terms = yaml.load(file);
-      terms = this.merge(terms, file_terms);
-    });
-    this.files[name] = terms;
-    return terms;
+    var me = this;
+    return new Promise((resolve,reject)=>
+      async.reduce(paths, {}, (terms, path, callback)=>{
+        path = `${path}/${name}`;
+        if (!fs.existsSync(path))
+          return callback(null, terms);
+        console.log(`loading ${path} ...`);
+        fs.readFile(path, "utf8", (err,data)=>{
+          var term = data? yaml.parse(data): {};
+          terms = me.merge(terms, term);
+          callback(null, terms);
+        });
+        //todo: report error
+      }, function(err, result) {
+        if (err) return reject(err)
+        me.files[name] = result;
+        return resolve(result);
+      })
+    );
   }
 
   read_config() {
-    var config = this.load_terms("app-config");
-    var site_config = this.load_terms(config.site_config, ['.']);
-    console.log("site config", site_config)
-    this.config = this.merge(config, site_config);
-    console.log("config loaded")
+    return this.load_terms("app-config")
+      .then(config=>{
+        this.config = config;
+        return this.load_terms(config.site_config);
+       })
+      .then(site_config=>{
+        this.config = this.merge(this.config, site_config);
+        return Promise.resolve(this.config)
+      });
   }
 
   merge(x,y) {
@@ -58,12 +71,13 @@ class Didi {
     return this.merge_type(expanded, type, types);
   }
 
+  init_server(config) {
+    var me = this;
+    http.createServer(function (req, res) {
+      res.write(JSON.stringify(me.config));
+      res.end(); //end the response
+    }).listen(1234);
+  }
 };
 
 var didi = new Didi();
-//create a server object:
-http.createServer(function (req, res) {
-  console.log(req.url);
-  res.write(JSON.stringify(didi.config)); //write a response to the client
-  res.end(); //end the response
-}).listen(1234);
