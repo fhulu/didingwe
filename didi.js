@@ -22,31 +22,25 @@ class Didi {
     paths = paths || ['./didi', '.'];
     if (!/\.\w+$/.test(name)) name += ".yml";
     var me = this;
-    return new Promise((resolve,reject)=>
-      async.reduce(paths, {}, (terms, path, callback)=>{
-        path = `${path}/${name}`;
-        if (!fs.existsSync(path))
-          return callback(null, terms);
-        console.log(`loading ${path} ...`);
-        fs.readFile(path, "utf8", (err,data)=>{
-          var term = data? yaml.parse(data): {};
-          terms = me.merge(terms, term);
-          callback(null, terms);
-        });
+    return after(async.reduce, paths, {}, (terms, path, callback)=>{
+      path = `${path}/${name}`;
+      if (!fs.existsSync(path))
+        return callback(null, terms);
+      console.log(`loading ${path} ...`);
+      fs.readFile(path, "utf8", (err,data)=>{
+        var term = data? yaml.parse(data): {};
         //todo: report error
-      }, function(err, result) {
-        if (err) return reject(err)
-        me.files[name] = result;
-        return resolve(result);
-      })
-    );
+        terms = me.merge(terms, term);
+        callback(null, terms);
+      });
+    });
   }
 
   read_config() {
     return this.load_terms("app-config")
       .then(config=>{
         this.config = config;
-        return this.load_terms(config.site_config);
+        return this.load_terms(config.site_config, ['.']);
        })
       .then(site_config=>{
         this.config = this.merge(this.config, site_config);
