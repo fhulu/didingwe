@@ -1,4 +1,5 @@
 site_config: .site-config.yml
+server_port: 80
 brand_name: $program_name
 brand_path: ../$brand_name
 image_path: $brand_link/images

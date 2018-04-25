@@ -76,7 +76,8 @@ class Didi {
     http.createServer(function (req, res) {
       res.write(JSON.stringify(me.config));
       res.end(); //end the response
-    }).listen(1234);
+    }).listen(config.server_port);
+    console.log("listening on port",config.server_port);
   }
 };
 
