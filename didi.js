@@ -15,14 +15,14 @@ class Didi {
       .then(config=>this.init_server(config))
   }
 
-  load_terms(name, paths) {
+  load_terms(terms, name, paths) {
     var loaded = this.files[name];
     if (loaded)
       return Promise.resolve(loaded);
     paths = paths || ['./didi', '.'];
     if (!/\.\w+$/.test(name)) name += ".yml";
     var me = this;
-    return after(async.reduce, paths, {}, (terms, path, callback)=>{
+    return after(async.reduce, paths, terms, (terms, path, callback)=>{
       path = `${path}/${name}`;
       if (!fs.existsSync(path))
         return callback(null, terms);
@@ -37,15 +37,9 @@ class Didi {
   }
 
   read_config() {
-    return this.load_terms("app-config")
-      .then(config=>{
-        this.config = config;
-        return this.load_terms(config.site_config, ['.']);
-       })
-      .then(site_config=>{
-        this.config = this.merge(this.config, site_config);
-        return Promise.resolve(this.config)
-      });
+    return this.load_terms({}, "app-config")
+      .then(config=>this.load_terms(config, config.site_config, '[.]'))
+      .then(config=>this.config=config)
   }
 
   merge(x,y) {
