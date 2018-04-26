@@ -13,6 +13,7 @@ class Didi {
     this.files = {};
     this.read_config()
       .then(config=>this.init_server(config))
+      .catch(error=>console.log(error))
   }
 
   load_terms(terms, name, paths) {
@@ -28,12 +29,17 @@ class Didi {
         return callback(null, terms);
       console.log(`loading ${path} ...`);
       fs.readFile(path, "utf8", (err,data)=>{
-        var term = data? yaml.parse(data): {};
-        //todo: report error
-        terms = me.merge(terms, term);
-        callback(null, terms);
+        try {
+          var term = yaml.parse(data);
+          terms = me.merge(terms, term);
+          callback(null, terms);
+        }
+        catch(e) {
+          callback(`Parsing error reading ${path} at line ${e.parsedLine}: ${e.message}`, terms);
+        }
       });
-    });
+    })
+    .then(terms=>this.files[name] = terms)
   }
 
   read_config() {
