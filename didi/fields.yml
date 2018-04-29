@@ -1,0 +1,450 @@
+## YAML Template.
+---
+
+add_user:
+  desc: Add a new user into the system
+  access: admin
+  url: /user/create
+
+admin:
+  name: Administrator
+
+administration:
+  desc: Perform adminstrative duties
+
+agree_terms:
+  question: I have read and accepted the $terms_and_conditions
+  desc: You must agree to the terms and conditions before continuing
+  valid: equals(1)
+  error: Must accept and agree to terms and conditions.
+
+audit_trail:
+  access: admin
+  url: /user/audit_trail
+
+blank:
+  name: " "
+
+calculate_days:
+  type: calculate_period
+  unit: day
+  prev_unit: hour
+  prev_unit_size: 24
+
+calculate_hours:
+  type: calculate_period
+  unit: hour
+  prev_unit: minute
+  prev_unit_size: 60
+
+calculate_period:
+  sql: select ceiling(timestampdiff($prev_unit,'$start_time', '$end_time')/$prev_unit_size)
+
+cellphone:
+  desc: |
+    The active cellphone or mobile number at which you can be contacted on.
+    This number will be used to for OTP verification.
+  valid: national_tel
+
+change_password:
+  desc: Change your current password
+  access: auth
+  action: dialog
+  url: /user/change_password
+
+
+close:
+  action: close_dialog
+  class: [brand-action-cancel]
+
+company_name:
+  valid: at_least(2)
+
+company_registration_no:
+  name: Company Registration Number
+  desc: >
+    Company registration number as it is stated on your CIPRO registration certificate.
+    YYYY/nnnnn/nn e.g 2006/294052/32. Pleae specify numbers without slashes(/).
+  attr: { min: 10000000000, max: 99999999999 }
+
+confirm_details:
+  name: I confirm that the details provided are true and correct.
+  valid: equals(1, Must confirm that details are true and correct)
+
+contacts:
+  email: support@mukoni.co.za
+
+confirm_password:
+  type: password
+  desc: Type in the same password as above to confirm correctness
+  valid: matches(password)
+
+
+day_of_month:
+  options:
+    - 1st
+    - 2nd
+    - 3rd
+    - 4th
+    - 5th
+    - 6th
+    - 7th
+    - 8th
+    - 9th
+    - 10th
+    - 11th
+    - 12th
+    - 13th
+    - 14th
+    - 15th
+    - 16th
+    - 17th
+    - 18th
+    - 19th
+    - 20th
+    - 21st
+    - 22nd
+    - 23rd
+    - 24th
+    - 25th
+    - 26th
+    - 27th
+    - 28th
+    - 29th
+    - 30th
+    - 31st
+
+day_of_week:
+  options:
+    - sunday
+    - monday
+    - tuesday
+    - wednesday
+    - thursday
+    - friday
+    - saturday
+
+
+developed_by:
+  name: developed by Mukoni Software
+  action: redirect
+  url: http://www.mukoni.co.za
+  target: _blank
+
+
+done:
+  post: [close_dialog]
+
+email:
+  desc: |
+    The active email address at which you can be contacted on.
+    This address will be used to for OTP verification and any system generated
+    communication
+
+  name: Email Address
+  format: email
+  valid: [email]
+
+email_address: { type: email }
+
+error_page:
+  desc: Unexpected error occured. Please report to your System Administrator.
+
+facebook:
+  src: /fb.png
+  url: http://facebook.com
+
+"false": { value: 0 }
+
+first_name:
+  desc: Your first name as written in your ID book
+  valid: name
+
+forgot_password:
+  access: public
+  desc: Click here if you have forgotten your password and you need to reset it
+  url: /user/forgot_password
+
+full_name:
+  desc: Full name and surname
+  question: What is your full name? Please specify first name and surname
+  valid:
+    - full_name
+goto:
+  action: $page.html
+
+home:
+  url: /home
+
+id:
+  name: Reference #
+
+id_no:
+  name: ID Number
+  question: Please enter your South Africa Identity Number
+  desc: Valid South African ID number
+  valid: za_id
+  attr: { min: 1000000000000, max: 9999999999999 }
+
+
+id_number:
+  type: id_no
+
+
+last_name:
+  desc: Your last name or surname as written in your ID book
+  valid: name
+
+latitude:
+  desc: Distance north or south from the equator
+  valid:
+    - decimal
+
+login:
+  desc: Log in to the system
+  access: public
+  audit: $email
+  url: /user/login
+  src: /logout_icon.jpg
+
+logout:
+  desc: Log out of the system
+  access: auth
+  icon: sign-out
+  src: /logout_icon.jpg
+  action: post
+  url: /user/logout
+
+
+longitude:
+  desc: Angular distance east or west on the earth's surface
+  valid:
+    - decimal
+
+lineage_sql: >
+  select concat_ws(',',c.$key_name,p1.$key_name,p2.$key_name,p3.$key_name,p4.$key_name,p5.$key_name) from $table c
+  left join $table p1 on c.$parent_key = p1.$key_name
+  left join $table p2 on p1.$parent_key = p2.$key_name
+  left join $table p3 on p2.$parent_key = p3.$key_name
+  left join $table p4 on p3.$parent_key = p4.$key_name
+  left join $table p5 on p4.$parent_key = p5.$key_name
+  where c.$key_name = '$key'
+
+manage_user_group:
+  access: user
+  url: /user/groups
+
+manage_users:
+  access: user
+  url: /user/list
+
+manage_all_users:
+  access: [admin]
+  name: System Users
+  url: /user/list_all
+
+mobile_number:
+  desc: The mobile number at which you can be contacted on
+  valid: national_tel
+
+month:
+  options:
+    - sql: |
+        select month("1970-01-01" + interval i month),
+        monthname("1970-01-01" + interval i month) from integers u
+        union
+        select month("1970-01-01" + interval 10+i month),
+        monthname("1970-01-01" + interval 10+i month) from integers u
+        where i < 2
+
+
+
+mukoni_logo:
+    desc: Visit our home page
+    type: image
+    src: mukoni.png
+    url: http://www.mukoni.co.za
+
+my_audit_trail:
+  desc: My audit trail
+  access: auth
+  url: /audit_trail/user_list
+
+
+"no": { value: 0 }
+
+organisation_audit_trail:
+  access: admin
+  url: /audit_trail/partner_list
+
+passport_document:
+  desc: Certified copy of passport document
+
+passport_no:
+  name: Passport Number
+  desc: Your passport number as it is written in your Passport book
+
+password:
+  desc: A secret combination of letters and number only known to you. Please do not give out your password.
+  valid: [password]
+  format: password
+
+physical_address:
+  attr: { maxlength: 128 }
+  valid: [at_least(15)]
+
+physical_code:
+  attr: { min: 0000, max: 9999 }
+  valid: za_code
+
+postal_address:
+  attr: { maxlength: 100 }
+  valid: at_least(15)
+
+postal_code:
+  attr: { min: 0000, max: 9999 }
+  valid: za_code
+
+program:
+  name: $program_name
+
+query:
+  type: button
+  call: $class::$invoker($key)
+
+redirect:
+  type: link
+
+ref_list:
+  code: code
+  display: name
+  table: ref_list
+  filter: where list = '$list'
+  sort_field: 2
+  sort_order: asc
+  sort: order by $sort_field $sort_order
+  sql: select $code, $display from $table $filter $sort
+  valid_sql: select count(1) from $table $filter and $code = '$value'
+
+ref_options:
+  options:
+    - ref_list
+  valid: ref_list
+
+register:
+  desc: Click here to register
+  access: public
+  url: /user/register
+
+rest_post:
+  merge: false
+
+send_email:
+  headers:
+    - MIME-Version: "1.0"
+    - Content-type: text/html; charset=iso-8859-1
+  smtp:
+    host: $smtp_host
+    auth: true
+    username: $smtp_user
+    password: $smtp_password
+    ssl:
+      verify_peer: false
+      verify_peer_name: false
+      allow_self_signed: true
+
+
+start_date:
+  name: Start Date
+  desc: Date Effective From
+
+
+submit_page:
+  type: submit
+  name: Submit
+  call: $class::$page($key)
+
+
+support_email: Mukoni Support <support@mukoni.co.za>
+
+system_audit_trail:
+  url: /audit_trail/system_list
+  access: admin
+
+title:
+  desc: A descriptive or distinctive appellation, especially one belonging to a person by right of rank, office, attainment
+
+twitter:
+  src: /twitter.png
+  url: https://twitter.com
+
+users:
+  access: admin
+  desc: List all the users
+  url: /user/list
+
+validator:
+  action: post
+  validate: all
+
+vat_no:
+  name: VAT Number
+  desc: VAT Number as it is written on the South African Revenue Services (SARS) certificate. Note This is a 10 digit number.
+  valid: za_vat
+  attr: { min: 1000000000, max: 9999999999 }
+
+view_profile:
+  desc: View my profile
+  access: auth
+  url: /user/profile
+  action: dialog
+
+view_users:
+  access: admin
+  desc: List all the users
+  url: /user/list
+
+weekday:
+  options:
+    - sunday
+    - monday
+    - tuesday
+    - wednesday
+    - thursday
+    - friday
+    - saturday
+
+welcome:
+  name: ""
+  access: auth
+  url: /user/profile
+
+wizard_post:
+  type: button
+  selector: "#page *"
+  validate: all
+  call: $class::$invoker($key)
+  action: post
+  attr: {wizard-jump: $code}
+
+tax_reference_no:
+  name: Tax Reference Number
+  attr: { min: 1000000000, max: 9999999999 }
+
+terms_and_conditions:
+  name: terms and conditions
+  type: link
+
+true: { value: 1}
+
+true_false:
+  options:
+    - "true"
+    - "false"
+
+"yes": { value: 1 }
+
+yes_no:
+  options:
+    - "yes"
+    - "no"

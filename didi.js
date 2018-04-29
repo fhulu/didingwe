@@ -5,14 +5,27 @@ const yaml = require("yamljs");
 const merge = require("./deep_merge.js");
 const fs = require("fs");
 const after = require("./after.js");
-// const Request = require("./request.js");
+const Client = require("./client.js");
 var async = require("async");
+var sessions = require("client-sessions");
+
+var session = sessions({
+  cookieName: 'didi',
+  secret: 'blargadeeblargblarg',
+  duration: 24 * 60 * 60 * 1000,
+  activeDuration: 1000 * 60 * 5
+});
+
 
 class Didi {
   constructor() {
     this.files = {};
+    this.clients = {};
+    this.next_seq = 1;
     this.read_config()
-      .then(config=>this.init_server(config))
+      .then(()=>this.load_fields())
+      .then(()=>this.load_validators())
+      .then(()=>this.init_server())
       .catch(error=>console.log(error))
   }
 
@@ -44,8 +57,20 @@ class Didi {
 
   read_config() {
     return this.load_terms({}, "app-config")
-      .then(config=>this.load_terms(config, config.site_config, '[.]'))
-      .then(config=>this.config=config)
+      .then(config => this.load_terms(config, config.site_config, '[.]'))
+      .then(config => this.config = config)
+  }
+
+  load_fields() {
+    return this.load_terms({}, "controls")
+      .then(controls => this.load_terms(controls, "fields"))
+      .then(fields => this.fields = fields)
+  }
+
+  load_validators() {
+    return this.load_terms({}, "validators")
+      .then(validators => this.validators = validators)
+
   }
 
   merge(x,y) {
@@ -65,13 +90,44 @@ class Didi {
     return this.merge_type(expanded, type, types);
   }
 
-  init_server(config) {
-    var me = this;
+  get_cookie(req, cookie) {
+    if (!req.headers.cookie)
+      return "unknown";
+
+    var cookies = req.headers.cookie.split(";");
+    console.log("cookies", cookies)
+    for (var c of cookies) {
+      var [name,value] = c.split("=");
+      if (name == cookie) return value;
+    }
+    return 'unknown';
+  }
+
+  process_request(req, res) {
+    var id = this.get_cookie(req, "didi");
+    var client = this.clients[id];
+    if (!client) {
+      client = new Client(this, req, res);
+      this.clients[id] = client;
+    }
+    client.process();
+  }
+
+  init_server() {
+    var server = this;
     http.createServer(function (req, res) {
-      res.write(JSON.stringify(me.config));
+      session(req, res, ()=>{
+        if (req.didi.seenyou) {
+          res.setHeader('X-Seen-You', 'true');
+        } else {
+          req.didi.seenyou = true;
+          res.setHeader('X-Seen-You', 'false');
+        }
+        server.process_request(req, res);
+      })
       res.end(); //end the response
-    }).listen(config.server_port);
-    console.log("listening on port",config.server_port);
+    }).listen(this.config.server_port);
+    console.log("listening on port",this.config.server_port);
   }
 };
 
