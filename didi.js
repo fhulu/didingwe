@@ -83,7 +83,7 @@ class Didi {
   }
 
   merge(x,y) {
-    const enforce_reset = (a, b) => b[0]=='_reset'? b: util.merge_array(a,b);
+    const enforce_reset = (a, b) =>  b[0]=='_reset'? (b.shift(), b): util.merge_array(a,b);
     return util.merge(x, y, { array_merger: enforce_reset });
   }
 
