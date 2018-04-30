@@ -8,6 +8,7 @@ const after = require("./after.js");
 const Client = require("./client.js");
 var async = require("async");
 var sessions = require("client-sessions");
+const debug = require("debug")("didi");
 
 var session = sessions({
   cookieName: 'didi',
@@ -21,7 +22,7 @@ class Didi {
   constructor() {
     this.files = {};
     this.clients = {};
-    this.next_seq = 1;
+    this.next_seq = 0;
     this.read_config()
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
@@ -34,10 +35,11 @@ class Didi {
     if (loaded)
       return Promise.resolve(loaded);
     paths = paths || ['./didi', '.'];
-    if (!/\.\w+$/.test(name)) name += ".yml";
+    var file = name;
+    if (!/\.\w+$/.test(name)) file += ".yml";
     var me = this;
     return after(async.reduce, paths, terms, (terms, path, callback)=>{
-      path = `${path}/${name}`;
+      path = `${path}/${file}`;
       if (!fs.existsSync(path))
         return callback(null, terms);
       console.log(`loading ${path} ...`);
@@ -52,7 +54,11 @@ class Didi {
         }
       });
     })
-    .then(terms=>this.files[name] = terms)
+    .then(terms => {
+      if (!terms)
+        throw new Error(`File(s) for '${name}' must exist`);
+      return this.files[name] = terms;
+    })
   }
 
   read_config() {
@@ -74,7 +80,7 @@ class Didi {
   }
 
   merge(x,y) {
-    const enforce_reset = (a, b) => b[0]=='_reset'? b: merge.array_merger;
+    const enforce_reset = (a, b) => b[0]=='_reset'? b: merge.array_merger(a,b);
     return merge(x, y, { array_merger: enforce_reset });
   }
 
@@ -92,40 +98,39 @@ class Didi {
 
   get_cookie(req, cookie) {
     if (!req.headers.cookie)
-      return "unknown";
+      return null;
 
     var cookies = req.headers.cookie.split(";");
-    console.log("cookies", cookies)
     for (var c of cookies) {
       var [name,value] = c.split("=");
       if (name == cookie) return value;
     }
-    return 'unknown';
+    return null;
   }
 
   process_request(req, res) {
     var id = this.get_cookie(req, "didi");
     var client = this.clients[id];
-    if (!client) {
-      client = new Client(this, req, res);
-      this.clients[id] = client;
-    }
-    client.process();
+    if (!client)
+      client = new Client(this, id);
+    this.client = client;
+    client.process(req, res);
+    if (!id) return;
+    this.next_seq++;
+    this.clients[id] = client;
   }
 
   init_server() {
-    var server = this;
-    http.createServer(function (req, res) {
-      session(req, res, ()=>{
+    http.createServer((req, res) => {
+      session(req, res, () => {
         if (req.didi.seenyou) {
           res.setHeader('X-Seen-You', 'true');
         } else {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        server.process_request(req, res);
+        this.process_request(req, res);
       })
-      res.end(); //end the response
     }).listen(this.config.server_port);
     console.log("listening on port",this.config.server_port);
   }

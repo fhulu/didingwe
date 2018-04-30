@@ -1,0 +1,8 @@
+index:
+  contents:
+    - type: page
+    - banner
+    - main:
+        class: [content, widest,clear-after]
+        url: $content
+    - footer
