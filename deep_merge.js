@@ -12,8 +12,8 @@ function clone(x, option) {
 }
 
 function merge_array(x,y) {
-  return x===undefined? clone(y): x;
-  return x.concat(clone(y));
+  y = clone(y);
+  return x===undefined? y : x.concat(y);
 }
 
 function init_options(options) {
@@ -37,13 +37,13 @@ function do_merge(x, y, options) {
     if (!x.hasOwnProperty(key)) continue;
     var vy = y[key];
     if (is_primitive(vy)) {
-      r[key] = vy;
+      r[key] = clone(vy);
       continue;
     }
 
     var vx = x[key];
     if (vy === undefined) {
-      r[key] = vx;
+      r[key] = clone(vx);
       continue;
     }
 
