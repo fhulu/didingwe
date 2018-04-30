@@ -2,7 +2,7 @@
 
 var http = require("http");
 const yaml = require("yamljs");
-const merge = require("./deep_merge.js");
+const util = require("./util.js");
 const fs = require("fs");
 const after = require("./after.js");
 const Client = require("./client.js");
@@ -23,6 +23,8 @@ class Didi {
     this.files = {};
     this.clients = {};
     this.next_seq = 0;
+    this.types = {};
+    this.pages = {};
     this.read_config()
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
@@ -44,14 +46,9 @@ class Didi {
         return callback(null, terms);
       console.log(`loading ${path} ...`);
       fs.readFile(path, "utf8", (err,data)=>{
-        try {
-          var term = yaml.parse(data);
-          terms = me.merge(terms, term);
-          callback(null, terms);
-        }
-        catch(e) {
-          callback(`Parsing error reading ${path} at line ${e.parsedLine}: ${e.message}`, terms);
-        }
+        var term = yaml.parse(data);
+        terms = me.merge(terms, term);
+        callback(null, terms);
       });
     })
     .then(terms => {
@@ -70,7 +67,7 @@ class Didi {
   load_fields() {
     return this.load_terms({}, "controls")
       .then(controls => this.load_terms(controls, "fields"))
-      .then(fields => this.fields = fields)
+      .then(fields => this.types = this.fields = fields)
   }
 
   load_validators() {
@@ -80,8 +77,8 @@ class Didi {
   }
 
   merge(x,y) {
-    const enforce_reset = (a, b) => b[0]=='_reset'? b: merge.array_merger(a,b);
-    return merge(x, y, { array_merger: enforce_reset });
+    const enforce_reset = (a, b) => b[0]=='_reset'? b: util.merge_array(a,b);
+    return util.merge(x, y, { array_merger: enforce_reset });
   }
 
   merge_type(obj, type, types, must_exist) {
@@ -133,6 +130,26 @@ class Didi {
       })
     }).listen(this.config.server_port);
     console.log("listening on port",this.config.server_port);
+  }
+
+  load_page(page) {
+    var existing = this.pages[page];
+    if (existing) return Promise.resolve(existing);
+
+    return this.load_terms(null, page)
+      .then(terms => this.update_page_terms(page, terms))
+  }
+
+  update_page_terms(page, terms) {
+    var types = {};
+    for (var key in terms) {
+      if (!terms.hasOwnProperty(key)) continue;
+      var path = page + '/' + key;
+      var term = terms[key];
+      this.types[path] = term;
+      types[key] = this.merge(this.types[path], term);
+    }
+    return this.pages[page] = types;
   }
 };
 
