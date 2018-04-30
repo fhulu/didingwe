@@ -87,17 +87,6 @@ class Didi {
     return util.merge(x, y, { array_merger: enforce_reset });
   }
 
-  merge_type(obj, type, types, must_exist) {
-    var expanded = types[type];
-    if (!expanded) {
-      if (must_exist) throw new Error(`Unknown type ${type}`, type);
-      return obj;
-    }
-    type = expanded.type;
-    expanded = this.merge(expanded, obj);
-    if (!type) return expanded;
-    return this.merge_type(expanded, type, types);
-  }
 
   get_cookie(req, cookie) {
     if (!req.headers.cookie)
@@ -143,7 +132,16 @@ class Didi {
     if (existing) return Promise.resolve(existing);
 
     return this.load_terms(null, page)
+      .then(terms => this.include(terms))
       .then(terms => this.update_page_terms(page, terms))
+  }
+
+  include(terms) {
+    var includes = terms.include;
+    if (!includes) return Promise.resolve(terms);
+    var promises = includes.map( page => this.load_page(page));
+    return Promise.all(promises)
+      .then(results => results.reduce((sum,result) => sum = this.merge(result, sum), terms))
   }
 
   update_page_terms(page, terms) {
