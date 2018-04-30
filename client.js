@@ -70,9 +70,9 @@ class Client {
   respond(types) {
     this.types = types;
     var item = this.follow_path(this.path, types);
-    var types = this.expand_types(item);
-    var response = { fields: item, types: types}
-    this.response.write(JSON.stringify(response));
+    var response = { fields: item, types: {}}
+    this.expand_types(item, response.types);
+    this.response.end(JSON.stringify(response));
   }
 
   follow_path(path, types) {
@@ -86,13 +86,13 @@ class Client {
     return item;
   }
 
-  expand_types(item) {
-    var types = {};
-    util.walk(item, v=>{
-      if (!v.type) return v;
-      types[v.type] = this.types[v];
+  expand_types(item, types) {
+    util.walk(item, types, (types, key, val)=>{
+      if (key != 'type') return val;
+      var expanded = types[val] = this.types[val];
+      this.expand_types(expanded, types);
+      return val;
     })
-    return types;
   }
 
   merge_type(obj, type, must_exist) {

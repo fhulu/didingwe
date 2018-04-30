@@ -46,14 +46,20 @@ class Didi {
         return callback(null, terms);
       console.log(`loading ${path} ...`);
       fs.readFile(path, "utf8", (err,data)=>{
-        var term = yaml.parse(data);
-        terms = me.merge(terms, term);
-        callback(null, terms);
+        try {
+          var term = yaml.parse(data);
+          terms = me.merge(terms, term);
+          callback(null, terms);
+        }
+        catch(e) {
+          callback(`Parsing error reading ${path} at line ${e.parsedLine}: ${e.message}`, terms);
+        }
       });
     })
     .then(terms => {
       if (!terms)
         throw new Error(`File(s) for '${name}' must exist`);
+      console.log(`loaded ${name}`)
       return this.files[name] = terms;
     })
   }
@@ -144,12 +150,9 @@ class Didi {
     var types = {};
     for (var key in terms) {
       if (!terms.hasOwnProperty(key)) continue;
-      var path = page + '/' + key;
-      var term = terms[key];
-      this.types[path] = term;
-      types[key] = this.merge(this.types[path], term);
+      types[key] = this.merge(this.types[key], terms[key]);
     }
-    return this.pages[page] = types;
+    return this.pages[page] = this.merge(this.types, types);
   }
 };
 

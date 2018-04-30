@@ -1,0 +1,324 @@
+cellphone_number:
+  name: Cellphone
+  layout: { type: label_inside}
+  class: [^grid]
+  inputs:
+    - dialling_code:
+        class: [w-1-6,right-text]
+        value: ~$('#country option:selected').attr('dialling_code')
+    - dialling_number: { class: [w-5-6]}
+
+cellphone:
+  valid: ""
+
+country:
+  valid:
+    - not(/^other$/)
+  error: Please contact the Administrator on +272895641258 for assistance
+
+enter_credentials:
+  inputs:
+    - cellphone: { push: merge, show: no }
+    - country:
+        push: cellphone
+        type: dropdown
+        option:
+          name: $2 ($3)
+          attr: {dialling_code: $3}
+        options:
+          - collection.data: [country, "", id,  name asc, dialling_code]
+    - cellphone_number: { push: email, type: multi_input }
+  values:
+    - read_values: { country: za}
+  post:
+    - write_session: [country,cellphone: $dialling_code$dialling_number]
+
+create:
+  access: [admin]
+  inputs:
+    - cellphone: { push: merge, show: no }
+    - country:
+        push: cellphone
+        type: dropdown
+        option:
+          name: $2 ($3)
+          attr: {dialling_code: $3}
+        options:
+          - collection.data: [country, "", id,  name asc, dialling_code]
+    - cellphone_number:
+        type: multi_input
+        push: email
+  values:
+    - read_values: { country: za}
+  pre_validation:
+    - let: { cellphone: $dialling_code$dialling_number}
+  post:
+    - collection.insert: [contact, contact_info: $first_name_nam $last_name, cellphone, access_level: public, blacklisted: 0]
+    - close_dialog: User added Successfully
+
+role:
+  options:
+    - admin
+    - user: {access: admin, partner_access: [company,individual,existing_account,post_paid]}
+    - finance: {access: admin, partner_access: merchant}
+
+create_user_email:
+  message: >
+      Dear <b>$first_name $last_name </b> <br><br>
+      You have have been registered on $program_name, by $creator_first_name $creator_last_name at $company_name. <br>
+      Kindly click on this URL <a href="$user_activation_link">$user_activation_link</a> to activate your registration. Once activated you can start sending SMS's on the system. <br><br>
+
+      Kind regards, <br><br>
+
+      Support Desk
+
+
+confirm_registration:
+  inputs:
+    - country: { push: cellphone}
+  values:
+    - read_session: [country]
+    - collection.values: [country, $country, country: name]
+  post:
+    - read_session: [country,new_user_id]
+    - collection.values: [user, $new_user_id, first_name, last_name, partner,email, user: id]
+    - collection.insert: [contact, first_name, last_name, cellphone,contact_info: $first_name $last_name,access_level: public, user: $new_user_id, partner, blacklisted: 0]
+    - collection.insert: [contact_group, partner, user,  name: Default, access_level: public, size: 0]
+    - collection.insert: [template_tag, partner, user, tag: cellphone]
+    - collection.insert: [template_tag, partner, user, tag: first_name]
+    - collection.insert: [template_tag, partner, user, tag: last_name]
+    - collection.update: [user, $new_user_id, country]
+    - let: { start_page: /user/welcome}
+    - read_session:
+      - billing_type
+      - billing_cellphone
+      - billing_email
+      - billing_vat_no
+      - billing_tel_no
+      - billing_country
+      - billing_company_registration_no
+      - billing_postal_address
+      - billing_postal_code
+      - partner
+      - billing_account_number
+    - collection.update:
+      - partner
+      - $partner
+      - type: $billing_type
+      - cellphone: $billing_cellphone
+      - email: $billing_email
+      - vat_no: $billing_vat_no
+      - tel_no: $billing_tel_no
+      - country: $billing_country
+      - postal_address: $billing_postal_address
+      - postal_code: $billing_postal_code
+      - company_registration_no: $billing_company_registration_no
+      - start_page
+      - acc_no: $billing_account_number
+    - if $billing_type == "existing_account":
+        - foreach:
+            - collection.data: [user, [role: "admin",partner.type: merchant],admin_first_name: first_name, admin_last_name: last_name, admin_email: email]
+            - emailer.send: { type: existing_account_registration_email}
+    - keep_session: billing_type
+    - let:
+        partner_id: $partner
+
+existing_account_registration_email:
+  from: $support_email
+  to: $admin_first_name $admin_last_name <$admin_email>
+  subject: New Existing Account Registration
+  message: >
+    Dear <b>$admin_first_name $admin_last_name</b> <br><br>
+    $first_name $last_name has registered on the system as an existing account holder using this $email,please verify the registrant details.<br><br>
+    Regards,<br><br>
+    <b>Customer Operations</b>
+
+list:
+  activate: { class: [green] }
+  deactivate: { class: [red] }
+  sort: email
+  sort_order: desc
+  flags: [show_titles,filter]
+
+login:
+  desc: Please provide the following details to log into the system
+  actions_pane: { class: [^grid]}
+  actions:
+    - login: {push: merge, class: [widest,vspace,^pad-medium]}
+    - forgot_password: {type: link, push: merge, class: [center-text, vspace]}
+    - register: { type: link, class: [vspace, center-text] }
+  post:
+    - collection.values: [session,$sid, partner.currency]
+    - if "$currency" == '':
+        - read_config: currency
+    - write_session: currency
+
+profile:
+  inputs:
+    - country: { type: dropdown_collection, push: email }
+  values:
+    - collection.values: [session, $sid, user.country]
+profile_update:
+  post:
+    - refresh: "#user_info"
+
+register:
+  name: Not a user? Sign up now!
+  steps:
+    - _reset
+    - enter_credentials
+    - check_otp: { clear: true }
+    - billing_information
+    - confirm_registration: { clear: true}
+    - complete_registration: { prev: false}
+
+activate:
+  access: [admin]
+  url: /user/activate
+
+deactivate:
+  access: [admin]
+  url: /user/deactivate
+
+billing_information:
+  type: input_page
+  inputs:
+    - billing_type:
+        type: radiogroup
+        layout:
+          subject:
+            on_click: ~$('.error').remove();
+        options: [individual,company,existing_account]
+    - default: { show: ~billing_type=='individual' }
+    - title: { type: dropdown_collection}
+    - first_name: { valid: contact_name }
+    - last_name: { valid: contact_name }
+    - country: { type: dropdown_collection }
+    - cellphone
+    - email
+    - account_number:  { show: ~billing_type=='existing_account' }
+    - default: {show: ~billing_type=='company' || billing_type == 'existing_account'}
+    - company_name
+    - company_registration_no
+    - vat_no
+    - tel_no
+    - default: {show: ~billing_type=='company' || billing_type == 'individual' || billing_type == 'existing_account'}
+    - postal_address: { type: textarea, class: [height-line-5, brand-font] }
+    - postal_code
+    - default: { show: ~billing_type=='existing_account' }
+  values:
+    - read_session: [title,first_name,last_name,cellphone,email,password,country]
+  post_prefix: billing_
+  post:
+    - let: {billing_type: $billing_billing_type}
+    - if "$billing_type" == 'individual':
+        - collection.values: [title, $billing_title, title: name]
+        - write_session: [registrant_partner: $title $billing_first_name $billing_last_name]
+    - if "$billing_type" == 'company' || $billing_type == 'existing_account':
+        - write_session: [registrant_partner: $billing_company_name]
+    - write_session:
+      - billing_type
+      - billing_cellphone
+      - billing_email
+      - billing_vat_no
+      - billing_tel_no
+      - billing_country
+      - billing_postal_address
+      - billing_company_registration_no
+      - billing_postal_code
+      - billing_account_number
+
+edit:
+  access: admin
+
+company_name:
+   valid:
+     - depends(billing_type,either(company,existing_account))
+     - at_least(2)
+
+company_registration_no:
+  valid:
+    - depends(billing_type,either(company,existing_account))
+    - at_least(7)
+
+contact_name:
+  valid:
+    - depends(billing_type,equals(individual))
+    - name
+
+postal_address:
+  valid:
+    - at_least(15)
+
+postal_code:
+  valid:
+    - depends(country, equals(za))
+    - za_code
+
+tel_no:
+  valid:
+    - depends(billing_type,either(company,existing_account))
+    - telephone
+
+vat_no:
+  valid:
+    - optional
+    - depends(billing_type,either(company,existing_account))
+    - za_vat
+
+welcome:
+  type: info_page
+  class: [center-text pad pad-medium]
+  actions_pane: { class: [ grid space fit ] }
+  lines:
+    - $message
+    - default: { tag: li, class: [pad-y pad-small, left-text, bullet-disc, paragraph,pad-left pad-small]}
+    - postpaid_applicant_message:
+        partner_access: [existing_account]
+        name: >
+          Your existing account details have been received and are being verified.
+          Once your details have been verified, you will be able to use a purchase order to buy credits.<br>
+          In the meantime you can still continue to use the system on a pre-paid basis until your details have been verified.
+    - postpaid_message:
+        partner_access: [post_paid]
+        name: >
+          You can now proceed to Buy Credits. Please note that you have three payment options available namely; <br>
+          Credit Card, Bank Deposit and Purchase Order. The Purchase Order option is based on the agreed rate per SMS with IMS.
+    - prepaid_message:
+        partner_access: [individual,company,existing_account]
+        name: >
+          You will need to have sufficient credits for the number of messages you would like to send.
+          The cost of these messages are on a sliding scale depending on the number of credits purchased.
+          The more credits you buy, the cheaper the cost per unit message.
+    - However, you can start adding your new contacts that will be used to send messages once you have enough credit.
+    - If you already have existing contacts in an Excel spreadsheet,  system allows you to import them.
+    - default: { tag: div, class: [pad-y pad-large] }
+    - What would you like to do?: { class: [bold italic,center-text]}
+  actions:
+    - buy_credits
+    - add_contacts: {action: dialog, url: /contact/add}
+    - import_contacts: {action: dialog, url: /contact/import_contacts}
+
+
+complete_registration:
+  lines: [_reset]
+  actions: [_reset]
+  read:
+    - read_session: [billing_type]
+    - if "$billing_type" == "existing_account":
+        - alert: >
+            Your Registration was successful, and it now is pending approval.
+            Upon verification of your account number, you will receive an email notifying you of the approval of your registration.
+            In the meantime you will have access to all system functions except for buying credits via purchase order process.
+    - if "$billing_type" != "existing_account":
+        - alert: Registration Successfully Completed.
+    - redirect: {url: /home }
+    - show_dialog: /user/login
+
+complete_registration_message:
+  name: Thank you for registrering. You can now login to the system.
+
+modify:
+  access: [admin]
+  actions:
+    - modify: {name: Update,push: merge}
