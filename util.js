@@ -67,12 +67,13 @@ util.merge.all = (array, options) => {
   return array.reduce((prev, next, init)=>merge(prev, next, options))
 }
 
-util.walk = (obj, sum, callback) => {
+util.walk = (obj, callback) => {
   for (var key in obj) {
     if (!obj.hasOwnProperty(key)) continue;
-    var v = obj[key] = callback(sum, key, obj[key], obj);
+    callback(key, obj[key], obj)
+    var v = obj[key];
     if (!util.is_primitive(v))
-      util.walk(v, sum, callback)
+      util.walk(v, callback)
   }
 }
 

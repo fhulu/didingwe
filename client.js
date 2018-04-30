@@ -87,11 +87,17 @@ class Client {
   }
 
   expand_types(item, types) {
-    util.walk(item, types, (types, key, val)=>{
-      if (key != 'type') return val;
-      var expanded = types[val] = this.types[val];
-      this.expand_types(expanded, types);
-      return val;
+    util.walk(item, (key, val, node)=>{
+      if (val in types) return;
+      if (key == 'type') {
+        var expanded = types[val] = this.types[val];
+        this.expand_types(expanded, types);
+      }
+      else if (Array.isArray(node) && typeof val == 'string') {
+        var expanded = types[val] = this.types[val];
+        if (expanded)
+          this.expand_types(expanded, types);
+      }
     })
   }
 
