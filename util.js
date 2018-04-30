@@ -1,8 +1,10 @@
 "use strict";
 
 var util = {};
+
 util.is_primitive = (x) => ["number","string","boolean"].indexOf(typeof x)>=0;
 
+util.is_object = (x) => x == Object(x)
 
 util.clone = (x, option) => {
   if (util.is_primitive(x)) return x;
@@ -65,5 +67,13 @@ util.merge.all = (array, options) => {
   return array.reduce((prev, next, init)=>merge(prev, next, options))
 }
 
+util.walk = (obj, sum, callback) => {
+  for (var key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
+    var v = obj[key] = callback(sum, key, obj[key], obj);
+    if (!util.is_primitive(v))
+      util.walk(v, sum, callback)
+  }
+}
 
 module.exports = util;
