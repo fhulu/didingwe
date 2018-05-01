@@ -70,11 +70,12 @@ util.merge.all = (array, options) => {
 util.walk = (obj, callback) => {
   for (var key in obj) {
     if (!obj.hasOwnProperty(key)) continue;
-    callback(key, obj[key], obj)
+    if (callback(key, obj[key], obj) === false) return;
     var v = obj[key];
     if (!util.is_primitive(v))
       util.walk(v, callback)
   }
+  return obj;
 }
 
 module.exports = util;
