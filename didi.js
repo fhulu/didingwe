@@ -127,19 +127,19 @@ class Didi {
     console.log("listening on port",this.config.server_port);
   }
 
-  load_page(page) {
+  load_page(page, included=false) {
     var existing = this.pages[page];
-    if (existing) return Promise.resolve(existing);
+    if (existing && !included) return Promise.resolve(existing);
 
     return this.load_terms(null, page)
       .then(terms => this.include(terms))
-      .then(terms => this.update_page_terms(page, terms))
+      .then(terms => included? terms: this.update_page_terms(page, terms))
   }
 
   include(terms) {
     var includes = terms.include;
     if (!includes) return Promise.resolve(terms);
-    var promises = includes.map( page => this.load_page(page));
+    var promises = includes.map( page => this.load_page(page, true));
     return Promise.all(promises)
       .then(results => results.reduce((sum,result) => sum = this.merge(result, sum), terms))
   }
