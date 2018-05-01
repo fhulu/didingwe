@@ -1,6 +1,19 @@
 const url = require("url");
 const qs = require("querystring")
 const util = require("./util.js");
+const traverse = require("traverse");
+
+const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
+  'q', 'valid', 'validate', 'write_session'];
+
+const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
+
+const non_expandables = ['post', 'audit','action', 'attr', 'css', 'html', 'script', 'sql', 'style', 'template', 'valid'];
+
+const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
+  'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
+  'sql_insert', 'sql_update', 'style', 'trigger', 'valid', 'validate', 'write_session'];
+
 
 class Client {
   constructor(server, id) {
@@ -70,9 +83,31 @@ class Client {
   respond(types) {
     this.types = types;
     var item = this.follow_path(this.path, types);
-    var response = { fields: item, types: {}}
-    this.expand_types(item, response.types);
+    var action = this.request.action;
+    if (!action) action = 'read';
+    this[action](item);
+  }
+
+  read(item) {
+    this.remove_server_items(item);
+    var types = {};
+    this.expand_types(item, types);
+    this.remove_server_items(types);
+    var response = { fields: item, types: types }
     this.response.end(JSON.stringify(response));
+  }
+
+  remove_server_items(root) {
+    var result = {}
+    util.walk(root, (val, key, node) =>{
+      if ( this.is_server_item(key))
+        delete node[key];
+    })
+  }
+
+  is_server_item(key) {
+    return post_items.includes(key)
+      || query_items.includes(key)
   }
 
   follow_path(path, types) {
@@ -87,8 +122,10 @@ class Client {
   }
 
   expand_types(item, types) {
-    util.walk(item, (key, val, node)=>{
+    util.walk(item, (val, key, node)=>{
       if (val in types) return;
+      if (non_expandables.includes(key)) return;
+
       if (key == 'type') {
         var expanded = types[val] = this.types[val];
         this.expand_types(expanded, types);
