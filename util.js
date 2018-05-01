@@ -2,7 +2,7 @@
 
 var util = {};
 
-util.is_primitive = (x) => ["number","string","boolean"].indexOf(typeof x)>=0;
+util.is_primitive = (x) => ["number","string","boolean"].includes(typeof x);
 
 util.is_object = (x) => x == Object(x)
 
@@ -70,12 +70,13 @@ util.merge.all = (array, options) => {
 util.walk = (obj, callback) => {
   for (var key in obj) {
     if (!obj.hasOwnProperty(key)) continue;
-    if (callback(key, obj[key], obj) === false) return;
-    var v = obj[key];
-    if (!util.is_primitive(v))
-      util.walk(v, callback)
+    var val = obj[key];
+    if (callback(val, key, obj) === false) return;
+    if (val && !util.is_primitive(val))
+      util.walk(val, callback)
   }
   return obj;
 }
+
 
 module.exports = util;
