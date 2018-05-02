@@ -22,7 +22,7 @@ class Client {
     this.seq = server.next_seq;
     this.posted = {};
     this.variables = {};
-    this.types = {};
+    this.pages = {}
   }
 
   process(request, response) {
@@ -32,11 +32,6 @@ class Client {
       .then(() => this.server.load_page(this.page))
       .then(types => this.respond(types))
       .catch(err=> this.report_error(err) )
-  }
-
-  output() {
-    console.log("Processed");
-    this.response.end();
   }
 
   report_error(err) {
@@ -81,19 +76,28 @@ class Client {
   }
 
   respond(types) {
-    this.types = types;
     var item = this.follow_path(this.path, types);
     var action = this.request.action;
     if (!action) action = 'read';
-    this[action](item);
+    this[action](item, types);
   }
 
-  read(item) {
+  read(item, types) {
+    var path = this.path.join('/');
+    var loaded = this.pages[path];
+    if (loaded)
+      return this.output(loaded);
+
     this.remove_server_items(item);
-    var types = {};
-    this.expand_types(item, types);
+    var expanded_types = {};
+    this.expand_types(item, types, expanded_types);
     this.remove_server_items(types);
-    var response = { fields: item, types: types }
+    var response = { fields: item, types: expanded_types }
+    this.pages[path] = response;
+    this.output(response);
+  }
+
+  output(response) {
     this.response.end(JSON.stringify(response));
   }
 
@@ -113,7 +117,7 @@ class Client {
   follow_path(path, types) {
     var item = types;
     var parent = item;
-    for (var branch of this.path) {
+    for (var branch of path) {
       item = item[branch];
       if (!item)
         throw Error("Invalid path " + path.join('/'));
@@ -121,33 +125,21 @@ class Client {
     return item;
   }
 
-  expand_types(item, types) {
+  expand_types(item, source_types, expanded_types) {
     util.walk(item, (val, key, node)=>{
-      if (val in types) return;
+      if (val in expanded_types) return;
       if (non_expandables.includes(key)) return;
 
       if (key == 'type') {
-        var expanded = types[val] = this.types[val];
-        this.expand_types(expanded, types);
+        var expanded = expanded_types[val] = source_types[val];
+        this.expand_types(expanded, source_types, expanded_types);
       }
       else if (Array.isArray(node) && typeof val == 'string') {
-        var expanded = types[val] = this.types[val];
+        var expanded = expanded_types[val] = source_types[val];
         if (expanded)
-          this.expand_types(expanded, types);
+          this.expand_types(expanded, source_types, expanded_types);
       }
     })
-  }
-
-  merge_type(obj, type, must_exist) {
-    var expanded = this.types[type];
-    if (!expanded) {
-      if (must_exist) throw new Error(`Unknown type ${type}`, type);
-      return obj;
-    }
-    type = expanded.type;
-    expanded = this.merge(expanded, obj);
-    if (!type) return expanded;
-    return this.merge_type(expanded, type, types);
   }
 
 
