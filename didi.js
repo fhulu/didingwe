@@ -18,6 +18,18 @@ var session = sessions({
 });
 
 
+const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
+  'q', 'valid', 'validate', 'write_session'];
+
+const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
+
+const non_expandables = ['post', 'audit','action', 'attr', 'css', 'html', 'script', 'sql', 'style', 'template', 'valid'];
+
+const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
+  'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
+  'sql_insert', 'sql_update', 'style', 'trigger', 'valid', 'validate', 'write_session'];
+
+
 class Didi {
   constructor() {
     this.files = {};
@@ -25,6 +37,7 @@ class Didi {
     this.next_seq = 0;
     this.types = {};
     this.pages = {};
+    this.reads = {};
     this.read_config()
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
@@ -152,6 +165,62 @@ class Didi {
     }
     return this.pages[page] = this.merge(this.types, types);
   }
+
+  read(path, types) {
+    var item = this.follow_path(path, types);
+    var loaded = this.reads[path];
+    if (loaded)
+      return loaded;
+
+    this.remove_server_items(item);
+    var expanded_types = {};
+    this.expand_types(item, types, expanded_types);
+    this.remove_server_items(types);
+    return this.reads[path] = { fields: item, types: expanded_types }
+  }
+
+  remove_server_items(root) {
+    var result = {}
+    util.walk(root, (val, key, node) =>{
+      if ( this.is_server_item(key))
+        delete node[key];
+    })
+  }
+
+  is_server_item(key) {
+    return post_items.includes(key)
+      || query_items.includes(key)
+  }
+
+  follow_path(path, types) {
+    path = path.split('/').slice(1);
+    var item = types;
+    var parent = item;
+    for (var branch of path) {
+      item = item[branch];
+      if (!item)
+        throw Error("Invalid path " + path.join('/'));
+    }
+    return item;
+  }
+
+  expand_types(item, source_types, expanded_types) {
+    util.walk(item, (val, key, node)=>{
+      if (val in expanded_types) return;
+      if (non_expandables.includes(key)) return;
+
+      if (key == 'type') {
+        var expanded = expanded_types[val] = source_types[val];
+        this.expand_types(expanded, source_types, expanded_types);
+      }
+      else if (Array.isArray(node) && typeof val == 'string') {
+        var expanded = expanded_types[val] = source_types[val];
+        if (expanded)
+          this.expand_types(expanded, source_types, expanded_types);
+      }
+    })
+  }
+
 };
 
 var didi = new Didi();

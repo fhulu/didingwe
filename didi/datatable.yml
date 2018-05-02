@@ -1,0 +1,125 @@
+datatable:
+  head: ""
+  tooltip: false
+  type: table
+  text: $head $body $no_records
+  class: [data,didi-listener]
+  create: datatable
+  head: { class: [didi] }
+  title: { class: [didi] }
+  body: { class: [didi,table-body] }
+  min_row_height: 20
+  defaults: {}
+  row_actions: []
+  row_styles: {}
+  row:
+    actions: []
+    styles: {}
+    class: []
+  cell:
+    class: [didi]
+  script: [/common/datatable.js]
+  row_creator: { type: table_row }
+  css: [/common/datatable.css]
+  flags: []
+  values:
+    - collection.sort_on: [sort]
+  position: top
+  filter:
+    name: ""
+    desc: Filter by specific columns
+
+  fields:
+    - type: none
+    - default: { span: 1, filter: yes}
+
+  sow: [slide,slideoff]
+
+  #paging
+  paging:
+    - statics
+    - type: actioner
+    - wrap: class
+
+  goto_first:
+    name: First
+    desc: Go to first page
+  goto_prev:
+    name: "<"
+    desc: Go to previous page
+  goto_next:
+    name: ">"
+    desc: Go to next page
+  goto_last:
+    name: Last
+    desc: Go to last page
+
+  # row actions
+  row_actions:
+    - default: { validate: none}
+    - type: actioner
+    - action: trigger
+    - slide: {style: {margin-right: 4px}}
+    - slideoff
+    - action: post
+
+  footer_actions:
+    - type: actioner
+
+  no_records:
+    type: datatable_no_records
+    show: no
+
+  collapse:
+    name: "-"
+    desc: Hide details
+  expand:
+    name: +
+    desc: More details ...
+    pages: []
+
+  slide:
+    event: slide
+    name: "<"
+    desc: More options...
+
+  slideoff:
+    event: slideoff
+    name: ">"
+    desc: Hide options
+
+  slideSpeed: 150
+  searchDelay: 250
+
+#todo: fix backend inheritance
+export:
+  name: Export to Excel
+  desc: Export to an Excel spreadsheet
+  action: redirect
+  validate: none
+  post:
+    call: datatable::export(root,$key)
+  query: " "
+  target: _blank
+
+ # todo: fix back-end to contextualise
+print:
+ desc: Print above contents
+ action: redirect
+ validate: none
+ post:
+   - call: datatable::pdf(root,$key)
+ query: " "
+ target: _blank
+
+
+image_row_action:
+  tag: i
+  name: " "
+  class: [fa, no-backcolor, pad-x pad-tiny, float-right, cursor-pointer]
+
+
+datatable_no_records:
+  type: p
+  name: No records found.
+  class: [datatable-no-records]
