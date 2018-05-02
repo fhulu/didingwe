@@ -11,6 +11,7 @@ var sessions = require("client-sessions");
 const debug = require("debug")("didi");
 const path_util = require("path");
 const mime = require("mime-types");
+const url = require("url");
 
 var session = sessions({
   cookieName: 'didi',
@@ -136,12 +137,14 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        if (!this.serve_mime(req, res))
-          this.process_request(req, res);
+        this.serve_mime(req, res)
+          || this.serve_spa(req, res)
+          || this.process_request(req, res);
       })
     }).listen(this.config.server_port);
     console.log("listening on port",this.config.server_port);
   }
+
 
   load_page(page, included=false) {
     var existing = this.pages[page];
@@ -179,7 +182,9 @@ class Didi {
     var expanded_types = {};
     this.expand_types(item, types, expanded_types);
     this.remove_server_items(types);
-    return this.reads[path] = { fields: item, types: expanded_types }
+    expanded_types['control'] = types['control'];
+    expanded_types['template'] = types['template'];
+    return this.reads[path] = { path: path, fields: item, types: expanded_types }
   }
 
   remove_server_items(root) {
@@ -224,30 +229,51 @@ class Didi {
     })
   }
 
-  load_spa() {
-    var spa = this.config['spa_template'];
-    var loaded = this.reads[spa];
-    if (loaded)
-      return Promise.resolve(loaded);
 
-    return after(fs.readFile(spa))
+  serve_spa(req, res) {
+    if (req.method != 'GET') return false;
+
+    var parsed = url.parse(req.url, true);
+    var query = parsed.query;
+    if (query.action) return false;
+
+    this.load_spa(query)
+      .then(data=> {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        res.end(data);
+      })
+    return true;
+  }
+
+  load_spa(query) {
+    var spa = this.config['spa_template'];
+    return after(fs.readFile, spa, "utf8")
       .then(data=>{
         data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
         data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
-        return this.reads[spa] = data;
-      })
+        data = data.replace("$request_method", this.config['request_method']);
+        var config = this.config['landing'];
+        util.replace_fields(config, query);
+        util.replace_fields(config, config);
+        var options = { path:  config.page, request: config};
+        return data = data.replace("$options", JSON.stringify(options));
+    })
+    .catch(err =>{
+      console.log("ERROR", err);
+      this.send404();
+    });
   }
 
   replace_links(html, type, template) {
     var urls = this.config[type];
     var links = "";
     if (!urls)
-      return;
+      return html;
 
-    for (url of urls) {
+    for (var url of urls) {
       links += template.replace('$script', url);
     }
-    html.replace(`$${type}_links`, links);
+    return html.replace(`$${type}_links`, links);
   }
 
   serve_mime(req, res) {

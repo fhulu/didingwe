@@ -1,0 +1,66 @@
+include: [menus,menu]
+
+banner:
+  class: [widest]
+  type: container
+  contents:
+    - quick_menu: { class: [float-right,hide-small] }
+    - session_details: { class: [float-right] }
+    - main_menu: {type: menu}
+
+session_details:
+  type: container
+  class: [hide-small]
+  contents:
+    - default: { class: [col s12, pad pad-small, height-line-3] }
+    - type: container
+    - credits_pane
+    - user_info
+
+
+credits_pane:
+  access: [user]
+  contents:
+    - default:
+        type: label
+        class: [pad-x pad-tiny, vertical-top ]
+    - credits
+    - credits_available: { class: [bold] }
+    - buy_credits: { type: button, action: dialog,class: [hide-small]}
+  values:
+    - refresh: "#credits_available"
+
+credits_available:
+  on_refresh:
+    action: post
+    validate: none
+    post:
+      - let: { credits_available: 0}
+      - collection.values: [session, $sid, partner]
+      - collection.hide: [quantity,amount]
+      - collection.values: [credit, [partner,active: 1], partner group, quantity, credits_available: /sum(quantity)]
+      - collection.values: [transaction, [partner, credit.active: 1], partner group, amount, credits_available: /$credits_available-sum(amount)]
+      - update: credits_available
+      - write_session: credits_available
+      - clear_values
+
+user_info:
+  access: auth
+  contents:
+    - default:
+        class: [cursor-pointer]
+        action: dialog
+        url: /user/profile
+        desc: Click here to view/change your details or change your password
+    - user: { type: font_awesome}
+    - full_name: { type: label}
+  values:
+    - refresh: "#user_info"
+  on_refresh:
+    action: post
+    validate: none
+    post:
+      - collection.values: [session, $sid, partner, user.first_name, user.last_name]
+      - let: { full_name: $first_name $last_name }
+      - keep_values: [full_name]
+      - update: full_name

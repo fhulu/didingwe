@@ -2,7 +2,6 @@ index:
   parent:
     class: [didi]
   type: container
-  tag: body
   read:
     - this.post: trigger/fire
   contents:

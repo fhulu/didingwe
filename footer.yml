@@ -1,0 +1,121 @@
+footer:
+  type: container
+  class: [whitesmoke, text-grey, separator-border border-top border-width-thin]
+  contents:
+    - panes
+    - social_media
+    - vspace
+    - copyright
+    - vspace: {class: pad-y pad-small}
+    - vspace
+
+
+social_media:
+  type: container
+  class: [widest,text-brand-highlight,center-all]
+  contents:
+    - type: font_awesome
+    - default: {class: [pointer-cursor,pad-left pad-tiny],target: _blank,action: redirect,style: {font-size: 3em}}
+    - vspace
+    - facebook-square: {url: "https://www.facebook.com/ItouchSA"}
+    - twitter-square: {url: "https://twitter.com/iTouch_IMS" }
+    - linkedin-square: {url: "https://www.linkedin.com/company/itouch"}
+
+
+copyright:
+  name: Copyright © iTouch Messaging Services 2017. All Rights Reserved
+  type: p
+  class: [font-medium,center-text, pad-y pad-small]
+
+panes:
+  type: container
+  class: [widest, whitesmoke, clear clear-after]
+  contents:
+    - panes_container:
+         type: container
+         class: [grid s2 m7 l7 fit]
+         contents:
+            - type: footer_pane
+            - blank: { class: [col s0 ]}
+            - services
+            - help
+            - divider_block:
+                type: container
+                name: ""
+                class: [col s0 m2 l2]
+                contents:
+                  - type: container
+                  - divider:
+                      class: [brand-color]
+                      width: 4px
+                      height: 180px
+                      left: 46%
+            - company
+            - other_services
+            - blank: { class: [col s0 ]}
+
+
+
+footer_pane:
+  type: container
+  class: [clear-after,pad-left pad-xlarge]
+  contents:
+    - subject:
+        tag: div
+        name: $parent_name
+        class: [text-charcoal, left-text,font-large,pad-top pad-small]
+    - vspace: { space: 6 }
+    - type: link
+    - default: { class: [text-brand-highlight,small-text-height,hover-underline, cursor-pointer,font-small]}
+
+services:
+  contents:
+    - bulk_sms: {target: _blank,url: "http://itouch.co.za/bulk-sms.php"}
+    - vspace
+    - pricing_and_payment: { type: footer_pane, class: [^pad-left pad-large,^text-brand-highlight,^hover-underline, font-medium] }
+
+other_services:
+  contents:
+    - type: itouch_link
+    - mems
+    - bulk-email
+    - bulk-mms
+    - short-codes
+    - api_intergration: {name: API Integration,target: _blank,url: "https://itouch.co.za/campaign-manager.php"}
+
+company:
+  contents:
+    - type: itouch_link
+    - about: {name: About Us}
+    - contactus
+    - find-us
+
+pricing_and_payment:
+  contents:
+    - payment_methods
+    - action: dialog
+    - add_rate
+    - buy_credits
+    - grant_credits
+
+help:
+  contents:
+    - user_guide: {action: dialog}
+    - faq: {action: dialog}
+    - terms_and_conditions: { class: [^pad-x ^pad-tiny],name: Terms and Conditions}
+    - helpdesk: {type: label}
+
+faq:
+  name: FAQ
+
+link:
+  class: [^underlined,block]
+
+helpdesk:
+  class: [text-white]
+  html: <a href="mailto:helpdesk@itouch.co.za">Helpdesk</a>
+
+itouch_link:
+  type: link
+  url: http://itouch.co.za/$id.php
+  target: _blank

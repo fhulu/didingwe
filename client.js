@@ -1,8 +1,6 @@
 const url = require("url");
 const qs = require("querystring")
 const util = require("./util.js");
-const traverse = require("traverse");
-
 
 class Client {
   constructor(server, id) {
@@ -16,6 +14,7 @@ class Client {
     this.response = response;
     console.log(`Processing client ${this.seq}`);
     this.parse_request(request)
+      .then((request) => this.rewrite_path(request))
       .then(() => this.server.load_page(this.page))
       .then(types => this.respond(types))
       .catch(err=> this.report_error(err) )
@@ -28,27 +27,21 @@ class Client {
 
   parse_request(req) {
     var parsed = url.parse(req.url, true);
-    this.path = this.rewrite_path(parsed.pathname);
     var get = parsed.query;
-    console.log("REQUEST PATH", this.path, "GET", get);
+    console.log("REQUEST GET", get);
 
     if (req.method !== 'POST') return Promise.resolve(this.request = get);
     return this.read_post(req)
       .then(post => this.request = Object.assign(post, get));
   }
 
-  rewrite_path(path) {
-    var path = path.split('/');
-    // remove initial '/'
-    path.shift();
-
-    // if no path given, assume index
-    if (path[0] == '') path[0] = 'index';
+  rewrite_path(request) {
+    var path = request.path.split('/');
     this.page = path[0];
 
     // if no branch given, assume page = branch
     if (path.length ==1) path.unshift(path[0]);
-    return path.join('/');
+    return this.path = path.join('/');
   }
 
   read_post(req) {
@@ -79,6 +72,7 @@ class Client {
   }
 
   output(response) {
+    this.response.writeHead(200, {'Content-Type': 'application/json'})
     this.response.end(JSON.stringify(response));
   }
 }

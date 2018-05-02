@@ -1,5 +1,5 @@
 site_config: .site-config.yml
-spa_template: spa.html
+spa_template: ./resources/didi/spa.html
 server_port: 80
 resource_dir: ./resources
 brand_name: $program_name
@@ -18,9 +18,9 @@ log_file: $brand_name.log
 upload_dir: ../uploads
 start_page: /home
 css:
-  - /didi/font-awesome/css/font-awesome.min.css
+  # - /didi/font-awesome/css/font-awesome.min.css
   - /didi/didi.css
-scripts:
+script:
   - /didi/jquery/jquery-3.2.1.min.js
   - /didi/jquery/jquery-ui-1.12.1/jquery-ui.min.js
   - /didi/enquire.min.js
