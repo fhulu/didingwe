@@ -1,5 +1,7 @@
 site_config: .site-config.yml
+spa_template: spa.html
 server_port: 80
+resource_dir: ./resources
 brand_name: $program_name
 brand_path: ../$brand_name
 image_path: $brand_link/images
@@ -16,16 +18,16 @@ log_file: $brand_name.log
 upload_dir: ../uploads
 start_page: /home
 css:
-  - /common/font-awesome/css/font-awesome.min.css
-  - /common/didi.css
+  - /didi/font-awesome/css/font-awesome.min.css
+  - /didi/didi.css
 scripts:
-  - /common/jquery/jquery-3.2.1.min.js
-  - /common/jquery/jquery-ui-1.12.1/jquery-ui.min.js
-  - /common/enquire.min.js
-  - /common/mukoni.jquery.js
-  - /common/mkn.js
-  - /common/mkn.render.js
-  - /common/page.js
+  - /didi/jquery/jquery-3.2.1.min.js
+  - /didi/jquery/jquery-ui-1.12.1/jquery-ui.min.js
+  - /didi/enquire.min.js
+  - /didi/mukoni.jquery.js
+  - /didi/mkn.js
+  - /didi/mkn.render.js
+  - /didi/page.js
 modules:
   - auth
   - collection
@@ -33,7 +35,7 @@ modules:
   - sms
   - document
 
-search_paths: [../common/,.,$brand_path]
+search_paths: [../didi/,.,$brand_path]
 collections:
   default: collection
   auth: [user,partner,user_group,user_group_member]

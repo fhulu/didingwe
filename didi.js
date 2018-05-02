@@ -9,6 +9,8 @@ const Client = require("./client.js");
 var async = require("async");
 var sessions = require("client-sessions");
 const debug = require("debug")("didi");
+const path_util = require("path");
+const mime = require("mime-types");
 
 var session = sessions({
   cookieName: 'didi',
@@ -134,7 +136,8 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        this.process_request(req, res);
+        if (!this.serve_mime(req, res))
+          this.process_request(req, res);
       })
     }).listen(this.config.server_port);
     console.log("listening on port",this.config.server_port);
@@ -220,6 +223,61 @@ class Didi {
       }
     })
   }
+
+  load_spa() {
+    var spa = this.config['spa_template'];
+    var loaded = this.reads[spa];
+    if (loaded)
+      return Promise.resolve(loaded);
+
+    return after(fs.readFile(spa))
+      .then(data=>{
+        data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
+        data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
+        return this.reads[spa] = data;
+      })
+  }
+
+  replace_links(html, type, template) {
+    var urls = this.config[type];
+    var links = "";
+    if (!urls)
+      return;
+
+    for (url of urls) {
+      links += template.replace('$script', url);
+    }
+    html.replace(`$${type}_links`, links);
+  }
+
+  serve_mime(req, res) {
+    if (req.method != 'GET') return false;
+    let path = path_util.resolve(this.config['resource_dir'] + '/' + req.url);
+    let ext = path_util.extname(path);
+    if (!ext) return false;
+
+    let content_type = mime.contentType(path_util.extname(path));
+
+    if(!content_type)
+      return this.send404(res);
+
+    fs.exists(path, (exists) => {
+      if(!exists) {
+        this.send404(res);
+        return;
+      }
+
+      res.writeHead(200, {'Content-Type': content_type});
+      fs.createReadStream(path).pipe(res);
+    });
+    return true;
+  }
+
+  send404(res) {
+    res.writeHead(404, {'Content-Type': 'text/plain'});
+    res.end('Error 404: Resource not found.');
+  }
+
 
 };
 

@@ -1,0 +1,142 @@
+table.data>thead .heading
+{
+  float: left;
+  display: inline-block;
+  padding-top: 6px;
+  padding-left: 4px;
+  padding-right: 20px;
+}
+
+table.data .paging
+{
+  float: right;
+}
+
+table.data .paging *
+{
+  margin-right: 1px;
+  display: inline-block;
+}
+table.data .paging div
+{
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+table.data .paging input
+{
+  width: 26px;
+  height: 26px;
+  text-align: center;
+}
+
+table.data .paging [action]
+{
+  padding: 5px 10px;
+}
+
+
+table.data th>div
+{
+  display: inline-block;
+  padding:2px;
+}
+
+table.data th[sort]
+{
+  cursor: pointer;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+table.data th[sort='asc']
+{
+  background-image:url('arrow_up.png');
+}
+table.data th[sort='desc']
+{
+  background-image:url('arrow_down.png');
+}
+
+table.data .header [action=filter]
+{
+  float: left;
+  width: 72px;
+  height: 30px;
+  cursor: pointer;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-image:url('filter_add32.png');
+}
+
+table.data .filtering[on]
+{
+  background-image:url('filter_del32.png');
+}
+
+table.data .filter input
+{
+  height: 20px;
+}
+
+table.data tr.sort
+{
+  cursor: pointer;
+}
+
+table.data>tbody>tr.expanded>td
+{
+  padding: 10 16;
+}
+
+table.data tr [action]
+{
+  cursor: pointer;
+  height: 100%;
+}
+
+table.data td.expandable [action]
+{
+  height: 100%;
+  border-right: 1px solid lightgray;
+  display: inline-block;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin-right: 5px;
+}
+
+table.data>tbody>tr>td.actions{ position: relative;white-space: nowrap; padding: 0}
+table.data>tbody>tr>td.actions>[action=slide],
+table.data>tbody>tr>td.actions>.slide
+{
+  position: absolute;
+  float: right;
+  right: 0px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+table.data .slide>[action]
+{
+  display: inline-block;;
+}
+
+table.data thead div
+{
+  display: inline-block;
+}
+
+table.data td>input
+{
+  width: 100%;
+  height: 100%;
+}
+
+table.data>tfoot tr
+{
+  height: 30px;
+  line-height: 30px;
+}
+
+table.data .hidden {
+  display: none;
+}
