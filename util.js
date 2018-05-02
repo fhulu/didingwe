@@ -78,5 +78,20 @@ util.walk = (obj, callback) => {
   return obj;
 }
 
+util.replace_vars = (str, values) => {
+  for (var key in values) {
+    if (!values.hasOwnProperty(key)) continue;
+    str = str.replace('$'+key, values[key]);
+  }
+  return str;
+}
+
+util.replace_fields = (obj, values) => {
+  util.walk(obj, (val, key, node) => {
+    var new_val = util.replace_vars(val, values);
+    if (new_val != val) node[key] = new_val;
+  })
+
+}
 
 module.exports = util;
