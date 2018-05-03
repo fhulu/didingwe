@@ -37,7 +37,8 @@ class Didi {
   constructor() {
     this.files = {};
     this.clients = {};
-    this.next_seq = 0;
+    this.client_seq = 0;
+    this.request_seq = 0;
     this.types = {};
     this.pages = {};
     this.reads = {};
@@ -51,11 +52,15 @@ class Didi {
 
   load_terms(terms, name, paths) {
     var loaded = this.files[name];
-    if (typeof loaded == 'function')
+    if (typeof loaded == 'function') {
+      console.log("stll loading terms for", name);
       return loaded;
+    }
 
-    if (loaded)
+    if (loaded) {
+      console.log("read terms from cache", name);
       return Promise.resolve(loaded);
+    }
 
     paths = paths || this.search_paths;
     var file = name;
@@ -135,9 +140,10 @@ class Didi {
     if (!client)
       client = new Client(this, id);
     this.client = client;
-    client.process(req, res);
+    this.request_seq++;
+    client.process(req, res, this.request_seq);
     if (!id) return;
-    this.next_seq++;
+    this.client_seq++;
     this.clients[id] = client;
   }
 
@@ -150,10 +156,10 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        this.serve_mime(req, res)
-          || this.serve_spa(req, res)
-          || this.process_request(req, res);
       })
+      this.serve_mime(req, res)
+        || this.serve_spa(req, res)
+        || this.process_request(req, res);
     }).listen(this.config.server_port);
     console.log("listening on port",this.config.server_port);
   }
@@ -161,8 +167,15 @@ class Didi {
 
   load_page(page) {
     var existing = this.pages[page];
-    if (typeof existing == 'function') return existing;
-    if (existing) return Promise.resolve(existing);
+    if (typeof existing == 'function') {
+      console.log("still loading", page);
+      return existing;
+    }
+
+    if (existing) {
+      console.log("read from cache", page);
+      return Promise.resolve(existing);
+    }
 
     return this.pages[page] = this.load_terms(null, page)
       .then(terms => this.include_all(terms))
