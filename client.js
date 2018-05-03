@@ -1,28 +1,35 @@
 const url = require("url");
 const qs = require("querystring")
 const util = require("./util.js");
-var debug = require("debug")("didi");
+var debug = require("debug")("DIDI");
 
 class Client {
   constructor(server, id) {
     this.server = server;
     this.id = id;
-    this.seq = server.client_seq;
+    this.seq = 0;
     this.variables = {};
+    this.auth_token = null;
+    this.config = server.config['landing'];
   }
 
-  process(req, res, seq) {
+  process(req, res) {
     var request = { request: req, response: res}
     this.response = req;
-    debug(`Processing client ${this.id} ${this.seq} seq ${seq}`);
+    ++this.seq;
     this.parse_query(request)
       .then(query => this.load_page(request))
       .then(types => this.respond(request, types))
       .catch(err=> this.report_error(request.response, err) )
   }
 
+  log(type, message) {
+    debug(`CLIENT ${this.id} ${this.seq} ${type} ${message}`);
+  }
+
+
   report_error(response, err) {
-    debug("ERROR", err);
+    this.log("ERROR", err);
     response.end();
   }
 
@@ -39,7 +46,7 @@ class Client {
   load_page(request) {
 
     util.replace_fields(request.query, request.query);
-    debug("REQUEST", JSON.stringify(request.query));
+    this.log("REQUEST", JSON.stringify(request.query));
 
     var path = request.query.path.split('/');
     if (path[0] == '') path.shift();
@@ -57,7 +64,6 @@ class Client {
       var body = '';
       var post;
       req.on('data', data=>{
-        debug("READ POST", data)
         body += data;
         if (body.length >= 1e6) {
           req.connection.destroy();
@@ -73,14 +79,27 @@ class Client {
   }
 
   read(request, types) {
-    debug("RESPONDING TO", request.query.path);
     var result = this.server.read(request.query.path, types);
     this.output(request.response, result);
   }
 
   output(response, result) {
-    response.setHeader('Content-Type', 'application/json')
-    response.end(JSON.stringify(result));
+    result = JSON.stringify(result);
+    this.log("RESPONSE", result.substring(0,127));
+    // response.setHeader('Content-Type', 'application/json')
+    response.end(result);
+  }
+
+  is_logged_in() {
+    return this.auth_token != null;
+  }
+
+  get_config() {
+    return this.config;
+  }
+
+  update_config(config) {
+    Object.assign(this.config, config);
   }
 }
 

@@ -8,7 +8,7 @@ const after = require("./after.js");
 const Client = require("./client.js");
 var async = require("async");
 var sessions = require("client-sessions");
-const debug = require("debug")("didi");
+const debug = require("debug")("DIDI");
 const path_util = require("path");
 const mime = require("mime-types");
 const url = require("url");
@@ -52,13 +52,8 @@ class Didi {
 
   load_terms(terms, name, paths) {
     var loaded = this.files[name];
-    if (typeof loaded == 'function') {
-      debug("stll loading terms for", name);
-      return loaded;
-    }
-
     if (loaded) {
-      debug("read terms from cache", name);
+      debug("CACHE HIT", name);
       return Promise.resolve(loaded);
     }
 
@@ -74,6 +69,7 @@ class Didi {
         try {
           var term = yaml.parse(data);
           terms = this.merge(terms, term);
+          debug(`LOADED ${path}`)
           callback(null, terms);
         }
         catch(e) {
@@ -84,7 +80,6 @@ class Didi {
     .then(terms => {
       if (!terms)
         throw new Error(`File(s) for '${name}' must exist`);
-      debug(`LOADED ${name}`)
       return this.files[name] = terms;
     })
   }
@@ -134,17 +129,16 @@ class Didi {
     return null;
   }
 
-  process_request(req, res) {
+  get_client(req) {
     var id = this.get_cookie(req, "didi");
+    if (!id) id = 0;
+
     var client = this.clients[id];
-    if (!client)
-      client = new Client(this, id);
-    this.client = client;
-    this.request_seq++;
-    client.process(req, res, this.request_seq);
-    if (!id) return;
-    this.client_seq++;
-    this.clients[id] = client;
+    if (!client) {
+      this.client_seq++;
+      this.clients[id] = client = new Client(this, this.client_seq);
+    }
+    return client;
   }
 
   init_server() {
@@ -156,26 +150,21 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        this.serve_mime(req, res)
-          || this.serve_spa(req, res)
-          || this.process_request(req, res);
+        var client = this.get_client(req);
+        this.serve_mime(client, req, res)
+          || this.serve_spa(client, req, res)
+          || client.process(req, res);
       })
     }).listen(this.config.server_port);
+
     debug("listening on port",this.config.server_port);
   }
 
 
   load_page(page) {
     var existing = this.pages[page];
-    if (typeof existing == 'function') {
-      debug("still loading", page);
-      return existing;
-    }
-
-    if (existing) {
-      debug("read from cache", page);
+    if (existing)
       return Promise.resolve(existing);
-    }
 
     return this.pages[page] = this.load_terms(null, page)
       .then(terms => this.include_all(terms))
@@ -236,7 +225,6 @@ class Didi {
   }
 
   follow_path(path, types) {
-    debug("FOLLOWING PATH", path)
     path = path.split('/').slice(1);
     var item = types;
     var parent = item;
@@ -270,37 +258,37 @@ class Didi {
   }
 
 
-  serve_spa(req, res) {
+  serve_spa(client, req, res) {
     if (req.method != 'GET') return false;
 
     var parsed = url.parse(req.url, true);
     var query = parsed.query;
     if (query.action) return false;
 
-    this.load_spa(query)
-      .then(data=> {
-        // res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(data);
-      })
+    client.log("SERVE SPA", parsed.pathname);
+    this.load_spa(client, query, res)
+      .then(data=> res.end(data))
     return true;
   }
 
-  load_spa(query) {
-    var spa = this.config['spa_template'];
+  load_spa(client, query, res) {
+    var config = util.clone(client.get_config());
+    var spa = config['template'];
+    delete config.template;
     return after(fs.readFile, spa, "utf8")
       .then(data=>{
         data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
         data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
         data = data.replace("$request_method", this.config['request_method']);
-        var config = this.config['landing'];
+
         util.replace_fields(config, query);
         util.replace_fields(config, config);
-        var options = { path:  config.page, request: config};
+        var options = { path:  config.page, request: config };
         return data = data.replace("$options", JSON.stringify(options));
     })
     .catch(err =>{
-      debug("ERROR", err);
-      this.send404();
+      client.log("ERROR", err);
+      this.send404(res);
     });
   }
 
@@ -316,7 +304,7 @@ class Didi {
     return html.replace(`$${type}_links`, links);
   }
 
-  serve_mime(req, res) {
+  serve_mime(client, req, res) {
     if (req.method != 'GET') return false;
     let path = path_util.resolve(this.config['resource_dir'] + '/' + req.url);
     let ext = path_util.extname(path);
@@ -328,7 +316,7 @@ class Didi {
       return this.send404(res);
 
     fs.exists(path, (exists) => {
-      debug("SERVING", path);
+      client.log("SERVING", path);
       if(!exists) {
         this.send404(res);
         return;
