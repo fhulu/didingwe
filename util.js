@@ -2,9 +2,10 @@
 
 var util = {};
 
-util.is_primitive = (x) => ["number","string","boolean"].includes(typeof x);
-
+util.is_primitive = (x) => typeof x == "string" || !isNaN(x);
+util.is_numeric = (x) => !isNaN(x)
 util.is_object = (x) => x == Object(x)
+util.is_array = (x) => x == Array.isArray(x)
 
 util.clone = (x, option) => {
   if (util.is_primitive(x)) return x;
