@@ -51,14 +51,16 @@ class Didi {
 
   load_terms(terms, name, paths) {
     var loaded = this.files[name];
+    if (typeof loaded == 'function')
+      return loaded;
+
     if (loaded)
       return Promise.resolve(loaded);
 
     paths = paths || this.search_paths;
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
-    var me = this;
-    return after(async.reduce, paths, terms, (terms, path, callback)=>{
+    return this.files[name] = after(async.reduce, paths, terms, (terms, path, callback)=>{
       path = `${path}/${file}`;
       if (!fs.existsSync(path))
         return callback(null, terms);
@@ -66,7 +68,7 @@ class Didi {
       fs.readFile(path, "utf8", (err,data)=>{
         try {
           var term = yaml.parse(data);
-          terms = me.merge(terms, term);
+          terms = this.merge(terms, term);
           callback(null, terms);
         }
         catch(e) {
@@ -157,22 +159,29 @@ class Didi {
   }
 
 
-  load_page(page, including=false) {
+  load_page(page) {
     var existing = this.pages[page];
-    if (existing && !including) return Promise.resolve(existing);
+    if (typeof existing == 'function') return existing;
+    if (existing) return Promise.resolve(existing);
 
-    return this.load_terms(null, page)
-      .then(terms => this.include(terms))
-      .then(included => including? included: this.update_page_terms(page, included))
+    return this.pages[page] = this.load_terms(null, page)
+      .then(terms => this.include_all(terms))
+      .then(included => this.update_page_terms(page, included))
   }
 
-  include(terms) {
+  include_all(terms) {
     var includes = terms.include;
     if (!includes) return Promise.resolve(terms);
-    var promises = includes.map( page => this.load_page(page, true));
+    var promises = includes.map( page => this.include_one(page));
     return Promise.all(promises)
       .then(results => results.reduce((sum,result) => {return this.merge(result, sum)}, terms))
   }
+
+  include_one(page) {
+    return this.load_terms(null, page)
+      .then(terms => this.include_all(terms))
+  }
+
 
   update_page_terms(page, terms) {
     var types = {};
