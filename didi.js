@@ -69,7 +69,7 @@ class Didi {
       path = `${path}/${file}`;
       if (!fs.existsSync(path))
         return callback(null, terms);
-      debug(`loading ${path} ...`);
+      debug(`LOADING ${path} ...`);
       fs.readFile(path, "utf8", (err,data)=>{
         try {
           var term = yaml.parse(data);
@@ -84,7 +84,7 @@ class Didi {
     .then(terms => {
       if (!terms)
         throw new Error(`File(s) for '${name}' must exist`);
-      debug(`loaded ${name}`)
+      debug(`LOADED ${name}`)
       return this.files[name] = terms;
     })
   }
@@ -236,7 +236,7 @@ class Didi {
   }
 
   follow_path(path, types) {
-    debug("FOLLOWING path", path)
+    debug("FOLLOWING PATH", path)
     path = path.split('/').slice(1);
     var item = types;
     var parent = item;
@@ -245,24 +245,27 @@ class Didi {
       if (!item)
         throw Error("Invalid path " + path.join('/'));
     }
-    debug("followed", path);
     return item;
   }
 
   expand_types(item, source_types, expanded_types) {
     util.walk(item, (val, key, node)=>{
-      if (val in expanded_types) return;
-      if (non_expandables.includes(key)) return;
+      if (val in expanded_types
+          || non_expandables.includes(key)
+          || util.is_numeric(val))
+        return;
 
-      if (key == 'type') {
-        var expanded = expanded_types[val] = source_types[val];
+      var expanded;
+      if (key == 'type')
+        expanded = expanded_types[val] = source_types[val];
+      else if (util.is_numeric(key) && typeof val == 'string')
+        expanded = expanded_types[val] = source_types[val];
+      else if (util.is_object(val))
+        expanded = expanded_types[key] = source_types[key];
+
+      if (expanded)
         this.expand_types(expanded, source_types, expanded_types);
-      }
-      else if (Array.isArray(node) && typeof val == 'string') {
-        var expanded = expanded_types[val] = source_types[val];
-        if (expanded)
-          this.expand_types(expanded, source_types, expanded_types);
-      }
+
     })
   }
 

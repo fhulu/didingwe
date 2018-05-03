@@ -18,7 +18,7 @@ class Client {
     this.parse_query(request)
       .then(query => this.load_page(request))
       .then(types => this.respond(request, types))
-      .catch(err=> this.report_error(err) )
+      .catch(err=> this.report_error(request.response, err) )
   }
 
   report_error(response, err) {
@@ -73,7 +73,7 @@ class Client {
   }
 
   read(request, types) {
-    debug("RESPONDING to", request.query.path);
+    debug("RESPONDING TO", request.query.path);
     var result = this.server.read(request.query.path, types);
     this.output(request.response, result);
   }
