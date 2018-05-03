@@ -1,0 +1,11 @@
+site_config: .site-config.yml
+program_name: My Program
+landing_page: index
+landing_content: home
+session_page: index
+session_content: home
+email_otp: yes
+sms_otp: yes
+request_method: get
+log_file: ../log/program.log
+upload_dir: ../uploads

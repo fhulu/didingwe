@@ -1,0 +1,74 @@
+file_uploader:
+  tag: div
+  class: [file-uploader error-sink]
+  create: file_uploader
+  script: [/common/file_uploader.js,/common/jquery.form.js]
+  css: [/common/file_uploader.css]
+  uploader: /?action=action
+  max_size: 100
+  parent_id: $id
+  text: $form $iframe $progress $buttons
+  form:
+    tag: form
+    width: 70%
+    class: [top-left,inline-block]
+    derive: [parent_id,uploader]
+    attr:
+      id: ""
+      enctype: multipart/form-data
+      target: iframe_$parent_id
+    text: $file
+    file: { type: file_input }
+  iframe:
+    tag: iframe
+    derive: [parent_id]
+    hide: yes
+    class: [absolute, top-left]
+    attr: {name: iframe_$parent_id }
+  progress:
+    type: container
+    class: [absolute,top-left,biggest]
+    show: no
+    contents:
+      - default: { classes: div, class: [biggest,float-left], text: "" }
+      - bar
+      - percent
+  buttons:
+    type: container
+    class: [float-right,tallest,center-text]
+    derive: [parent_id]
+    width: 82
+    contents:
+      - default: { class: [biggest,center-text], show: no }
+      - upload: { type: submit }
+      - cancel: { type: button }
+      - type: control
+      - uploaded
+      - failed
+  valid: extension(pdf)
+  post:
+    - read_config: upload_dir
+    - collection.values: [session, $sid, user, partner, partner.upload_dir]
+    - collection.values: [user, $user, upload_dir]
+    - collection.insert: [document, name]
+    - document.upload: [file, $upload_dir, $new_document_id]
+    - collection.update: [document, $new_document_id, path, mime]
+    - trigger: "uploaded,#page,$path"
+    - write_session: [new_document_id,uploaded_document_path: $path]
+
+upload:
+  derive: [parent_id]
+  post:
+    - trigger: "upload,#page [action=upload]"
+
+
+view:
+  post:
+    - collection.values: [document, $key, name, path, mime.media]
+    - document.view: [$path, $name, $media]
+
+document_link:
+  type: link
+  action: redirect
+  target: _blank
+  url: /?action=action&path=document/view&key=$value

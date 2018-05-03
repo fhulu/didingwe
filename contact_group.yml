@@ -1,0 +1,232 @@
+include: [datatable, isearch]
+
+add:
+  url: /contact_group/add
+  type: input_page
+  name: Add a new contact group
+  modal:
+    dialog: {class: [col s12 m6 l5 ]}
+  inputs:
+    - group_name
+    - access_level: { type: radiogroup }
+  actions:
+    - add: { name: Save }
+    - close
+  pre_validation:
+    - collection.values: [session, $sid, user]
+  post:
+    - collection.insert: [contact_group, name: $group_name, access_level, blacklisted: 0, size: 0]
+    - collection.values: [contact_group,$new_contact_group_id,create_time,owner: user.email]
+    - trigger: [addNewRow,".contact-group-list",{key: $new_contact_group_id,group_name: $group_name,size: 0,owner, access_level: $access_level,actions: "expand,slide,edit,add_new_member,delete"}]
+    - alert: Group Successfuly Added
+    - update: [group_name: " "]
+  audit:
+    action: Add Contact Group
+    detail: $group_name
+
+delete:
+  confirmation: yes
+  post:
+    - collection.values: [session,$sid,user]
+    - collection.values: [contact_group,$key,group_name: name,group_owner: user]
+    - if $user!=$group_owner:
+        - abort: The group can only be deleted by its owner
+    - collection.update: [contact_group,$key,active: 0]
+    - trigger: [removeRow, .contact-group-list, $key]
+  audit:
+    action: Delete Group
+    detail: "Group Name: $group_name"
+
+delete_member:
+  validate: none
+  confirmation: yes
+  post:
+    - collection.values: [contact_group_member, $key, contact_group, group_name: contact_group.name, contact.cellphone]
+    - collection.update: [contact_group_member, $key, active: 0]
+    - collection.values: [contact_group_member, [contact_group, active: 1], identifier,size: /count(1)]
+    - collection.update: [contact_group, $contact_group, size]
+    - trigger: [setRowData, .contact-group-list, $contact_group, {size: $size}]
+    - trigger: [removeRow, .contact-group-member-list, $key]
+  audit:
+    action: Delete Group Member
+    detail: "Group $group_name Member $cellphone"
+
+edit_member:
+  validate: none
+  post:
+    - collection.values: [contact_group_member, $key, contact]
+    - show_dialog: [/contact/edit, {key: $contact} ]
+
+edit:
+  url: /contact_group/edit
+  type: input_page
+  modal:
+    dialog: {class: [col s12 m8 l7 ]}
+  validate: group_name
+  inputs:
+    - group_name
+    - access_level: { type: radiogroup }
+  values:
+    - collection.values: [contact_group, $key, group_name: name,access_level]
+  actions:
+    - edit: { name: Update }
+  post:
+    - collection.values: [contact_group, $key, old_name: name,old_access_level: access_level]
+    - collection.update: [contact_group,$key,name: $group_name,access_level]
+    - trigger: [setRowData, .contact-group-list, $key, {group_name: $group_name, access_level: $access_level}]
+    - close_dialog
+  audit:
+    action: Edit Group
+    detail: >
+      Previous name: $old_name  New Name: $group_name
+        Previous access level: $old_access_level,  New access level: $access_level
+
+add_new_member:
+  url: /contact_group/add_new_member
+  type: input_page
+  dd_init:
+    added: []
+    removed: []
+  modal:
+    dialog: {class: [col s12 m8 l7 ]}
+  inputs:
+    - group_name: {show: no}
+    - new_member: { type: isearch}
+    - new_added_members: {type: datatable}
+    - added_member: { hide: yes, template: none }
+    - add_member: { hide: yes, type: submit, validate: none}
+  values:
+    - collection.values: [contact_group, $key, group_name: name]
+  actions:
+    - close
+
+new_added_members:
+  type: datatable
+  body: { max-height: 120 }
+  class: [contact-group-member-list]
+  fields:
+    - key: { show: no }
+    - cellphone: {width: 35%}
+    - contact_info: {width: 65%}
+    - actions
+  row_actions:
+    - type: image_row_action
+    - delete_member:
+        class: [fa-times, text-red]
+  defaults:
+    actions: delete_member
+
+new_member:
+  type: isearch
+  adder: { url: /contact/add }
+  drop: { max-height: 180px }
+  placeholder: Search / Add member
+  option:
+     name: $2 $3
+  already_added_message: Member already added
+  post:
+    - collection.values: [session, $sid, partner,user]
+    - collection.hide: [access_level,create_time,blacklisted,active,country,create_time,group]
+    - collection.search: [contact,[active: 1,partner], identifier,cellphone,contact_info, actions: '/"delete_member"']
+  on_selected: |
+    ~
+      var data = $('#new_member').data('source');
+      this.find('.isearch-searcher').val('');
+      $('#added_member').val(data[0]);
+      $('[action=add_member]').trigger('click');
+
+
+add_member:
+  post:
+    - collection.values: [contact_group_member, [contact_group: $key, contact: $added_member, active: 1], found: identifier, group_name: contact_group.name]
+    - if $found:
+        - abort: Member already exists in $group_name group
+    - collection.values: [contact,$added_member,cellphone,partner]
+    - collection.insert: [contact_group_member, "", partner, contact_group: $key, contact: $added_member,active: 1]
+    - collection.values: [contact_group_member, [contact_group: $key, active: 1],group_name: contact_group.name, contact_group group, size: /count(1)]
+    - collection.update: [contact_group, $contact_group, size]
+    - trigger: [setRowData,".contact-group-list",$key,size: $size]
+    - collection.values: [contact, $added_member, cellphone, access_level, owner: user.email, contact_info]
+    - trigger: [addNewRow,.contact-group-member-list,{key: $new_contact_group_member_id,cellphone: $cellphone,contact_info: $contact_info}]
+  audit:
+    action: Add member to contact group
+    detail: $cellphone added to $group_name
+
+existing_members:
+  type: datatable
+  body: {max-height: 200px}
+  flags: [show_titles,filter]
+  class: [widest,contact-group-member-list]
+  sort: create_time
+  sort_order: desc
+  fields:
+    - key: {show: no}
+    - create_time: { width: 15%}
+    - cellphone: { width: 13% }
+    - contact_info: { width: 67% }
+    - actions: { width: 4% }
+  row_actions:
+    - type: image_row_action
+    - delete_member: { class: [fa-times, text-red] }
+    - edit_member: { class: [fa-pencil, text-brown] }
+  defaults:
+    actions: edit_member,delete_member
+  values:
+    - collection.data: [contact_group_member, [contact_group: $key,active],identifier, contact.create_time, contact.contact.cellphone, contact.contact_info, actions: '/"edit_member,delete_member"',create_time: /now()]
+  on_addContact: |
+    ~ function(e, id, cellphone, info) {
+        $('#added_member').val(id);
+        $('[action=add_member]').trigger('click');
+      }
+
+group_name:
+  valid:
+    - at_least(2)
+    - unique_group
+
+unique_group:
+  valid:
+    - collection.unique(contact_group,name,$name, user,$user)
+
+list:
+  type: datatable
+  flags: [show_titles,filter]
+  body: {max-height: 800px}
+  class: [widest, contact-group-list]
+  sort: name
+  sort_order: desc
+  fields:
+    - key: { show: no }
+    - group_name: { width: 50% }
+    - size: { width: 8% }
+    - owner: { width: 30% }
+    - access_level: { width: 12% , class: [center-text]}
+    - actions
+  row_actions:
+    - edit: { action: dialog,target: .navigation-target>* }
+    - add_new_member: {class: [green],action: dialog}
+    - delete
+    - export_contacts: {class: [teal],action: redirect}
+  expand:
+    pages:
+      - /contact_group/existing_members
+
+list_all:
+  type: list
+  values:
+    - collection.data: [contact_group, [active, partner], id, name, size: /cast(size as unsigned), user.email, access_level, actions: "/if(size>0,'expand,slide,add_new_member,edit,delete,export_contacts','slide,add_new_member,edit,delete,export_contacts')"]
+
+list_own:
+  type: list
+  values:
+    - collection.data: [contact_group, [active, user], id, name, size: /cast(size as unsigned), user.email, access_level, actions: '/"expand,slide,add_new_member,edit,delete,export_contacts"']
+
+
+export_contacts:
+  name: Export to Excel
+  desc: Export to an Excel spreadsheet
+  action: redirect
+  validate: none
+  post:
+    call: qmessenger::export_contacts($key)
+  target: _blank

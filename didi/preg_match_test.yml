@@ -1,0 +1,46 @@
+## YAML Template.
+---
+preg_match_test:
+  type: labelled_input_page
+  width: 600
+  inputs:
+    - type: textarea
+    - pattern
+    - subject
+    - result: { type: input }
+    - type: datatable
+    - matches:
+        selector: "#pattern,#subject"
+        fields:
+          - f1
+          - f2
+          - f3
+          - f4
+          - f5
+          - f6
+          
+        load:
+          - call: page::preg_match_test(request)
+  actions:
+    - preg_match:
+        action: trigger
+        event: refresh
+        sink: "#matches"
+        params: 
+          type: once
+
+    - preg_match_all:
+        action: trigger
+        event: refresh
+        sink: "#matches"
+        params: 
+          type: all
+
+       
+      
+    
+
+ 
+textarea:
+  style:
+    height: 80px

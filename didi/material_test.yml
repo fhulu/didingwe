@@ -1,0 +1,8 @@
+material_test:
+  type: container
+  contents:
+    - type: google_icon
+    - face
+    - computer
+    - watch_later
+    - refresh: { class: [spin]}

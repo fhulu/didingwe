@@ -1,0 +1,224 @@
+include: [datatable]
+
+add:
+  url: /rate/add
+  type: input_page
+  dd_init:
+    cost: 0
+    quantity: 1
+  modal:
+    dialog: { class: [col s12 m10 l6] }
+  inputs:
+    - start_date: { type: date_future, valid: date(future) }
+    - type: number_input
+    - quantity
+    - cost
+    - type: disabled_input
+    - currency
+    - unit_cost: { value: ~(((cost/quantity)*100)/100).toFixed(2) }
+  actions:
+    - add
+    - close
+  values:
+    - read_config: currency
+    - sql_values: select curdate() start_date
+  post:
+    - collection.values: [session, $sid, user_email: user.email]
+    - read_config: [currency,registrar]
+    - collection.values: [partner, [name: $registrar], registrar: id]
+    - collection.insert: [rate, type: prepaid, start_date, currency, quantity, unit_cost,cost: /$cost*100, client: $registrar]
+    - collection.update: [rate, [start_date: '/<="$start_date"', active: 1, quantity, identifier: "/!=$new_rate_id" ], active: 0]
+    - update: { quantity: "", cost: "",unit_cost: "0.00"}
+    - collection.values: [rate,$new_rate_id,amount: '/round(cost/100,2)',cost]
+    - trigger: [addNewRow,"",{key: $new_rate_id,added_on: $create_time,by: $user_email,effective_date: $start_date,partner: Prepaid,quantity: $quantity,unit_cost: $unit_cost,total_cost: $amount,currency: $currency,actions: "slide,edit,delete"}]
+    - alert: Successfully Added
+  audit:
+    name: Add rate
+    detail: from $start_date;  $quantity @ $amount $currency
+
+quantity:
+  valid: greater_equal(200)
+
+
+cost:
+  valid:
+    - numeric
+    - greater(0)
+
+view:
+  type: datatable
+  body: {max-height: 400}
+  sort: quantity
+  sort_order: desc
+  class: [widest]
+  flags: [show_titles]
+  fields:
+    - quantity: {width: 35%}
+    - Total Cost: {width: 35%,class: [left-text]}
+    - currency: {width: 30%,class: [left-text]}
+  values:
+    - read_config: currency
+    - collection.data: [ rate, [start_date: /<=curdate(),quantity: />=1,active: 1,currency, type: prepaid],quantity: /cast(quantity as unsigned), amount: '/round(cost/100,2)', currency]
+    - on_addRate: ~this.trigger('refresh')
+
+manage:
+  type: datatable
+  class: [^scroll-table, widest]
+  name: Manage Rates
+  sort: added_on
+  sort_order: desc
+  flags: [show_titles,filter]
+  fields:
+    - key: {show: no}
+    - added_on: {width: 20%}
+    - by: {width: 15%}
+    - effective_date: {width: 15%}
+    - client: { width: 15%}
+    - quantity: {width: 10%, class: [right-text]}
+    - unit_cost: {width: 15%,class: [right-text]}
+    - total_cost: {width: 10%,class: [right-text]}
+    - currency: {width: 5%, class: [center-text]}
+    - actions
+  row_actions:
+    - edit: {action: dialog}
+    - delete
+  values:
+    - read_config: [currency,registrar]
+    - collection.values: [partner, [name: $registrar], registrar: id]
+    - collection.sort_on: [sort]
+    - collection.data:
+        - rate
+        - [quantity: />=1, active: 1,currency]
+        - identifier
+        - create_time
+        - user.email
+        - start_date
+        - client: /if(type="prepaid","Prepaid",client.partner.name)
+        - quantity: /cast(quantity as unsigned)
+        - unit_cost: /round(cost/quantity/100,3)
+        - cost: /round(cost/100,2)
+        - currency
+        - actions: /"slide,edit,delete"
+
+  on_editRate: ~this.trigger('refresh')
+  on_deleteRate: |
+    ~function(e,key) {
+      var tr = this.findByAttribute('key', key);
+      tr.trigger('delete');
+    }
+
+
+activate:
+  confirmation: yes
+  post:
+    - collection.values: [rate,$key,quantity,currency,cost,user_fullname: '/concat(first_name,"  ",last_name)',start_date,first_name: user.first_name,last_name: user.last_name]
+    - collection.update: [rate,$key,active: 1]
+    - close_dialog: Rate Activated
+    - trigger: addRate
+  audit:
+    action: Activate Rate
+    detail: 'Activated rate added by $user_fullname on $start_date. quantity: $quantity, cost: $cost,currency: $currency'
+
+edit:
+  url: /rate/edit
+  type: input_page
+  modal:
+    dialog: { class: [col s12 m10 l6] }
+  inputs:
+    - type: disabled_input
+    - quantity:
+    - cost: {type: input}
+    - currency:
+  values:
+    - collection.values: [rate,$key,quantity,cost, cost: "/round(cost/100,2)",currency]
+  validate: cost
+  actions:
+    - edit: {name: Update}
+    - close
+  post:
+    - collection.values: [rate,$key,quantity,old_cost: cost,currency]
+    - collection.update: [rate,$key,cost: /$cost*100]
+    - collection.values: [rate,$key,unit_cost: '/round(cost/$quantity/100,3)',cost]
+    - sql_values: select round($cost/100,2) as cost
+    - trigger: [setRowData,"",$key,{total_cost: $cost,unit_cost: $unit_cost}]
+    - close_dialog: Rate Updated
+    - audit:
+       action: Edit Rate
+       detail: Changed cost from $old_cost $currency to $cost $currency
+
+delete:
+  confirmation: yes
+  post:
+    - collection.values: [rate,$key,quantity,currency,cost,user_fullname: '/concat(user.first_name,"  ",user.last_name)',start_date]
+    - collection.update: [rate,$key,active: 0]
+    - close_dialog: $name action was successful
+    - trigger: [deleteRate,"",$key]
+  audit:
+    action: Deleted Rate
+    detail: 'Deactivated rate added by $user_fullname on $start_date. quantity: $quantity, cost: $cost,currency: $currency'
+
+
+set_post_paid_rate:
+  url: /rate/set_post_paid_rate
+  type: input_page
+  dd_init:
+    cost: 0
+    quantity: 1
+  modal:
+    dialog: { class: [col s12 m10 l6] }
+  inputs:
+    - start_date: { type: date, valid: date }
+    - cost
+    - type: disabled_input
+    - currency
+  values:
+    - read_config: currency
+    - sql_values: select curdate() start_date
+  actions:
+    - set_post_paid_rate: {name: Set }
+  post:
+    - collection.values: [partner, $key,user, partner_name: name, email, type: type]
+    - collection.insert: [rate, type: post_paid, start_date, currency, quantity: 1,cost: /$cost*100,client: $key]
+    - collection.update: [rate, [start_date: '/<="$start_date"', active: 1, quantity: 1, identifier: "/!=$new_rate_id" ], active: 0]
+    - close_dialog: Successfully Set Rate
+    - if $type == 'existing_account':
+        - collection.update: [partner,$key,type: 'post_paid',active: 1]
+        - emailer.send: {type: post_paid_approval_email}
+        - trigger: approveAdministration
+        - close_dialog: Account Approved
+        - audit:
+            action: Approve Postpaid Account
+            detail: $partner_name
+  audit:
+    name: Set postpaid rate
+    detail: from $start_date;  $quantity @ $cost $currency for $partner_name
+
+
+post_paid_approval_email:
+  from: $support_email
+  to: $partner_name <$email>
+  subject: Your application to $program_name has been approved.
+  message: >
+    Dear $first_name $last_name<br><br>
+    Congratulations! Your application to use the $program_name has been approve.<br><br>
+    Please continue to logon to the system (www.itouchbulksms.co.za)<br>
+    You can start buying the credits and loading contacts to enable you to start sending SMS’s<br>
+    Please note that you have three (3) payment options, Credit Card, Bank Deposit and Purchase Order.<br>
+    As an existing client of IMS you can use the Purchase Order feature and you will be billed at the <br>end of the month at the agreed rate with IMS.<br>
+    Should you encounter any problems please contact our support desk<br><br>
+    Regards,<br><br>
+    <b>Customer Operations</b>
+
+add_country_rate:
+  type: input_page
+  inputs:
+    - country:
+        type: dropdown
+        option:
+          name: $2 ($3)
+          attr: {dialling_code: $3}
+        options:
+          - collection.data: [country, "", identifier,  name asc, dialling_code]
+    - sms_credit_rate
+  post:
+    - collection.insert: [country_rate,country,sms_credit_rate]

@@ -1,0 +1,112 @@
+access_level:
+  layout: { type: label_top}
+
+actioner:
+  class: [transparent-9, hover-shadow hover-opaque, pad-x pad-tiny]
+
+actions_pane:
+  class: [grid space fit]
+
+button:
+  class: [border brand-border border-width-thin,hover-brand-highlight, pad pad-tiny rounded,center-text]
+
+control:
+  target: .content
+
+confirm_dialog:
+  message:
+    class: [center-text]
+
+datatable:
+  class: [border-collapse, transparent-color, scroll-table]
+  title: { class: [bold left-text, light-grey, pad pad-tiny]}
+  body: { class: [widest,font-small] }
+  slide: { class: [blue,border-width-thin border-bottom border-light-grey ] }
+  slideoff: { class: [blue] }
+  edit: { class: [orange] }
+  delete: { class: [red] }
+  blacklist: { class: [black] }
+  whitelist: { class: [whitesmoke]}
+  row:
+    class: [vertical-top]
+    styles:
+      inactive: [text-grey]
+  cell:
+    class: [ border-width-thin border-bottom border-light-grey, pad pad-tiny]
+  no_records:
+    class: [italic, font-large]
+
+dropdown:
+  class: [border brand-border border-width-thin, pad pad-tiny]
+
+filled_text:
+  class: [bold, pad pad-tiny]
+
+file_uploader:
+  class: [height-line-2]
+
+input:
+  class: [pad pad-tiny, brand-border border-bottom border-width-thin]
+
+input_page:
+  synopsis: { class: [pad pad-small]}
+
+isearch:
+  option:
+    class: [border-light-grey border-bottom border-width-thin]
+  drop:
+    class: [transparent-9, white,shadow]
+
+label_left:
+  class: [pad pad-small]
+  label:
+    class: [col s12 m4 l4, space, right-text, pad pad-tiny]
+  subject:
+    class: [col s12 m8 l8, space]
+
+label_top:
+  class: [pad-x pad-small]
+
+link:
+  class: [underlined]
+
+modal:
+  dialog: {class: [white]}
+  title_bar: { class: [light-grey, pad pad-small]}
+  close_button:
+    class: [text-white, hover-text-brand-highlight, round, grey, center-text pad pad-tiny, border border-width-thin border-white]
+    top: -8
+    right: -8
+
+
+
+navigator:
+  class: [same-height]
+  navigation:
+    class: [col s12 m2 l2, whitesmoke]
+  heading:
+    class: [bold font-large, pad pad-tiny]
+    mutable: false
+  item:
+    class: [pointer-cursor, pad pad-tiny, hover-brand-highlight, focus]
+    immutable: [url]
+  target_container:
+    class: [col s12 m10 l10]
+
+panel:
+  title:
+    class: [pad pad-small grey]
+
+popup:
+  message:
+    class: [center-text, font-green, font-xlarge, pad pad-large]
+
+radiogroup:
+  class: [pad-x pad-medium]
+  layout: { type: label_top }
+
+redirect:
+  target: .content
+
+textarea:
+  class: [border border-light-grey border-width-thin]

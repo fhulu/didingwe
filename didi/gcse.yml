@@ -1,0 +1,15 @@
+gcse_search:
+  type: container
+  class: [gcse-search]
+  script: [/common/gcse.js]
+  contents:
+    - gcse_search_box
+    - gcse_search_results
+
+gcse_search_box:
+  tag: div
+  text: <gcse:searchbox></gcse:searchbox>
+
+gcse_search_results:
+  tag: div
+  text: <gcse:searchresults></gcse:searchresults>

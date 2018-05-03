@@ -1,0 +1,19 @@
+wizard:
+  class: [relative,white,brand-text]
+  bookmarks:
+    class: [height-xlarge,m12,hide-small,font-small, grid fit, border-top border-bottom border-grey border-width-thin]
+    state_styles:
+      pending: [cursor-not-allowed, hdivider]
+      active: [bold, brand-border border-bottom border-width-small]
+      done: [fa fa-check fa-pad fa-right, hdivider,text-brand-highlight]
+      visited: [underlined,hdivider]
+      committed: [cursor-not-allowed, italic, fa fa-check fa-pad fa-right,hdivider]
+  bookmark:
+    number: ""
+    class: [border-grey border-width-thin, pad pad-medium,tallest,table-cell]
+  navigation:
+    class: [pad pad-small, bottom,widest, clear-after]
+  prev: { class: [float-left]}
+  next: { class: [float-right]}
+  step_container: { class: [pad-y pad-small]}
+  navigation: { class: [border-grey border-top border-width-thin, pad pad-small, clear, clear-after]}

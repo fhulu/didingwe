@@ -1,0 +1,29 @@
+fire:
+  post:
+    - read_config: use_triggers
+    - if !"$use_triggers": abort
+    - foreach:
+      - collection.data:
+          - hook
+          - [trigger.active: 1, trigger.start_time: /<=now(), trigger.end_time: />=now(), trigger_url]
+          - trigger
+          - trigger.entry_count
+          - trigger.maximum_entries
+          - triggered_url
+          - method
+          - parameters
+          - roles
+          - partner_type
+          - entries
+          - trigger.credits_granted
+      - if auth.authorized($roles,$partner_type):
+          - let: $parameters
+          - if "$triggered_url" == "":
+              - $method: $parameters
+          - if "$triggered_url" != "":
+              - $method: [$triggered_url,$parameters]
+          - if $entries:
+              - collection.update: [ trigger, $trigger, entry_count: /$entry_count+$entries]
+              - collection.insert: [promo_entry,"",trigger: $trigger,winner: $new_user_id,create_time: /now(),price: $credits_granted ]
+              - if $entry_count+$entries >= $maximum_entries:
+                  - collection.update: [ trigger, $trigger, active: 0]

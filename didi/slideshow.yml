@@ -1,0 +1,17 @@
+slideshow:
+  create: slideshow
+  type: container
+  slide_duration: 5000
+  transition_duration: 400
+  every: [$slide_duration, .showNextSlide, $transition_duration]
+  start_slide: 0
+  zIndex: 1
+  attr: { current_slide: $start_slide, zIndex: $zIndex}
+  contents: $slides
+  effects: [drop]
+  slides:
+    - default:
+        derive: [zIndex]
+        style: { z-index: $zIndex}
+        class: [slideshow-slide]
+        show: no

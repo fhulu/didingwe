@@ -1,0 +1,11 @@
+coming_soon:
+  type: info_page
+  lines: [coming_soon_message]
+  actions_pane: { class: [pad-jumbo, grid s1 m1 l1]}
+  actions: [home]
+
+coming_soon_message:
+  type: p
+  mutable: false
+  class: [font-xlarge,center-text]
+  name: Coming Soon...<br><br>Watch this space!

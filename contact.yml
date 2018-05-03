@@ -1,0 +1,293 @@
+include: [datatable, navigator, isearch, document, wizard]
+
+
+contacts:
+  type: navigator
+  base_url: /contact
+  default: { url: /contact/own_contacts}
+  items:
+    - own_contacts
+    - all_contacts
+    - add: { action: dialog }
+    - vspace
+    - $heading: { name: Groups }
+    - list_own_contact_groups
+    - list_all_contact_groups
+    - add_contact_group: { action: dialog }
+    - vspace
+    - import_contacts: { action: dialog }
+
+add:
+  type: input_page
+  url: /contact/add
+  name: Add a new contact
+  modal:
+    dialog: {class: [col s12 m6 l5 ]}
+  inputs:
+    - first_name
+    - last_name
+    - country:
+        type: dropdown
+        option:
+          name: $2 ($3)
+          attr: {dialling_code: $3}
+        options:
+          - collection.data: [country, "", identifier,  name asc, dialling_code]
+    - cellphone_number:
+        type: multi_input
+        name: Cellphone
+        layout: { type: label_inside}
+        class: [^grid]
+        inputs:
+          - dialling_code:
+              class: [w-1-6,right-text]
+              value: ~$('#country option:selected').attr('dialling_code')
+          - dialling_number:
+              class: [w-5-6]
+              valid:
+                - unique_contact
+                - numeric
+    - access_level: { type: radiogroup }
+  actions:
+    - add: { name: Save }
+    - close
+  values:
+    - read_values: { country: za}
+  pre_validation:
+    - let: { cellphone: $dialling_code$dialling_number}
+  post:
+    - collection.insert: [contact, first_name, last_name, contact_info: $first_name $last_name, cellphone, access_level, blacklisted: 0]
+    - update: { first_name: "", last_name: "", dialling_number: ""}
+    - trigger: [addContact, "", $new_contact_id, $cellphone, $first_name $last_name]
+    - collection.values: [contact,$new_contact_id, time_added: create_time, owner: user.email,contact_info]
+    - trigger: [addNewRow,".contact-list",{key: $new_contact_id,time_added: $time_added,cellphone: $dialling_code$dialling_number,contact_info: $contact_info,owner: $user,access_level: $access_level}]
+    - alert: Contact successfully added.
+    - clear_values
+    - audit:
+       action: Added Contact
+       detail: $cellphone $first_name $last_name
+
+
+unique_contact:
+  valid: collection.unique(contact,first_name,$first_name,last_name,$last_name,cellphone,$cellphone,owner,$owner,active,1)
+  error: Contact already exists
+
+edit:
+  type: container
+  url: /contact/edit
+  modal:
+    dialog: {class: [col s12 m6 l5 ]}
+  contents:
+    - template: label_left
+    - cellphone: { type: input }
+    - user_fields: { template: none}
+    - access_level: { type: radiogroup}
+    - owner: { type: filled_text}
+    - edit: { type: submit, name: Update, template: none, class: [centered,block]}
+    - vspace
+  values:
+    - collection.hide: [contact, partner,active,blacklisted,time_added,group,country,create_time]
+    - collection.values: [contact, $key, cellphone, access_level, owner: user.email,"*"]
+  post:
+    - collection.update: [contact, $key, delta]
+    - collection.hide: [contact, partner,active,blacklisted,access,user,group,country,create_time,contact_info]
+    - collection.values: [contact, $key, cellphone, access_level, owner: user.email, combined: "*"]
+    - collection.update: [contact,$key, contact_info: $combined]
+    - trigger: [setRowData, ".contact-list", $key, {contact_info: $combined,cellphone: $cellphone, access_level: $access_level}]
+    - foreach:
+        - collection.data: [contact_group_member, [contact: $key], identifier]
+        - trigger: [setRowData, .contact-group-member-list, $identifier, {contact_info: $combined, cellphone: $cellphone, access_level: $access_level}]
+    - collection.unhide: []
+    - close_dialog
+  audit:
+    action: Edit contact
+    detail: $delta
+
+user_fields:
+  tag: div
+  text:
+    - template: label_left
+    - type: input
+    - collection.fields: [contact, $key, cellphone, access_level,user,partner,access,active,blacklisted,time_added,group,country,create_time,contact_info]
+
+list:
+  type: datatable
+  class: [widest,contact-list]
+  body: { max-height: 250 }
+  sort: time_added
+  sort_order: desc
+  flags: [show_titles,filter]
+  fields:
+    - key: { show: no }
+    - time_added: {width: 20%}
+    - cellphone: {width: 15%}
+    - contact_info: {width: 35%}
+    - owner: {width: 20%}
+    - access_level: {width: 10%}
+    - style
+    - actions
+  row:
+    styles:
+      blacklisted: [black]
+  row_actions:
+    - edit: { action: dialog }
+    - delete
+    - blacklist
+    - whitelist
+  defaults:
+    actions: slide,edit,delete,blacklist
+
+own_contacts:
+  name: View Own Contacts
+  type: list
+  fields:
+    - pop: owner
+  values:
+    - collection.data:
+        - contact
+        - [active, user]
+        - identifier
+        - create_time
+        - cellphone
+        - contact_info
+        - access_level
+        - style: /if(blacklisted,"blacklisted","")
+        - actions: /if(blacklisted,"slide,edit,delete,whitelist","slide,edit,delete,blacklist")
+
+all_contacts:
+  name: View All Contacts
+  type: list
+  values:
+    - collection.data:
+        - contact
+        - [active, partner]
+        - identifier
+        - create_time
+        - cellphone
+        - contact_info
+        - email: user.email
+        - access_level
+        - style: /if(blacklisted,"blacklisted","")
+        - actions: /if(blacklisted,"slide,edit,delete,whitelist","slide,edit,delete,blacklist")
+
+delete:
+  confirmation: yes
+  post:
+    - collection.values: [contact, $key, first_name, last_name, cellphone]
+    - collection.update: [contact, $key, active: 0]
+    - collection.values: [contact_group_member,contact: $key, contact_key: identifier,contact_group]
+    - collection.update: [contact_group_member,identifier: $contact_key,active: 0]
+    - collection.values: [contact_group_member,[contact_group: $contact_group,active],identifier,size: /count(1)]
+    - collection.update: [contact_group,identifier: $contact_group,size: $size]
+    - trigger: [removeRow, ".contact-list", $key]
+  audit:
+    action: Delete contact
+    detail: $first_name $last_name $cellphone
+
+blacklist:
+  confirmation: System will block messages sent to this contact. Are you sure?
+  post:
+    - collection.values: [contact, $key, first_name, last_name, cellphone]
+    - collection.update: [contact, $key, blacklisted: 1]
+    - trigger: [setRowData,"", $key, {style: blacklisted,actions: "slide,edit,delete,whitelist"}]
+  audit: $first_name $last_name $cellphone
+
+whitelist:
+  post:
+    - collection.values: [contact, $key, first_name, last_name, cellphone]
+    - collection.update: [contact, $key, blacklisted: 0]
+    - trigger: [setRowData,"", $key, {style: whitelisted,actions: "slide,edit,delete,blacklist"}]
+  audit: $first_name $last_name $cellphone
+
+import_contacts:
+  url: /contact/import_contacts
+  type: wizard
+  steps:
+    - upload_file
+    - dialing_code_information
+    - group_information
+    - complete_import: { prev: false }
+
+upload_file:
+  type: input_page
+  desc: >
+    Please upload the Excel file containing contacts that you would like to import. <br>
+    The first row of the file must contain field names and the rest of the rows will contain the contact information.<br>
+    It is a requirement that at least one column contains a cell phone number.
+  inputs:
+    - excel_file: { type: file_uploader, valid: "" }
+  read:
+    - write_session: [uploaded_document_path: "" ]
+  post:
+    - read_session: uploaded_document_path
+    - qmessenger.validate_excel_file: [$uploaded_document_path, excel_file]
+
+group_information:
+  type: input_page
+  desc: Please enter the contact group to which the contacts in the file will belong to.
+  inputs:
+    - contact_group: { type: isearch,valid: provided}
+  post:
+    - collection.values: [contact_group,$contact_group,group_name: name,access_level]
+    - write_session: contact_group,access_level
+  audit:
+    action: Import Contacts
+    detail: "Group imported to: $group_name"
+
+dialing_code_information:
+  type: input_page
+  desc: >
+    If your cell phone numbers in the Excel file are not formatted in the form of +2712345678, <br>
+    please select the default country dialling code for the country to which the numbers belong to.
+  inputs:
+    - default_country_dialling_code: { type: dropdown }
+  values:
+    - read_values: { default_country_dialling_code: "+27" }
+  post:
+    - write_session: default_country_dialling_code
+
+default_country_dialling_code:
+  option: { name: $2 ($1) }
+  options:
+    - collection.data: [country, "", dialling_code,  name asc]
+
+complete_import:
+  type: input_page
+  class: [center-text, pad-y pad-medium]
+  dd_init: { loaded: false }
+  values:
+    - read_session: [uploaded_document_path, contact_group, default_country_dialling_code,access_level]
+    - collection.values: [session, $sid, user, partner,email: user.email]
+    - collection.update: [contact_group, $contact_group, size: loading...]
+    - qmessenger.start_import: [$user, $partner, $contact_group, $uploaded_document_path, $default_country_dialling_code]
+    - trigger: [setRowData,".contact-group-list", $contact_group, {size: Loading,owner: $email}]
+    - trigger: finished_loading
+    - clear_values
+  inputs:
+    - template: none
+    - spinner:
+        type: font_awesome
+        class: [center-text,font-jumbo, fa-spin, pad-large]
+        show: ~loaded == false
+        on_finished_loading: ~loaded = true
+    - type: p
+    - default: {class: [center-text]}
+    - loading_message:
+        name: Loading ...
+        show: ~loaded == false
+    - completed_message:
+        show: ~loaded == true
+        name: Your file has been successfully uploaded on our servers.
+    - close:
+        type: button
+        show: ~loaded == true
+
+
+contact_group:
+  adder: { url: /contact_group/add }
+  style: { max-height: 150 }
+  post:
+    - _reset
+    - collection.values: [session, $sid, partner,user]
+    - collection.search: [contact_group,[partner, active: 1, blacklisted: 0],identifier, name ]
+  on_addContactGroup: ~this.trigger('selected', [arguments[1], arguments[2]]);

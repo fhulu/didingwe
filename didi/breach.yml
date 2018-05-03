@@ -1,0 +1,28 @@
+## YAML Template.
+---
+
+breach:
+  type: info_page
+  name: Unauthorised access
+  desc: |
+    You are not authorised to access this page.<br>
+    Possible reasons for this message are:
+  lines:
+      - type: list_item
+      - r1:
+          access: auth
+          name: Your role was changed since you accessed this function.
+      - r2:
+          name: The System Administrator has restricted access to this function.
+      - r3:
+          access: public
+          name: Your session has timed out.
+  actions_pane:
+    class: [grid space s1 m2 l2, pad pad-large]
+  actions:
+    - home: { action: redirect }
+    - login: { action: dialog }
+  modal:
+    dialog:
+      position: { my: 'top', at: 'top+10' }
+      class: [col s11 m8 l8 ]

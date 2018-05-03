@@ -1,0 +1,224 @@
+## YAML Template.
+---
+
+add_user:
+  desc: Add a new user into the system
+
+admin:
+  name: Administrator
+
+administration:
+  desc: Perform adminstrative duties
+
+agree_terms:
+  question: I have read and accepted the terms and conditions
+  desc: You must agree to the terms and conditions before continuing
+  error: Must accept and agree to terms and conditions.
+
+blue: { name: Blou }
+
+cellphone:
+  name: selfone
+  desc: |
+    The active cellphone or mobile number at which you can be contacted on.
+    This number will be used to for OTP verification.
+
+change_password:
+  desc: Change your current password
+
+close:
+  action: close_dialog
+
+color: { name: Kleur }
+
+company_name:
+
+company_registration_no:
+  name: Company Registration Number
+  desc: >
+    Company registration number as it is stated on your CIPRO registration certificate.
+    YYYY/nnnnn/nn e.g 2006/294052/32. Pleae specify numbers without slashes(/).
+
+confirm_details:
+  name: I confirm that the details provided are true and correct.
+  valid: equals(1, Must confirm that details are true and correct)
+
+contacts:
+  email: support@mukoni.co.za
+
+confirm_password:
+  desc: Type in the same password as above to confirm correctness
+
+country:
+  options:
+    - [za, South Africa]
+    - ref_list
+
+day_of_month:
+
+day_of_week:
+
+developed_by:
+  name: developed by Mukoni Software
+
+done:
+  post: [close_dialog]
+
+email:
+  desc: |
+    The active email address at which you can be contacted on.
+    This address will be used to for OTP verification and any system generated
+    communication
+  name: Email Address
+
+email_address:
+  type: email
+
+error_page:
+  desc: Unexpected error occured. Please report to your System Administrator.
+
+facebook:
+
+"false": { value: 0 }
+
+first_name:
+  desc: Your first name as written in your ID book
+
+forgot_password:
+  desc: Click here if you have forgotten your password and you need to reset it
+
+full_name:
+  desc: Full name and surname
+  question: What is your full name? Please specify first name and surname
+
+goto:
+  action: $page.html
+
+green: { name: Groen }
+
+home:
+
+id:
+  name: Reference #
+
+id_no:
+  name: ID Number
+  question: Please enter your South Africa Identity Number
+  desc: Valid South African ID number
+
+
+id_number:
+
+last_name:
+  desc: Your last name or surname as written in your ID book
+
+latitude:
+  desc: Distance north or south from the equator
+
+login:
+  desc: Log in to the system
+  access: public
+
+logout:
+  desc: Log out of the system
+
+
+longitude:
+  desc: Angular distance east or west on the earth's surface
+
+manage_user_group:
+
+manage_users:
+
+manage_all_users:
+
+mobile_number:
+  desc: The mobile number at which you can be contacted on
+
+month:
+
+mukoni_logo:
+  desc: Visit our home page
+
+my_audit_trail:
+  desc: My audit trail
+
+
+"no": { name: Nee }
+
+organisation_audit_trail:
+
+passport_document:
+  desc: Certified copy of passport document
+
+passport_no:
+  name: Passport Number
+  desc: Your passport number as it is written in your Passport book
+
+password:
+  desc: A secret combination of letters and number only known to you. Please do not give out your password.
+
+
+postal_address:
+
+postal_code:
+
+physical_address:
+
+physical_code:
+
+query:
+
+red: { name: Rooi }
+
+register:
+  desc: Click here to register
+
+role:
+
+send_email:
+
+start_date:
+  name: Start Date
+  desc: Date Effective From
+
+
+submit_page:
+  name: Submit
+
+
+system_audit_trail:
+
+title:
+  desc: A descriptive or distinctive appellation, especially one belonging to a person by right of rank, office, attainment
+
+
+users:
+  desc: List all the users
+
+validator:
+
+vat_no:
+  name: VAT Number
+  desc: VAT Number as it is written on the South African Revenue Services (SARS) certificate. Note This is a 10 digit number.
+
+view_profile:
+  desc: View my profile
+
+view_users:
+  desc: List all the users
+
+weekday:
+
+welcome:
+  name: Welkom
+
+tax_reference_no:
+  name: Tax Reference Number
+
+
+true: { }
+
+true_false:
+
+"yes": { name: Jaa }

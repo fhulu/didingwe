@@ -4,7 +4,7 @@ server_port: 80
 resource_dir: ./resources
 brand_name: $program_name
 brand_path: ../$brand_name
-image_path: $brand_link/images
+image_path: /images
 landing:
   page: /index
   path: /home

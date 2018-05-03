@@ -1,0 +1,21 @@
+## YAML Template.
+---
+## YAML Template.
+---
+alphabetic: $name must be alpabetic
+
+extension: $name must be of type $1
+
+provided: $name must be provided
+
+in: No such $name '$value'
+
+int_tel: Please use international number format for $name, e.g. +27123456789
+
+national_tel: Please user national number format for $name, e.g. 0123456789
+
+unique: $name ($value) already exists  
+
+visitable: $name $value is not accessible from this site
+
+  

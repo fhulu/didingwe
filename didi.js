@@ -41,6 +41,7 @@ class Didi {
     this.types = {};
     this.pages = {};
     this.reads = {};
+    this.search_paths = ['./didi', '.'];
     this.read_config()
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
@@ -52,7 +53,8 @@ class Didi {
     var loaded = this.files[name];
     if (loaded)
       return Promise.resolve(loaded);
-    paths = paths || ['./didi', '.'];
+
+    paths = paths || this.search_paths;
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
     var me = this;
@@ -83,13 +85,22 @@ class Didi {
   read_config() {
     return this.load_terms({}, "app-config")
       .then(config => this.load_terms(config, config.site_config, '[.]'))
-      .then(config => this.config = config)
+      .then(config => {
+        util.replace_fields(config, config);
+        this.search_paths.push(config.brand_path);
+        console.log("BRAND PATH", config.brand_path);
+       return this.config = config;
+     });
   }
 
   load_fields() {
+    console.log("SEARCH PATHS", this.search_paths);
     return this.load_terms({}, "controls")
       .then(controls => this.load_terms(controls, "fields"))
-      .then(fields => this.types = this.fields = fields)
+      .then(fields => {
+        util.replace_fields(fields, this.config);
+        this.types = this.fields = fields;
+      })
   }
 
   load_validators() {
@@ -146,13 +157,13 @@ class Didi {
   }
 
 
-  load_page(page, included=false) {
+  load_page(page, including=false) {
     var existing = this.pages[page];
-    if (existing && !included) return Promise.resolve(existing);
+    if (existing && !including) return Promise.resolve(existing);
 
     return this.load_terms(null, page)
       .then(terms => this.include(terms))
-      .then(terms => included? terms: this.update_page_terms(page, terms))
+      .then(included => including? included: this.update_page_terms(page, included))
   }
 
   include(terms) {
@@ -160,7 +171,7 @@ class Didi {
     if (!includes) return Promise.resolve(terms);
     var promises = includes.map( page => this.load_page(page, true));
     return Promise.all(promises)
-      .then(results => results.reduce((sum,result) => sum = this.merge(result, sum), terms))
+      .then(results => results.reduce((sum,result) => {return this.merge(result, sum)}, terms))
   }
 
   update_page_terms(page, terms) {
@@ -173,17 +184,19 @@ class Didi {
   }
 
   read(path, types) {
-    var item = this.follow_path(path, types);
     var loaded = this.reads[path];
     if (loaded)
       return loaded;
 
+    var item = this.follow_path(path, types);
     this.remove_server_items(item);
     var expanded_types = {};
     this.expand_types(item, types, expanded_types);
     this.remove_server_items(types);
     expanded_types['control'] = types['control'];
     expanded_types['template'] = types['template'];
+    util.replace_fields(types, this.config);
+    util.replace_fields(item, this.config);
     return this.reads[path] = { path: path, fields: item, types: expanded_types }
   }
 
@@ -201,6 +214,7 @@ class Didi {
   }
 
   follow_path(path, types) {
+    console.log("FOLLOWING path", path)
     path = path.split('/').slice(1);
     var item = types;
     var parent = item;
@@ -209,6 +223,7 @@ class Didi {
       if (!item)
         throw Error("Invalid path " + path.join('/'));
     }
+    console.log("followed", path);
     return item;
   }
 
@@ -239,7 +254,7 @@ class Didi {
 
     this.load_spa(query)
       .then(data=> {
-        res.writeHead(200, {'Content-Type': 'text/html'});
+        // res.writeHead(200, {'Content-Type': 'text/html'});
         res.end(data);
       })
     return true;
@@ -288,6 +303,7 @@ class Didi {
       return this.send404(res);
 
     fs.exists(path, (exists) => {
+      console.log("SERVING", path);
       if(!exists) {
         this.send404(res);
         return;

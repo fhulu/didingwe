@@ -1,0 +1,9 @@
+popup:
+  type: container
+  message:
+      type: p
+      attr: { parseHtml: br}
+  contents:
+    - $message
+  modal:
+    title_bar: ""

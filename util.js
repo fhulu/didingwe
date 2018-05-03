@@ -72,13 +72,14 @@ util.walk = (obj, callback) => {
     if (!obj.hasOwnProperty(key)) continue;
     var val = obj[key];
     if (callback(val, key, obj) === false) return;
-    if (val && !util.is_primitive(val))
+    if (val !== undefined && !util.is_primitive(val))
       util.walk(val, callback)
   }
   return obj;
 }
 
 util.replace_vars = (str, values) => {
+  if (!str.includes('$')) return str;
   for (var key in values) {
     if (!values.hasOwnProperty(key)) continue;
     str = str.replace('$'+key, values[key]);
@@ -88,6 +89,7 @@ util.replace_vars = (str, values) => {
 
 util.replace_fields = (obj, values) => {
   util.walk(obj, (val, key, node) => {
+    if (typeof val != 'string') return;
     var new_val = util.replace_vars(val, values);
     if (new_val != val) node[key] = new_val;
   })

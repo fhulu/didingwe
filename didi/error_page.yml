@@ -1,0 +1,22 @@
+---
+error_page:
+  type: info_page
+  name: Unexpected Error
+  class: [center-contents pad-large pad-y]
+  lines:
+    - type: p
+    - unexpected_error
+  actions:
+    - home: { action: [close_dialog, redirect]}
+    - close: { action: close_dialog }
+  actions_pane:
+    class: [pad-large pad-x pad-y, grid space s1 m2 l2]
+  modal:
+    dialog:
+      position: { my: 'top', at: 'top+10' }
+      class: [col s11 m8 l5]
+
+unexpected_error:
+  name: >
+    An unexpected error occurred while processing your results.
+    Please notify the system administrator of this incident.

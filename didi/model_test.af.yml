@@ -1,0 +1,6 @@
+test:
+  name: Toets
+  desc: Toets hierdie ding
+
+show_test:
+  name: Wys Toets

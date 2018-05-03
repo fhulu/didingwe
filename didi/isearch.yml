@@ -1,0 +1,49 @@
+isearch:
+  type: container
+  create: isearch
+  placeholder: Search $name
+  script: [/common/isearch.js]
+  css: [/common/isearch.css]
+  class: [ isearch,relative]
+  contents: [ $searcher, $buttons, $drop]
+  searcher:
+    type: input
+    derive: [placeholder]
+    attr: { placeholder: $placeholder }
+    class: [isearch-searcher, widest, pad pad-small]
+  buttons:
+    class: [absolute top-right, pad pad-tiny,tallest]
+    type: container
+    derive: [name,adder,dropper]
+    contents: [$adder,$dropper]
+  adder:
+    tag: label
+    text: +
+    class: [isearch-adder,pad-x pad-tiny,inline-block, pointer-cursor]
+    derive: [name]
+    desc: Add a new $name
+    action: dialog
+    show: no
+  dropper:
+    type: [font_awesome,fanthom]
+    icon: caret-down
+    class: [isearch-dropper, pad-x pad-tiny, inline-block, pointer-cursor]
+    desc: Show all items
+  drop:
+    type: container
+    class: [isearch-drop,overlay,fixed,scroll-y]
+    text: ""
+    height: auto
+    show: no
+    autoload: 10
+  option:
+    type: anchor
+    class: [isearch-option,block,nomargin,undecorated,pad pad-small,hover-light-grey]
+    value: $1
+    chosen: $2
+    name: $2
+    embolden: [name]
+    attr: { id: "", name: "", value: $value, chosen: $chosen }
+  search_fields: name asc
+  search_collection: $id
+  post: []

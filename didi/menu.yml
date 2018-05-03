@@ -1,0 +1,74 @@
+
+menu:
+  type: container
+  class: [menu,nolist]
+  tag: ul
+  items:
+    - type: menu_item
+    - action: redirect
+  contents:
+    - mobile_menu_anchor
+    - mobile_menu_items
+    - desktop_menu_items
+
+mobile_menu_anchor:
+  type: font_awesome
+  class: [hide-medium,hide-large,cursor-pointer,float-right]
+  attr: { tabindex: $number, title: $desc}
+  icon: bars
+  on_click:
+    - script: this.parent().find('.dropdown').show()
+
+
+mobile_menu_items:
+  type: container
+  class: [hide-medium,hide-large,dropdown]
+  derive: [items]
+  show: no
+  contents: [merge: items]
+  on_click:
+    - script: this.hide()
+
+desktop_menu_items:
+  type: container
+  class: [hide-small]
+  derive: [items]
+  contents: [merge: items]
+
+menu_item:
+  tag: li
+  url: /$id
+  mutable: [url]
+  type: container
+  contents: [menu_link]
+  attr: { tabindex: $number, title: $desc}
+  class: [col s12]
+
+menu_link:
+  tag: a
+  derive: [desc]
+  name: $parent_name
+
+sub_menu:
+  type: menu_item
+  class: [hover-dropdown]
+  title: { type: menu_link }
+  text: $title $expansion
+  expansion: { type: sub_menu_dropdown, derive: [sub_items] }
+  sub_items:
+    - action: redirect
+    - type: sub_menu_item
+
+sub_menu_dropdown:
+  classes: span
+  class: [absolute,overlay,dropdown]
+  derive: [sub_items]
+  text: $sub_items
+
+sub_menu_item:
+  type: menu_item
+  text: { type: sub_menu_link }
+  trap: [click]
+
+
+sub_menu_link: { type: menu_link }

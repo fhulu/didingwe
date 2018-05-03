@@ -1,0 +1,334 @@
+include: [isearch, datatable, navigator]
+
+compose:
+  type: navigator
+  base_url: /compose
+  default: { url: /compose/new_sms }
+  items:
+    - new_sms
+    - vspace
+    - $heading: { name: Templates }
+    - own_templates: { url: /template/list_own }
+    - all_templates: { url: /template/list_all }
+    - vspace
+    - add_new_template: { action: dialog, url: /template/add }
+
+new_sms:
+  name: New SMS
+  dd_init:
+    message: ""
+    character_count: 0
+    sms_part_count: 0
+    recipient_count: 0
+    chosen_expiration: false
+    chosen_throttling: false
+    chosen_notifications: false
+    chosen_replies: false
+    scheduling: send_now
+    recipient_ids: []
+    unit_credits: 0
+  type: container
+  class: [grid space s1 m2 l2]
+  contents:
+    - default:
+        type: panel
+        class: [shadow, table-row]
+    - choose_recipients
+    - message_text
+    - delivery_options
+    - send_buttons: { type: container }
+  values:
+    - sql_values: select now() schedule_time
+
+choose_recipients:
+  title:
+    type: container
+    name: $parent_name
+    class: [clear-after]
+    contents:
+      - p: { name: $parent_name, class: [float-left]}
+      - count:
+          type: filled_text
+          class: [float-right]
+          value: ~recipient_count
+          on_gotGroupTotal: ~function(e,total) { recipient_count += parseInt(total) }
+  panes:
+    - chosen_recipients: { type: datatable }
+    - recipients: { type: isearch }
+
+recipients:
+  type: isearch
+  adder: { url: /contact/add }
+  drop: { max-height: 180px }
+  option:
+    type: container
+    detail: $2 $3
+    size: $4
+    left: { derive: [detail], name: $detail}
+    right: { derive: [size], name: $size, class: [float-right] }
+    contents: [type: label, $left, $right]
+
+  already_added_message: Recipient(s) already added
+  post:
+    - _reset
+    - collection.values: [session, $sid, partner,user]
+    - collection.search: [contact_group, [partner, active: 1, size: />0], identifier, name, ignore: /"", size, actions: '/"delete"']
+    - collection.search: [contact,[partner, active: 1, blacklisted: 0], identifier, cellphone, contact_info, size: /"", actions: '/"edit,delete"']
+  on_selected: |
+    ~
+      var data = this.data('source');
+      this.find('.isearch-searcher').val('');
+      var key = data[0];
+      if (recipient_ids.indexOf(key) >= 0) {
+        alert("$already_added_message");
+        return;
+      }
+      recipient_ids.push(key);
+      $('#chosen_recipients').trigger('addRow', [data]);
+      $('#message_stats').trigger('computeCredits',[ {contact_id: key, message: message} ] );
+      recipient_count += (data[3]==""?1 : parseInt(data[3]));
+
+chosen_recipients:
+  type: datatable
+  class: [widest,contact-list]
+  body: { max-height: 150 }
+  fields:
+    - key: { show: no }
+    - cellphone
+    - contact_info
+    - size: { width: 7%}
+    - actions: { width: 10%}
+  expand:
+    pages:
+      - /contact_group/members
+  defaults: {actions: "delete,edit"}
+  row_actions:
+    - type: image_row_action
+    - delete:
+        class: [fa-times, text-red]
+        action: trigger
+    - edit:
+       class: [fa-pencil, text-brown]
+       action: dialog
+       derive: [value]
+       key: $value
+       url: /contact/edit
+  on_delete: |
+    ~
+      var tr = event.result;
+      var total = tr.attr('total');
+      recipient_count -= total? total: 1;
+      var index = recipient_ids.indexOf(tr.attr('key'));
+      if (index >= 0)
+        recipient_ids.splice(index,1);
+      unit_credits -= tr.attr('credits');
+  on_addNewRow: |
+    ~ function(e, data) {
+        var id = data.key;
+        if (recipient_ids.indexOf(id) >= 0) return;
+        recipient_ids.push(id);
+        recipient_count++;
+        $('#message_stats').trigger('computeCredits',[ {contact_id: id, message: message} ] );
+      }
+  on_addRow: |
+    ~ function(e, data) {
+       var tr = this.findByAttribute('key', data[0]);
+       tr.attr('total', data[3]);
+    }
+  on_computedCredits: |
+    ~ function(e, id, credits) {
+        var tr = this.findByAttribute('key', id);
+        tr.attr('credits', credits);
+        unit_credits += credits;
+     }
+
+message_text:
+  panes:
+    - message_template:
+        type: isearch
+        drop: { max-height: 230 }
+        adder: { url: /template/add }
+        search_fields: name asc,message
+        option:
+          type: titled_paragraph
+          title: $2
+          body: $3
+          embolden: [title,body]
+          phrase: { class: [font-tiny, text-dark-grey, italic] }
+        post:
+          - _reset
+          - collection.data: [message_template, [partner], identifier, name, message]
+        on_selected: ~message=this.data('source')[2]
+    - message:
+        type: textarea
+        template: inplace_input
+        label: Type message here
+        class: [height-line-8,widest, pad pad-small,^border]
+        value: ~message
+    - message_stats: { type: container }
+
+
+message_stats:
+  type: container
+  class: [grid fit]
+  contents:
+      - template:
+          type: label_top
+          class: [light-grey, hdivider border-width-thin brand-border, font-tiny]
+      - type: filled_text
+      - character_count:
+          value: |
+            ~ var msg = message.trim();
+              character_count = msg.length;
+              for (var i=character_count-1; i>=0; --i) {
+                var ascii = msg.charCodeAt(i);
+                if (ascii > 128) ++character_count;
+                if ([169,188,189,190].indexOf(ascii) >= 0) ++character_count;
+              }
+              return character_count;
+      - sms_part_count:
+          value: |
+            ~ return sms_part_count = (function() {
+                if(!character_count) return 0;
+                if (character_count<=160) return 1;
+                return Math.ceil(character_count / 153);
+            })();
+      - credits_to_be_used:
+          value: |
+           ~ var total = unit_credits * sms_part_count;
+             if (/<([^>]+)>/.exec(message)) total = total + ' (approx. )';
+             return total;
+  on_computeCredits:
+    action: post
+    validate: none
+    post:
+      - qmessenger.calc_credits_required: [$contact_id, $message]
+      - trigger: [computedCredits,"", $contact_id, $credits, $characters]
+
+option_panel:
+  header:
+    id: header_$parent_id
+    derive: [desc]
+    class: [pad pad-tiny, shadow]
+    style:
+      background-color: >
+        ~ chosen_$parent_id? 'teal': 'whitesmoke'
+      color: >
+        ~ chosen_$parent_id? 'white': 'black'
+
+  body:
+    class: [pad pad-small]
+
+
+delivery_options:
+  panes:
+    - type: option_panel
+    - replies
+    - notifications
+    - expiration
+    - throttling
+
+expiration:
+  name: Select message expiry date
+  desc: >
+    Specify period after which the message will expire if not read by the recipient,
+    i.e. will message will no longer be shown on recipient handset after this time.
+  contents:
+    - type: plain_text
+    - default: { class: [inline-block]}
+    - Message(s) expire after
+    - expiry_hours:
+        type: input
+        attr: { size: 5}
+    - hours
+
+throttling:
+  name: Select message speed
+  desc: To assist with handling responses, you may want to pace the rate at which messages go out.
+  disabled: ~recipient_count > 1
+  contents:
+    - type: plain_text
+    - default: { class: [inline-block, pad pad-small]}
+    - Throttle messages at
+    - validity_hours:
+        type: input
+        attr: { size: 5}
+    - per minute
+
+notifications:
+  name: Receive Notifications?
+  desc: You will be notified when the message has been displayed on the recipient handset
+  body: ""
+
+replies:
+  name: Receive replies?
+  body: ""
+
+
+send_buttons:
+  class: [^shadow, float-right, grid space s1 m1 l1]
+  contents:
+    - default: { disabled: ~sms_part_count * recipient_count == 0 }
+    - scheduling:
+        type: radiogroup
+        layout:
+          subject: { disabled: ~sms_part_count * recipient_count == 0 }
+    - schedule_time:
+       type: datetime_future
+       template: label_left
+       show: ~scheduling=='send_later'
+       valid:
+         - depends(scheduling,equals(send_later))
+         - datetime(future)
+    - submit_sms: { type: submit, class: [pad-medium] }
+    - recipients: { type: input, show: no, value: ~recipient_ids.join() }
+    - credits_required:
+        type: input
+        show: no
+        value: ~sms_part_count * recipient_count
+  audit:
+    action: Add Group
+    detail: $group_name
+
+submit_sms:
+  validate: [schedule_time]
+  name: Submit
+  class: [pad-medium]
+  post:
+    - let: [credits_available: 0]
+    - collection.values: [session, $sid, partner, partner_id: partner, user_id: user,user,country: partner.country]
+    - collection.values: [credit, [partner,active], credits_available: /sum(quantity)]
+    - collection.values: [transaction, [partner,credit.active: 1], credits_available: /$credits_available-sum(amount)]
+    - let: { credits_used: $credits_required }
+    - sql_values: select $credits_required - $credits_available credits_required
+    - collection.values: [country_rate,[$country,start_date: '/<=now()',active: 1],quantity]
+    - if $credits_required > 0:
+        - write_session: credits_required
+        - show_dialog: /credits/insufficient_credit
+        - abort
+    - sql_insert: [schedule, partner_id, user_id, schedule_time, credits_used]
+    - qmessenger.start_submit: [$new_schedule_id, $recipients, $message]
+    - foreach:
+        - collection.data: [credit, [partner,active: 1], credit: id, quantity, create_time asc]
+        - let: { usable: $quantity }
+        - collection.values: [transaction, [credit], usable: /$quantity - sum(amount)]
+        - if $usable > $credits_used:
+           - collection.insert: [transaction,credit, amount: $credits_used, kind: sms]
+           - break
+        - if $usable <= $credits_used && $usable > 0:
+           - collection.insert: [transaction, credit, amount: $usable, kind: sms]
+           - collection.update: [credit,$credit, active: 0]
+           - sql_values: select $credits_used - $usable credits_used
+    - refresh: "#credits_available"
+    - if $scheduling == 'send_later':
+        - alert: Message(s) scheduled to go out at $schedule_time
+        - audit:
+            action: Scheduled $credits_used message(s)
+            detail: $message
+    - if $scheduling == 'send_now':
+        - alert: Message(s) sent to recipient(s)
+        - audit:
+            action: Sent $credits_used message(s)
+            detail: $message
+    - redirect: { url: /compose/compose}
+    - update: credits_available

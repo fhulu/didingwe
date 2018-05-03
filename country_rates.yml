@@ -1,0 +1,116 @@
+include: [datatable]
+
+add:
+  type: input_page
+  url: /country_rates/add
+  modal:
+    dialog: {class: [col s12 m6 l5 ]}
+  inputs:
+    - country:
+        type: dropdown
+        option:
+          name: $2 ($3)
+          attr: {dialling_code: $3}
+        options:
+          - collection.data: [country, "", identifier,  name asc, dialling_code]
+        valid: provided
+    - quantity: {name: Number of credits per SMS,type: number_input}
+    - start_date: { type: date,valid: date }
+  actions:
+    - add
+    - close
+  post:
+    - collection.values: [country_rate,country: $country, found: identifier,country_name: country.name]
+    - if $found:
+        - abort: Country credit rate already exist.
+    - collection.values: [session,$sid,user]
+    - collection.insert: [country_rate,"",country,quantity,start_date,create_time: /now(),created_by: $user,active: 1]
+    - collection.update: [country_rate,[country: $country,start_date: '/="$start_date"', active: 1, identifier: "/!=$new_country_rate_id"],active: 0]
+    - collection.values: [country_rate,$new_country_rate_id,country_name: country.name,country_dialling_code: country.dialling_code]
+    - trigger: [addNewRow,.country_list,{key: $new_country_rate_id,country: $country_name,dialling_code: $country_dialling_code,quantity: $quantity,effective_from: $start_date}]
+    - update: [quantity: ""]
+    - collection.values: [country,$country,country_name: name]
+    - alert: Added credit rate for $country_name
+  audit:
+    action: Add new country credit rate
+    detail: "Country: $country_name Quantity:$quantity Effective from: $start_date"
+
+quantity:
+  name: Credits per SMS
+  valid: numeric
+  error: $name must be numeric
+
+list:
+  type: datatable
+  class: [widest,country_list]
+  body: {max-height: 800px}
+  flags: [show_titles, filter]
+  fields:
+    - key: {show: no}
+    - country
+    - dialling_code
+    - quantity: {class: [left-text]}
+    - effective_from
+    - actions
+  row_actions:
+    - type: image_row_action
+    - edit: { class: [fa-pencil, text-brown],action: dialog }
+    - delete: { class: [fa-times, text-red],action: post }
+  defaults:
+    actions: edit,delete
+  values:
+    - collection.data: [country_rate,active: 1,identifier,country.name,country.dialling_code,quantity,start_date,actions: '/"edit,delete"']
+  on_deleteCountryRate: |
+    ~function(e,key) {
+      var tr = this.findByAttribute('key', key);
+      tr.trigger('delete');
+    }
+
+
+view_country_rates:
+  type: list
+  fields:
+    - pop: actions
+    - pop: effective_from
+
+edit:
+  url: /country_rates/edit
+  type: input_page
+  modal:
+    dialog: { class: [col s12 m10 l6] }
+  inputs:
+    - country:
+        type: dropdown
+        attr: disabled
+        option:
+          name: $2 ($3)
+          attr: {dialling_code: $3}
+        options:
+          - collection.data: [country, "", identifier,  name asc, dialling_code]
+        valid: provided
+    - quantity: {name: Number of credits per SMS,type: number_input}
+    - start_date: { type: date,valid: date }
+  values:
+    - collection.values: [country_rate,$key, country,quantity,start_date]
+  actions:
+    - edit: {name: Update}
+    - close
+  post:
+    - collection.update: [country_rate,$key,delta]
+    - collection.values: [country,$country,country_name: name]
+    - trigger: [setRowData,.country_list, $key, {country: $country_name, quantity: $quantity,effective_from: $start_date}]
+    - close_dialog
+  audit:
+    action: Edit Country Rate for $country_name
+    detail: Modified $delta
+
+
+delete:
+  confirmation: yes
+  post:
+    - collection.update: [country_rate,$key,active: 0]
+    - collection.values: [country_rate,$key,country_name: country.name]
+    - trigger: [deleteCountryRate,"",$key]
+  audit:
+    action: Delete Country Rate
+    detail: $country_name

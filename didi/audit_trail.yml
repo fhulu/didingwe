@@ -1,0 +1,47 @@
+include: [datatable]
+user_list:
+  type: datatable
+  access: auth
+  name: My Audit Trail
+  class: [widest,scroll-table]
+  body: { max-height: 500 }
+  sort: when
+  sort_order: desc
+  flags: [show_titles,filter]
+  report_title: User Audit Trail
+  actions:
+    - print
+    - export
+  fields:
+    - when: { width: 18%,name: Time }
+    - what: { width: 18%, name: Action }
+    - detail: { width: 62% }
+  values:
+    - collection.data: [audit, [user], create_time, action, detail]
+    - clear_values: [user]
+
+partner_list:
+  name: Organisation Audit Trail
+  type: user_list
+  access: admin
+  fields:
+    - when: { width: 18%, push: merge }
+    - email: { width: 18%, push: what, class: [truncate-word]}
+    - what: { width: 15%, push: merge, class: [truncate-word]}
+    - detail: { width: 30%, push: merge, class: [truncate-word] }
+  values:
+    - _reset
+    - collection.sort_on: sort
+    - collection.data: [audit, [partner], create_time, user.email, action, detail]
+    - clear_values: [partner]
+
+system_list:
+  name: System Audit Trail
+  type: partner_list
+  access: admin
+  fields:
+    - organisation: { push: email, width: 15%, class: [truncate-word] }
+  values:
+    - _reset
+    - collection.sort_on: sort
+    - collection.data: [audit, [], create_time, partner.name, user.email, action, detail]

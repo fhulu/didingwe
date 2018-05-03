@@ -1,0 +1,55 @@
+include: [datatable,navigator]
+
+inbox:
+  type: navigator
+  base_url: /inbox
+  default: { url: /inbox/own}
+  items:
+    - vspace
+    - own_inbox
+    - vspace
+    - all_inbox
+    - vspace
+
+list:
+  type: datatable
+  class: [widest]
+  flags: [show_titles,filter]
+  sort: submit_time
+  sort_order: desc
+  fields:
+    - submit_time
+    - sender: {class: [truncate-word]}
+    - cellphone
+    - contact_info
+    - sent_message
+    - reply_time
+    - reply_message
+    - actions
+  values:
+    - collection.values: [session, $sid, user,partner]
+
+
+own:
+  name: Own Inbox
+  type: list
+  values:
+    - sql: |
+        SELECT o.submit_time,s.v3 sender,
+              o.msisdn, o.contact_info, o.message, i.create_time reply_time, i.message reply, ""
+        from outq o join inq i on o.msisdn = i.msisdn and o.status in ('SUBMITD','DELIVRD', 'ACCEPTD')
+          and (i.destination = o.id or i.create_time >= o.submit_time and i.create_time < o.submit_time + interval 3 day)
+          and o.user_id = '$user'
+        join auth s on o.user_id = s.id
+
+all:
+  name: All Inboxes
+  type: list
+  values:
+    - sql: |
+        SELECT o.submit_time,s.v3 sender,
+              o.msisdn, o.contact_info, o.message, i.create_time reply_time, i.message reply, ""
+        from outq o join inq i on o.msisdn = i.msisdn and o.status in ('SUBMITD','DELIVRD', 'ACCEPTD')
+          and (i.destination = o.id or i.create_time >= o.submit_time and i.create_time < o.submit_time + interval 3 day)
+          and o.partner_id = '$partner'
+        join auth s on o.partner_id = s.id

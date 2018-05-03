@@ -1,0 +1,19 @@
+db_name: mydb
+db_user: myuser
+db_password: mypassword
+log_dir: ../log
+log_file: myprogram.log
+upload_dir: ../uploads
+email_otp: yes
+sms_otp: yes
+request_method: get
+smtp_host: smtp.example.com
+smtp_user: email@example.com
+smtp_password: mypassword
+send_sms:
+  protocol: http
+  port: 80
+  host: www.qmessenger.co.za
+  user: minime
+  password: mypassword
+  path: web2sms/submit?uid=$user&pw=$password&sms=$message&da=$cellphone

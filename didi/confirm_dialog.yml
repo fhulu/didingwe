@@ -1,0 +1,19 @@
+---
+confirm_dialog:
+  type: info_page
+  class: [pad-large]
+  name: Confirm
+  message:
+    type: p
+    mutable: false
+    name: "Are you sure?"
+  lines: [$message]
+  actions_pane:
+    class: [pad pad-large, grid space s1 m2 l2]
+  actions:
+    - "yes": {class: [brand-action-success]}
+    - "no": { action: close_dialog,class: [brand-action-cancel]}
+  modal:
+    dialog:
+      class: [col s9 m4 l3]
+      close_button: ""

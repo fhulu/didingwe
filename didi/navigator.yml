@@ -1,0 +1,29 @@
+navigator:
+  type: container
+  base_url: /$id
+  contents:
+    - $navigation
+    - $target_container
+  navigation:
+    type: container
+    derive: [name,heading, brief, items,item, base_url]
+    contents: $items
+  heading:
+    tag: div
+    name: $parent_name
+  items:
+    - $heading
+    - type: $item
+  item:
+    tag: div
+    action: redirect
+    derive: [base_url]
+    url: $base_url/$id
+    target: .navigation-target>*
+    immutable: [url]
+  default: { sub_page: true }
+  target_container:
+    type: container
+    class: [navigation-target]
+    derive: [default]
+    contents: [$default]

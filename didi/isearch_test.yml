@@ -1,0 +1,51 @@
+include: [isearch]
+
+isearch_test:
+  desc: Test iSearch
+  type: input_page
+  inputs:
+    - country: { type: isearch }
+    - bound: { value: <didi test }
+  actions: [test]
+  post: [write_session: $test]
+
+
+country:
+  adder: { url: /isearch_test/add }
+  drop: { max-height: 180px }
+  option:
+    type: container
+    country: $value
+    label: { derive: [value], name: $parent_name ($value) }
+    contents: [$label, $flag]
+    flag:
+      type: flag_icon
+      class: [float-right]
+      derive: [country]
+
+add:
+  desc: Add new country
+  width: 600
+  header_class: [rounded-xlarge,^w3-blue-grey, white]
+  class: [rounded-xlarge,pad-bottom]
+  type: input_page
+  inputs:
+    - new_country_code
+    - new_country_name
+  actions:
+    - add: { class: [^rounded-xlarge] }
+    - close: {action: close_dialog}
+  post:
+    - collection.insert: [country, $new_country_code, name: $new_country_name]
+    - close_dialog
+    - trigger: [added,"#country", [$new_country_code, $new_country_name] ]
+
+new_country_code:
+  name: Country Code
+  valid: not(collection(country,$value))
+  error: Country code already exists
+
+new_country_name:
+  name: Country Name
+  valid: collection_unique(country,name)
+  error: Country name already exists

@@ -1,0 +1,42 @@
+model_test:
+  desc: Test model binding/watching
+  dd_init:
+    moves: 0
+    color: red
+    colors: [red,orange,yellow,green,blue,indigo,violet]
+    default_text_color: white
+    text_color: {orange: black, yellow: black, white: black }
+  type: input_page
+  inputs:
+    # - template: none
+    - color: { type: dropdown }
+    - checked: { type: checkbox }
+    - switched: { type: radiogroup, options: ["on","off"] }
+    - string_test:
+        type: p
+        text: color `color` checked `checked` switched `switched`
+        on_click:
+          action: post
+          post:
+            - alert: hello
+
+    - type: input
+    - style_test:
+        style:
+          background-color: ~color
+          # color: ~colors[(colors.indexOf(color)+3) % colors.length]
+          color: |
+            ~if (text_color[color])
+               return text_color[color];
+            return default_text_color;
+        value: You chose `color`
+        on_mousemove: ~++moves;
+    - show_test: { show: ~checked, value: ~colors.indexOf(color)+1 }
+    - checked_and_switched:
+        disabled: ~checked && switched == 'on'
+        value: ~moves
+
+
+
+color:
+  options: [red,orange,yellow,green,blue,indigo,violet]

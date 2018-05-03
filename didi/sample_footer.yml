@@ -1,0 +1,5 @@
+sample_footer:
+  type: container
+  class: [tiny-font center-text, absolute bottom-left,widest,light-grey]
+  contents:
+    - developed_by: { type: link }

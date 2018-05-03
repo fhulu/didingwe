@@ -14,8 +14,7 @@ class Client {
     this.response = response;
     console.log(`Processing client ${this.seq}`);
     this.parse_request(request)
-      .then((request) => this.rewrite_path(request))
-      .then(() => this.server.load_page(this.page))
+      .then((request) => this.load_page(request))
       .then(types => this.respond(types))
       .catch(err=> this.report_error(err) )
   }
@@ -27,21 +26,29 @@ class Client {
 
   parse_request(req) {
     var parsed = url.parse(req.url, true);
-    var get = parsed.query;
-    console.log("REQUEST GET", get);
+    var get = Object.assign({}, parsed.query);
 
     if (req.method !== 'POST') return Promise.resolve(this.request = get);
     return this.read_post(req)
       .then(post => this.request = Object.assign(post, get));
   }
 
-  rewrite_path(request) {
+  load_page(request) {
+
+    this.request = request;
+    util.replace_fields(this.request, request);
+    console.log("REQUEST", this.request);
+
     var path = request.path.split('/');
+    if (path[0] == '') path.shift();
     this.page = path[0];
 
     // if no branch given, assume page = branch
     if (path.length ==1) path.unshift(path[0]);
-    return this.path = path.join('/');
+    this.path = path.join('/');
+
+    this.request = request;
+    return this.server.load_page(this.page);
   }
 
   read_post(req) {
@@ -49,6 +56,7 @@ class Client {
       var body = '';
       var post;
       req.on('data', data=>{
+        console.log("READ POST", data)
         body += data;
         if (body.length >= 1e6) {
           req.connection.destroy();
@@ -66,14 +74,14 @@ class Client {
   }
 
   read(types) {
-    console.log("path", this.path)
+    // console.log("READ PATH", this.path, JSON.stringify(types))
     var response = this.server.read(this.path, types);
     this.output(response);
   }
 
-  output(response) {
-    this.response.writeHead(200, {'Content-Type': 'application/json'})
-    this.response.end(JSON.stringify(response));
+  output(result) {
+    // this.r esponse.setHeader('Content-Type', 'application/json')
+    this.response.end(JSON.stringify(result));
   }
 }
 

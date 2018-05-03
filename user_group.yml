@@ -1,0 +1,224 @@
+include: [datatable, isearch]
+
+add:
+  url: /user_group/add
+  type: input_page
+  name: Add a new user group
+  modal:
+    dialog: {class: [col s12 m6 l5 ]}
+  inputs:
+    - group_name
+    - access_level: { type: radiogroup }
+  actions:
+    - add: { name: Save }
+    - close
+  pre_validation:
+    - collection.values: [session, $sid, owner: user, partner]
+  post:
+    - collection.insert: [user_group, name: $group_name, access_level, size: 0]
+    - collection.values: [user_group,$new_user_group_id,time_added,user.email]
+    - trigger: [addNewRow,".user-group-list",{key: $new_user_group_id,name: $group_name,size: 0,owner: $email, access_level: $access_level, actions: "expand,slide,edit,add_new_member,delete"}]
+    - alert: Group Successfuly Added
+    - update: [group_name: ""]
+  audit:
+    action: Add User Group
+    detail: $group_name
+
+delete:
+  confirmation: yes
+  post:
+    - collection.values: [session,$sid,user]
+    - collection.values: [user_group,$key,group_name: name,group_owner: owner]
+    - if $user!=$group_owner:
+        - abort: The group can only be deleted by the its owner
+    - collection.update: [user_group,$key,active: 0]
+    - trigger: deleteUserGroup
+    - trigger: [removeRow, .user-group-list, $key]
+    - close_dialog: Group Deleted
+  audit:
+    action: Delete Group
+    detail: "Group Name: $group_name"
+
+delete_member:
+  confirmation: yes
+  post:
+    - collection.values: [user_group_member, $key, user_group, group_name: user_group.name, user.email]
+    - collection.update: [user_group_member, $key, active: 0]
+    - collection.values: [user_group_member, [user_group, active: 1], identifier,size: /count(1)]
+    - collection.update: [user_group, $user_group, size]
+    - trigger: [setRowData, .user-group-list, $user_group, {size: $size}]
+    - trigger: [removeRow, .user-group-member-list, $key]
+    - trigger: delete_memberUserGroup
+  audit:
+    action: Delete Group Member
+    detail: "Group $user_group Member $email"
+
+edit:
+  url: /user_group/edit
+  type: input_page
+  modal:
+    dialog: {class: [col s12 m8 l7 ]}
+  validate: group_name
+  inputs:
+    - group_name
+    - access_level: { type: radiogroup }
+  values:
+    - collection.values: [user_group, $key, group_name: name,access_level]
+  actions:
+    - edit: { name: Update }
+  post:
+    - collection.values: [user_group, $key, old_name: name,old_access_level: access_level]
+    - collection.update: [user_group,$key,name: $group_name,access_level]
+    - trigger: [setRowData,"", $key, {name: $group_name,access_level: $access_level}]
+    - close_dialog: Group Edited.
+  audit:
+    action: Edit Group
+    detail: >
+      Previous name: $old_name  New Name: $group_name
+        Previous access level: $old_access_level,  New access level: $access_level
+
+add_new_member:
+  url: /user_group/add_new_member
+  type: input_page
+  dd_init:
+    added: []
+    removed: []
+  modal:
+    dialog: {class: [col s12 m8 l7 ]}
+  inputs:
+    - group_name: {show: no}
+    - new_member: { type: isearch}
+    - members: {type: datatable}
+    - added_member: { hide: yes, template: none }
+    - add_member: { hide: yes, type: submit, validate: none}
+  values:
+    - collection.values: [user_group, $key, group_name: name]
+  actions:
+    - close
+
+new_member:
+  type: isearch
+  drop: { max-height: 180px }
+  placeholder: Search / Add member
+  option:
+     name: $2 $3 ($4)
+  already_added_message: Member already added
+  post:
+    - collection.values: [session, $sid, partner,user]
+    - collection.search: [user,[partner], identifier,first_name,last_name,email,actions: '/"delete_member"']
+  on_selected: |
+    ~
+      var data = $('#new_member').data('source');
+      this.find('.isearch-searcher').val('');
+      $('#added_member').val(data[0]);
+      $('[action=add_member]').trigger('click');
+
+add_member:
+  post:
+    - collection.values: [user_group_member, [user_group: $key, user: $added_member, active: 1], found: identifier, group_name: user_group.name]
+    - if $found:
+        - abort: Member already exists
+    - collection.values: [user,$added_member,cellphone,first_name,last_name,email,partner]
+    - collection.insert: [user_group_member, "", partner, user_group: $key, user: $added_member,active: 1]
+    - collection.values: [user_group_member, [user_group: $key, active: 1], user_group group, size: /count(1)]
+    - collection.update: [user_group, $key, size]
+    - trigger: [setRowData,"",$key,size: $size]
+    - trigger: [addUser,"",$new_user_group_member_id,$first_name,$last_name,$email]
+  audit:
+    action: Add Group Member
+    detail: "Group Name: $group_name  New Member: $email"
+
+existing_members:
+  name: View members in a group
+  type: datatable
+  body: {max-height: 100px}
+  class: [widest,user-group-member-list]
+  flags: [show_titles, filter]
+  fields:
+    - key: {show: no}
+    - first_name: {width: 30%}
+    - last_name: {width: 30%}
+    - email: {width: 40%}
+    - actions
+  row_actions:
+    - type: image_row_action
+    - delete_member:
+        class: [fa-times, text-red]
+        action: post
+        validate: none
+  values:
+    - collection.data: [user_group_member, [user_group: $key,active: 1],identifier,user.first_name, user.last_name, user.email, actions: '/"delete_member"']
+  on_editUserGroup: ~this.trigger('refresh')
+  on_delete_memberUserGroup: ~this.trigger('refresh')
+  on_add_memberUserGroup: ~this.trigger('refresh')
+
+group_name:
+  valid:
+    - at_least(2)
+    - unique_group
+
+unique_group:
+  valid:
+    - collection.unique(user_group,name,$group_name,partner,$partner,active,1)
+  error: $name already exists
+
+list:
+  type: datatable
+  class: [widest, user-group-list]
+  flags: [show_titles]
+  body: {max-height: 800px}
+  sort: name
+  sort_order: desc
+  fields:
+    - key: { show: no }
+    - name: { width: 40% }
+    - size: { width: 8% }
+    - owner: { width: 40% }
+    - actions
+  row_actions:
+    - add_new_member: {action: dialog,class: [green]}
+    - edit: { action: dialog,target: .navigation-target>* }
+    - delete
+  expand:
+    pages:
+      - /user_group/existing_members
+  values:
+    - collection.values: [session, $sid, owner: user, partner]
+  on_addUserGroup: ~this.trigger('refresh')
+  on_editUserGroup: ~this.trigger('refresh')
+  on_deleteUserGroup: ~this.trigger('refresh')
+
+list_all:
+  name: View all User Groups
+  type: list
+  values:
+    - collection.data: [user_group, [partner], identifier, name,size, email: owner.user.email, actions: '/"expand,slide,add_new_member,edit,delete"']
+
+list_own:
+  name: View Own User Groups
+  type: list
+  values:
+    - collection.data: [user_group, [partner, active: 1], identifier, name,size, email: owner.user.email, actions: '/"expand,slide,edit,add_new_member,delete"']
+
+members:
+  type: datatable
+  flags: [show_titles]
+  row_actions:
+    - type: image_row_action
+    - delete_member:
+        class: [fa-times, text-red]
+        action: post
+        validate: none
+  fields:
+    - key: {show: no}
+    - first_name
+    - last_name
+    - email
+    - actions
+  on_editUserGroup: ~this.trigger('refresh')
+  on_delete_memberUserGroup: ~this.trigger('refresh')
+  on_add_memberUserGroup: ~this.trigger('refresh')
+  on_addUser: |
+    ~ function(e, id, first_name, last_name, email) {
+        this.trigger('addRow', [[id, first_name, last_name, email, 'delete_member']]);
+      }

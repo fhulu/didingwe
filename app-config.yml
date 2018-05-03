@@ -1,0 +1,13 @@
+program_name: qMessenger
+css: [$brand_path/qmessenger.css]
+scripts:
+  - /didi/isearch.js
+start_page: /compose
+registrant_role: admin
+currency: ZAR
+collections:
+  contact: [contact, contact_group, contact_group_member]
+  template: [message_template, template_tag]
+modules: [qmessenger,document]
+partner_collections: [contact]
+registrar: iTouch Messaging Services
