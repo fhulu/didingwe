@@ -6,16 +6,17 @@ class Client {
   constructor(server, id) {
     this.server = server;
     this.id = id;
-    this.seq = server.next_seq;
+    this.seq = server.client_seq;
     this.variables = {};
   }
 
-  process(request, response) {
-    this.response = response;
-    console.log(`Processing client ${this.seq}`);
-    this.parse_request(request)
-      .then((request) => this.load_page(request))
-      .then(types => this.respond(types))
+  process(req, res, seq) {
+    var request = { request: req, response: res}
+    this.response = req;
+    console.log(`Processing client ${this.seq} seq ${seq}`);
+    this.parse_query(request)
+      .then(query => this.load_page(request))
+      .then(types => this.respond(request, types))
       .catch(err=> this.report_error(err) )
   }
 
@@ -24,31 +25,30 @@ class Client {
     this.response.end();
   }
 
-  parse_request(req) {
+  parse_query(request) {
+    var req = request.request;
     var parsed = url.parse(req.url, true);
     var get = Object.assign({}, parsed.query);
 
-    if (req.method !== 'POST') return Promise.resolve(this.request = get);
+    if (req.method !== 'POST') return Promise.resolve(request.query = get);
     return this.read_post(req)
-      .then(post => this.request = Object.assign(post, get));
+      .then(post => request.query = Object.assign(post, get));
   }
 
   load_page(request) {
 
-    this.request = request;
-    util.replace_fields(this.request, request);
-    console.log("REQUEST", this.request);
+    util.replace_fields(request.query, request.query);
+    console.log("REQUEST", JSON.stringify(request.query));
 
-    var path = request.path.split('/');
+    var path = request.query.path.split('/');
     if (path[0] == '') path.shift();
-    this.page = path[0];
+    var page = path[0];
 
     // if no branch given, assume page = branch
     if (path.length ==1) path.unshift(path[0]);
-    this.path = path.join('/');
+    request.query.path = path.join('/');
 
-    this.request = request;
-    return this.server.load_page(this.page);
+    return this.server.load_page(page);
   }
 
   read_post(req) {
@@ -67,21 +67,19 @@ class Client {
     });
   }
 
-  respond(types) {
-    var action = this.request.action;
-    if (!action) action = 'read';
-    this[action](types);
+  respond(request, types) {
+    this[request.query.action](request, types);
   }
 
-  read(types) {
-    // console.log("READ PATH", this.path, JSON.stringify(types))
-    var response = this.server.read(this.path, types);
-    this.output(response);
+  read(request, types) {
+    console.log("RESPONDING to", request.query.path);
+    var result = this.server.read(request.query.path, types);
+    this.output(request.response, result);
   }
 
-  output(result) {
-    // this.r esponse.setHeader('Content-Type', 'application/json')
-    this.response.end(JSON.stringify(result));
+  output(response, result) {
+    response.setHeader('Content-Type', 'application/json')
+    response.end(JSON.stringify(result));
   }
 }
 
