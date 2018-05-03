@@ -1,6 +1,7 @@
 const url = require("url");
 const qs = require("querystring")
 const util = require("./util.js");
+var debug = require("debug")("didi");
 
 class Client {
   constructor(server, id) {
@@ -13,16 +14,16 @@ class Client {
   process(req, res, seq) {
     var request = { request: req, response: res}
     this.response = req;
-    console.log(`Processing client ${this.seq} seq ${seq}`);
+    debug(`Processing client ${this.id} ${this.seq} seq ${seq}`);
     this.parse_query(request)
       .then(query => this.load_page(request))
       .then(types => this.respond(request, types))
       .catch(err=> this.report_error(err) )
   }
 
-  report_error(err) {
-    console.log("ERROR", err);
-    this.response.end();
+  report_error(response, err) {
+    debug("ERROR", err);
+    response.end();
   }
 
   parse_query(request) {
@@ -38,7 +39,7 @@ class Client {
   load_page(request) {
 
     util.replace_fields(request.query, request.query);
-    console.log("REQUEST", JSON.stringify(request.query));
+    debug("REQUEST", JSON.stringify(request.query));
 
     var path = request.query.path.split('/');
     if (path[0] == '') path.shift();
@@ -56,7 +57,7 @@ class Client {
       var body = '';
       var post;
       req.on('data', data=>{
-        console.log("READ POST", data)
+        debug("READ POST", data)
         body += data;
         if (body.length >= 1e6) {
           req.connection.destroy();
@@ -72,7 +73,7 @@ class Client {
   }
 
   read(request, types) {
-    console.log("RESPONDING to", request.query.path);
+    debug("RESPONDING to", request.query.path);
     var result = this.server.read(request.query.path, types);
     this.output(request.response, result);
   }

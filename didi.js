@@ -47,18 +47,18 @@ class Didi {
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
       .then(()=>this.init_server())
-      .catch(error=>console.log(error))
+      .catch(error=>debug(error))
   }
 
   load_terms(terms, name, paths) {
     var loaded = this.files[name];
     if (typeof loaded == 'function') {
-      console.log("stll loading terms for", name);
+      debug("stll loading terms for", name);
       return loaded;
     }
 
     if (loaded) {
-      console.log("read terms from cache", name);
+      debug("read terms from cache", name);
       return Promise.resolve(loaded);
     }
 
@@ -69,7 +69,7 @@ class Didi {
       path = `${path}/${file}`;
       if (!fs.existsSync(path))
         return callback(null, terms);
-      console.log(`loading ${path} ...`);
+      debug(`loading ${path} ...`);
       fs.readFile(path, "utf8", (err,data)=>{
         try {
           var term = yaml.parse(data);
@@ -84,7 +84,7 @@ class Didi {
     .then(terms => {
       if (!terms)
         throw new Error(`File(s) for '${name}' must exist`);
-      console.log(`loaded ${name}`)
+      debug(`loaded ${name}`)
       return this.files[name] = terms;
     })
   }
@@ -95,13 +95,13 @@ class Didi {
       .then(config => {
         util.replace_fields(config, config);
         this.search_paths.push(config.brand_path);
-        console.log("BRAND PATH", config.brand_path);
+        debug("BRAND PATH", config.brand_path);
        return this.config = config;
      });
   }
 
   load_fields() {
-    console.log("SEARCH PATHS", this.search_paths);
+    debug("SEARCH PATHS", this.search_paths);
     return this.load_terms({}, "controls")
       .then(controls => this.load_terms(controls, "fields"))
       .then(fields => {
@@ -156,24 +156,24 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
+        this.serve_mime(req, res)
+          || this.serve_spa(req, res)
+          || this.process_request(req, res);
       })
-      this.serve_mime(req, res)
-        || this.serve_spa(req, res)
-        || this.process_request(req, res);
     }).listen(this.config.server_port);
-    console.log("listening on port",this.config.server_port);
+    debug("listening on port",this.config.server_port);
   }
 
 
   load_page(page) {
     var existing = this.pages[page];
     if (typeof existing == 'function') {
-      console.log("still loading", page);
+      debug("still loading", page);
       return existing;
     }
 
     if (existing) {
-      console.log("read from cache", page);
+      debug("read from cache", page);
       return Promise.resolve(existing);
     }
 
@@ -236,7 +236,7 @@ class Didi {
   }
 
   follow_path(path, types) {
-    console.log("FOLLOWING path", path)
+    debug("FOLLOWING path", path)
     path = path.split('/').slice(1);
     var item = types;
     var parent = item;
@@ -245,7 +245,7 @@ class Didi {
       if (!item)
         throw Error("Invalid path " + path.join('/'));
     }
-    console.log("followed", path);
+    debug("followed", path);
     return item;
   }
 
@@ -296,7 +296,7 @@ class Didi {
         return data = data.replace("$options", JSON.stringify(options));
     })
     .catch(err =>{
-      console.log("ERROR", err);
+      debug("ERROR", err);
       this.send404();
     });
   }
@@ -325,7 +325,7 @@ class Didi {
       return this.send404(res);
 
     fs.exists(path, (exists) => {
-      console.log("SERVING", path);
+      debug("SERVING", path);
       if(!exists) {
         this.send404(res);
         return;
