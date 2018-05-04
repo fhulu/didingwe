@@ -2,10 +2,12 @@
 
 var util = {};
 
-util.is_primitive = (x) => typeof x == "string" || !isNaN(x);
-util.is_numeric = (x) => !isNaN(x)
-util.is_object = (x) => x == Object(x)
-util.is_array = (x) => x == Array.isArray(x)
+util.is_primitive = x => typeof x == "string" || !isNaN(x);
+util.is_numeric = x => !isNaN(x);
+util.is_string = x => typeof x == "string";
+util.is_array = x => Array.isArray(x);
+util.is_object = x => !util.is_primitive(x) && x == Object(x);
+util.is_iteratable = x => Symbol.iterator in Object(obj);
 
 util.clone = (x, option) => {
   if (util.is_primitive(x)) return x;
@@ -31,8 +33,8 @@ util.merge = (x, y, options) => {
   function doit(x, y) {
     // if (!options.is_mergeable(y)) return clone(y);
 
-    var is_array = Array.isArray(x);
-    var same_type = is_array === Array.isArray(y);
+    var is_array = util.is_array(x);
+    var same_type = is_array === util.is_array(y);
     if (!same_type) return util.clone(y);
     if (is_array) return options.array_merger(x,y);
 
@@ -69,12 +71,25 @@ util.merge.all = (array, options) => {
 }
 
 util.walk = (obj, callback) => {
+  if (!obj || util.is_primitive(obj)) return obj;
+  if (util.is_array(obj)) {
+    var len = obj.length;
+    for (var i = 0; i< len; ++i) {
+      if (callback(obj[i], i, obj) === false) return obj;
+      var diff = len - obj.length;
+      if (diff) {
+        i -= diff;
+        len -= diff;
+        continue;
+      }
+      util.walk(obj[i], callback)
+    }
+    return obj;
+  }
   for (var key in obj) {
     if (!obj.hasOwnProperty(key)) continue;
-    var val = obj[key];
-    if (callback(val, key, obj) === false) return;
-    if (val !== undefined && !util.is_primitive(val))
-      util.walk(val, callback)
+    if (callback(obj[key], key, obj) === false) return obj;
+    util.walk(obj[key], callback)
   }
   return obj;
 }
@@ -94,7 +109,40 @@ util.replace_fields = (obj, values) => {
     var new_val = util.replace_vars(val, values);
     if (new_val != val) node[key] = new_val;
   })
-
 }
+
+util.intersection = (a,b) => {
+  var r = [];
+  for (var x of a) {
+    if (b.includes(x)) r.push(x);
+  }
+  return r;
+}
+
+util.intersects = (a,b) => util.intersection(a,b).length > 0
+
+util.remove = (x, k) => util.is_array(x)?  x.splice(k,1): delete x[k];
+
+util.first_object = x => {
+  for (var k in x) {
+    if (!x.hasOwnProperty(k)) continue;
+    return [k, x[k]];
+  }
+  return [];
+}
+
+util.first_key = x => util.first_object(x)[0];
+util.first_value = x => util.first_object(x)[1];
+
+util.is_empty = x => {
+  for (var k in x) {
+    if (!x.hasOwnProperty(k)) continue;
+    return false;
+  }
+  return true;
+}
+
+util.default = (x, d) => x === undefined? d: x;
+
 
 module.exports = util;
