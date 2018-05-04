@@ -111,15 +111,8 @@ util.replace_fields = (obj, values) => {
   })
 }
 
-util.intersection = (a,b) => {
-  var r = [];
-  for (var x of a) {
-    if (b.includes(x)) r.push(x);
-  }
-  return r;
-}
-
-util.intersects = (a,b) => util.intersection(a,b).length > 0
+util.intersection = (a,b) => a.filter ( v => b.includes(v) )
+util.intersects = (a,b) => a.some( v => b.includes(v) )
 
 util.remove = (x, k) => util.is_array(x)?  x.splice(k,1): delete x[k];
 
@@ -135,6 +128,9 @@ util.first_key = x => util.first_object(x)[0];
 util.first_value = x => util.first_object(x)[1];
 
 util.is_empty = x => {
+  if (x == null) return true;
+  if (util.is_array(x)) return x.length == 0;
+
   for (var k in x) {
     if (!x.hasOwnProperty(k)) continue;
     return false;
@@ -143,6 +139,5 @@ util.is_empty = x => {
 }
 
 util.default = (x, d) => x === undefined? d: x;
-
 
 module.exports = util;
