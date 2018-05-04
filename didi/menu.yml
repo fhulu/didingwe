@@ -25,7 +25,8 @@ mobile_menu_items:
   class: [hide-medium,hide-large,dropdown]
   derive: [items]
   show: no
-  contents: [merge: items]
+  contents:
+    - merge: items
   on_click:
     - script: this.hide()
 
@@ -33,7 +34,8 @@ desktop_menu_items:
   type: container
   class: [hide-small]
   derive: [items]
-  contents: [merge: items]
+  contents:
+    - merge: items
 
 menu_item:
   tag: li

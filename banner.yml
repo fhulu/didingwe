@@ -9,6 +9,7 @@ banner:
     - main_menu: {type: menu}
 
 session_details:
+  access: auth
   type: container
   class: [hide-small]
   contents:

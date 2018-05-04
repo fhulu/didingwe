@@ -167,22 +167,26 @@ class Didi {
     if (existing)
       return Promise.resolve(existing);
 
+    var already_included = [];
     return this.pages[page] = this.load_terms(null, page)
-      .then(terms => this.include_all(terms))
+      .then(terms => this.include_all(terms, already_included))
       .then(included => this.update_page_terms(page, included))
   }
 
-  include_all(terms) {
+  include_all(terms, already) {
     var includes = terms.include;
     if (!includes) return Promise.resolve(terms);
-    var promises = includes.map( page => this.include_one(page));
+    var promises = includes.map( page => this.include_one(page, already));
     return Promise.all(promises)
       .then(results => results.reduce((sum,result) => {return this.merge(result, sum)}, terms))
   }
 
-  include_one(page) {
+  include_one(page, already) {
+    if (already.includes(page))
+      return Promise.resolve({});
+    already.push(page);
     return this.load_terms(null, page)
-      .then(terms => this.include_all(terms))
+      .then(terms => this.include_all(terms, already))
   }
 
 
@@ -207,21 +211,20 @@ class Didi {
 
     util.replace_fields(item, this.config);
     this.remove_server_items(item, ['access']);
-    client.remove_unauthorized(item);
+    var removed = client.remove_unauthorized(item);
 
     var expanded_types = {};
-    this.expand_types(item, types, expanded_types);
+    this.expand_types(item, types, expanded_types, removed);
     expanded_types['control'] = types['control'];
     expanded_types['template'] = types['template'];
-    
+
     util.replace_fields(expanded_types, this.config);
     this.remove_server_items(expanded_types, ['access']);
 
-    var removed = client.remove_unauthorized(expanded_types);
+    removed = client.remove_unauthorized(expanded_types);
     removed.push('access');
     this.remove_keys(item, removed);
     this.remove_keys(expanded_types, removed);
-
 
     return this.reads[cache_key] = { path: path, fields: item, types: expanded_types }
   }
@@ -263,10 +266,11 @@ class Didi {
     return item;
   }
 
-  expand_types(item, source_types, expanded_types) {
+  expand_types(item, source_types, expanded_types, removed=[]) {
     util.walk(item, (val, key, node)=>{
       if (val in expanded_types
           || non_expandables.includes(key)
+          || removed.includes(val)
           || util.is_numeric(val))
         return;
 
@@ -279,7 +283,7 @@ class Didi {
         expanded = expanded_types[key] = source_types[key];
 
       if (expanded)
-        this.expand_types(expanded, source_types, expanded_types);
+        this.expand_types(expanded, source_types, expanded_types, removed);
 
     })
   }
