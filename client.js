@@ -11,6 +11,7 @@ class Client {
     this.variables = {};
     this.auth_token = null;
     this.config = server.config['landing'];
+    this.roles = ['public'];
   }
 
   process(req, res) {
@@ -29,6 +30,7 @@ class Client {
 
 
   report_error(response, err) {
+    if (this.server.is_debug_mode()) throw err;
     this.log("ERROR", err);
     response.end();
   }
@@ -79,14 +81,14 @@ class Client {
   }
 
   read(request, types) {
-    var result = this.server.read(request.query.path, types);
+    var result = this.server.read(this, request.query.path, types);
     this.output(request.response, result);
   }
 
   output(response, result) {
     result = JSON.stringify(result);
     this.log("RESPONSE", result.substring(0,127));
-    // response.setHeader('Content-Type', 'application/json')
+    response.setHeader('Content-Type', 'application/json')
     response.end(result);
   }
 
@@ -100,6 +102,37 @@ class Client {
 
   update_config(config) {
     Object.assign(this.config, config);
+  }
+
+  get_roles() {
+    return this.roles;
+  }
+
+  is_authorized(rights) {
+    if (rights === undefined) return true;
+    if (!util.is_array(rights)) rights = [rights]
+    return util.intersects(rights, this.roles);
+  }
+
+  remove_unauthorized(root) {
+    var removed = [];
+    util.walk(root, (val, key, node) => {
+      if (util.is_array(node)) {
+        if (!util.is_object(val) || util.is_empty(val)) return;
+        var index = key;
+        key = util.first_key(val);
+        val = util.first_value(val);
+        // [key, val] = util.first_object(val);
+        if (this.is_authorized(val.access)) return;
+        node.splice(index, 1);
+        removed.push(key);
+      }
+      else if (util.is_object(val) && !this.is_authorized(val.access)) {
+        delete node[key];
+        removed.push(key);
+      }
+    });
+    return removed;
   }
 }
 

@@ -43,11 +43,12 @@ class Didi {
     this.pages = {};
     this.reads = {};
     this.search_paths = ['./didi', '.'];
+    this.config = {};
     this.read_config()
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
       .then(()=>this.init_server())
-      .catch(error=>debug(error))
+      .catch(e=>this.report_error(e))
   }
 
   load_terms(terms, name, paths) {
@@ -72,8 +73,8 @@ class Didi {
           debug(`LOADED ${path}`)
           callback(null, terms);
         }
-        catch(e) {
-          callback(`Parsing error reading ${path} at line ${e.parsedLine}: ${e.message}`, terms);
+        catch(err) {
+          this.report_error(err)
         }
       });
     })
@@ -194,27 +195,53 @@ class Didi {
     return this.pages[page] = this.merge(this.types, types);
   }
 
-  read(path, types) {
-    var loaded = this.reads[path];
+  read(client, path, types) {
+    var roles = client.get_roles().join('.')
+    var cache_key = `${path}:${roles}`;
+    var loaded = this.reads[cache_key];
+
     if (loaded)
       return loaded;
 
     var item = this.follow_path(path, types);
-    this.remove_server_items(item);
+
+    util.replace_fields(item, this.config);
+    this.remove_server_items(item, ['access']);
+    client.remove_unauthorized(item);
+
     var expanded_types = {};
     this.expand_types(item, types, expanded_types);
-    this.remove_server_items(types);
     expanded_types['control'] = types['control'];
     expanded_types['template'] = types['template'];
-    util.replace_fields(types, this.config);
-    util.replace_fields(item, this.config);
-    return this.reads[path] = { path: path, fields: item, types: expanded_types }
+    
+    util.replace_fields(expanded_types, this.config);
+    this.remove_server_items(expanded_types, ['access']);
+
+    var removed = client.remove_unauthorized(expanded_types);
+    removed.push('access');
+    this.remove_keys(item, removed);
+    this.remove_keys(expanded_types, removed);
+
+
+    return this.reads[cache_key] = { path: path, fields: item, types: expanded_types }
   }
 
-  remove_server_items(root) {
-    var result = {}
+  remove_keys(root, keys) {
+    util.walk(root, (val, key, node) => {
+      if (util.is_numeric(val)) return;
+      if (util.is_array(node)) {
+        if (util.is_object(val)) val = util.first_key(val);
+        if (keys.includes(val)) node.splice(key, 1);
+      }
+      else if (keys.includes(key)) {
+        delete node[key];
+      }
+    })
+  }
+
+  remove_server_items(root, exclusions=[]) {
     util.walk(root, (val, key, node) =>{
-      if ( this.is_server_item(key))
+      if (!exclusions.includes(key) && this.is_server_item(key))
         delete node[key];
     })
   }
@@ -286,8 +313,8 @@ class Didi {
         var options = { path:  config.page, request: config };
         return data = data.replace("$options", JSON.stringify(options));
     })
-    .catch(err =>{
-      client.log("ERROR", err);
+    .catch(err => {
+      client.report_error(res, err);
       this.send404(res);
     });
   }
@@ -333,6 +360,14 @@ class Didi {
     res.end('Error 404: Resource not found.');
   }
 
+  is_debug_mode() {
+    return util.default(this.config['debug'], true);
+  }
+
+  report_error(e) {
+    debug("ERROR", e.message);
+    if (this.is_debug_mode()) throw e;
+  }
 
 };
 
