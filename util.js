@@ -138,6 +138,13 @@ util.is_empty = x => {
   return true;
 }
 
+util.empty = x => {
+  for (var k in x) {
+    if (!x.hasOwnProperty(k)) continue;
+    delete x[k];
+  }
+}
+
 util.default = (x, d) => x === undefined? d: x;
 
 module.exports = util;
