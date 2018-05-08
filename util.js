@@ -37,6 +37,7 @@ util.merge = (target, ...sources) => {
   function doit(x, y) {
     // if (!options.is_mergeable(y)) return clone(y);
     if (!y) return x;
+    if (util.is_primitive(y) || util.is_primitive(x)) return y;
     var is_array = util.is_array(x);
     var same_type = is_array === util.is_array(y);
     if (!same_type) return util.clone(y);
