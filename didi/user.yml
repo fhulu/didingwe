@@ -318,8 +318,8 @@ enter_email:
     - write_session: [email, first_name, last_name, cellphone]
 
 
-forgot_password:
-  url: /user/forgot_password
+forgot_password_wizard:
+  url: /user/forgot_password_wizard
   desc: Reset your password if you have forgotten it
   position: { my: 'top', at: 'top+50' }
   type: wizard
@@ -578,7 +578,7 @@ profile_update:
     - collection.update: [user, $user, delta]
     - close_dialog: Successfully updated
 
-register:
+register_wizard:
   access: public
   position: { my: 'top', at: 'top+50' }
   type: wizard

@@ -163,7 +163,7 @@ first_name:
 forgot_password:
   access: public
   desc: Click here if you have forgotten your password and you need to reset it
-  url: /user/forgot_password
+  url: /user/forgot_password_wizard
 
 full_name:
   desc: Full name and surname
@@ -334,7 +334,7 @@ ref_options:
 register:
   desc: Click here to register
   access: public
-  url: /user/register
+  url: /user/register_wizard
 
 rest_post:
   merge: false

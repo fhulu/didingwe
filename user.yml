@@ -162,7 +162,7 @@ profile_update:
   post:
     - refresh: "#user_info"
 
-register:
+register_wizard:
   name: Not a user? Sign up now!
   steps:
     - _reset
