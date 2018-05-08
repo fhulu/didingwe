@@ -280,7 +280,7 @@ class Didi {
         key = val;
       }
       node = types[key];
-      if (!node || non_expandables.includes(key) || key in expanded)
+      if (!node || non_expandables.includes(key) || key in expanded || key.includes("."))
         return;
 
       removed.push(...client.remove_unauthorized(node));
