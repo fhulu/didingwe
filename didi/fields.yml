@@ -204,7 +204,7 @@ login:
   desc: Log in to the system
   access: public
   audit: $email
-  url: /user/login
+  url: /user/login_dialog
   src: /logout_icon.jpg
 
 logout:

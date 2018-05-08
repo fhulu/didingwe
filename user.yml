@@ -313,7 +313,7 @@ complete_registration:
     - if "$billing_type" != "existing_account":
         - alert: Registration Successfully Completed.
     - redirect: {url: /home }
-    - show_dialog: /user/login
+    - show_dialog: /user/login_dialog
 
 complete_registration_message:
   name: Thank you for registrering. You can now login to the system.
