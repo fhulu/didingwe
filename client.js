@@ -115,6 +115,10 @@ class Client {
   }
 
   remove_unauthorized(root) {
+    if (!this.is_authorized(root.access)) {
+      util.empty(root);
+      return [];
+    }
     var removed = [];
     util.walk(root, (val, key, node) => {
       if (util.is_array(node)) {

@@ -26,7 +26,7 @@ const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 
 
 const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
 
-const non_expandables = ['post', 'audit','action', 'attr', 'css', 'html', 'script', 'sql', 'style', 'template', 'valid'];
+const non_expandables = ['post', 'audit','action', 'access', 'attr', 'css', 'html', 'script', 'sql', 'style', 'template', 'valid'];
 
 const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
   'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
@@ -54,7 +54,7 @@ class Didi {
   load_terms(terms, name, paths) {
     var loaded = this.files[name];
     if (loaded) {
-      debug("CACHE HIT", name);
+      debug("CACHE-HIT", name);
       return Promise.resolve(loaded);
     }
 
@@ -69,7 +69,7 @@ class Didi {
       fs.readFile(path, "utf8", (err,data)=>{
         try {
           var term = yaml.parse(data);
-          terms = this.merge(terms, term);
+          this.merge(terms, term);
           debug(`LOADED ${path}`)
           callback(null, terms);
         }
@@ -112,9 +112,14 @@ class Didi {
 
   }
 
-  merge(x,y) {
+  merge(target, ...sources) {
     const enforce_reset = (a, b) =>  b[0]=='_reset'? (b.shift(), b): util.merge_array(a,b);
-    return util.merge(x, y, { array_merger: enforce_reset });
+    var last = util.last(sources);
+    if (typeof last == 'function') {
+      var options = Object.assign(last(), { array_merger: enforce_reset});
+      sources.splice(options.length-1, 1, ()=>options)
+    }
+    return util.merge(target, ...sources)
   }
 
 
@@ -168,7 +173,7 @@ class Didi {
       return Promise.resolve(existing);
 
     var already_included = [];
-    return this.pages[page] = this.load_terms(null, page)
+    return this.pages[page] = this.load_terms({}, page)
       .then(terms => this.include_all(terms, already_included))
       .then(included => this.update_page_terms(page, included))
   }
@@ -178,14 +183,14 @@ class Didi {
     if (!includes) return Promise.resolve(terms);
     var promises = includes.map( page => this.include_one(page, already));
     return Promise.all(promises)
-      .then(results => results.reduce((sum,result) => {return this.merge(result, sum)}, terms))
+      .then(results => this.merge(terms, ...results))
   }
 
   include_one(page, already) {
     if (already.includes(page))
       return Promise.resolve({});
     already.push(page);
-    return this.load_terms(null, page)
+    return this.load_terms({}, page)
       .then(terms => this.include_all(terms, already))
   }
 
@@ -194,9 +199,9 @@ class Didi {
     var types = {};
     for (var key in terms) {
       if (!terms.hasOwnProperty(key)) continue;
-      types[key] = this.merge(this.types[key], terms[key]);
+      types[key] = this.merge({}, this.types[key], terms[key]);
     }
-    return this.pages[page] = this.merge(this.types, types);
+    return this.pages[page] = this.merge({}, this.types, types);
   }
 
   read(client, path, types) {
@@ -211,22 +216,20 @@ class Didi {
 
     util.replace_fields(item, this.config);
     this.remove_server_items(item, ['access']);
-    var removed = client.remove_unauthorized(item);
+    client.remove_unauthorized(item);
+    this.remove_keys(item, ['access']);
 
-    var expanded_types = {};
-    this.expand_types(item, types, expanded_types, removed);
-    expanded_types['control'] = types['control'];
-    expanded_types['template'] = types['template'];
-
-    util.replace_fields(expanded_types, this.config);
-    this.remove_server_items(expanded_types, ['access']);
-
-    removed = client.remove_unauthorized(expanded_types);
-    removed.push('access');
+    var expanded = {};
+    var removed = this.expand_types(client, item, types, expanded);
+    removed.push('acccess');
     this.remove_keys(item, removed);
-    this.remove_keys(expanded_types, removed);
+    if (!expanded.control) expanded.control = types.control
+    if (!expanded.template) expanded.template = types.template;
 
-    return this.reads[cache_key] = { path: path, fields: item, types: expanded_types }
+    util.replace_fields(expanded, this.config);
+    this.remove_keys(expanded, removed);
+
+    return this.reads[cache_key] = { path: path, fields: item, types: expanded }
   }
 
   remove_keys(root, keys) {
@@ -266,26 +269,31 @@ class Didi {
     return item;
   }
 
-  expand_types(item, source_types, expanded_types, removed=[]) {
+  expand_types(client, item, types, expanded) {
+
+    var removed = [];
+
     util.walk(item, (val, key, node)=>{
-      if (val in expanded_types
-          || non_expandables.includes(key)
-          || removed.includes(val)
-          || util.is_numeric(val))
+      if (util.is_numeric(val)) return;
+      var is_array = util.is_array(node);
+      if (is_array && util.is_string(val) || key == 'type') {
+        key = val;
+      }
+      node = types[key];
+      if (!node || non_expandables.includes(key) || key in expanded)
         return;
 
-      var expanded;
-      if (key == 'type')
-        expanded = expanded_types[val] = source_types[val];
-      else if (util.is_numeric(key) && typeof val == 'string')
-        expanded = expanded_types[val] = source_types[val];
-      else if (util.is_object(val))
-        expanded = expanded_types[key] = source_types[key];
-
-      if (expanded)
-        this.expand_types(expanded, source_types, expanded_types, removed);
-
-    })
+      removed.push(...client.remove_unauthorized(node));
+      this.remove_server_items(node);
+      if (removed.includes[key]) return is_array;
+      if (util.is_empty(node)) {
+        removed.push(key);
+        return is_array;
+      }
+      expanded[key] = node;
+      removed.push(...this.expand_types(client, node, types, expanded));
+    });
+    return removed;
   }
 
 

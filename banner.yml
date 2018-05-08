@@ -46,7 +46,6 @@ credits_available:
       - clear_values
 
 user_info:
-  access: auth
   contents:
     - default:
         class: [cursor-pointer]
