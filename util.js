@@ -59,7 +59,7 @@ util.merge = (target, ...sources) => {
   }
 
   for (var source of sources) {
-    doit(target, source);
+    target = doit(target, source);
   }
 
   return target;
