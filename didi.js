@@ -12,6 +12,7 @@ const debug = require("debug")("DIDI");
 const path_util = require("path");
 const mime = require("mime-types");
 const url = require("url");
+var file_watcher = require("filewatcher")();
 
 var session = sessions({
   cookieName: 'didi',
@@ -44,6 +45,7 @@ class Didi {
     this.reads = {};
     this.search_paths = ['./didi', '.'];
     this.config = {};
+    this.init_file_watcher();
     this.read_config()
       .then(()=>this.load_fields())
       .then(()=>this.load_validators())
@@ -51,18 +53,22 @@ class Didi {
       .catch(e=>this.report_error(e))
   }
 
-  load_terms(terms, name, paths) {
+  load_terms(terms, name, ...dirs) {
     var loaded = this.files[name];
     if (loaded) {
       debug("CACHE-HIT", name);
       return Promise.resolve(loaded);
     }
 
-    paths = paths || this.search_paths;
+    if (!dirs.length)
+      dirs =  this.search_paths;
+
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
-    return this.files[name] = after(async.reduce, paths, terms, (terms, path, callback)=>{
+    var paths = [];
+    return this.files[name] = after(async.reduce, dirs, terms, (terms, path, callback)=>{
       path = `${path}/${file}`;
+      paths.push(path);
       if (!fs.existsSync(path))
         return callback(null, terms);
       debug(`LOADING ${path} ...`);
@@ -78,20 +84,26 @@ class Didi {
         }
       });
     })
-    .then(terms => {
-      if (!terms)
+    .then(result => {
+      if (!result)
         throw new Error(`File(s) for '${name}' must exist`);
-      return this.files[name] = terms;
+      result.__paths = util.merge(result.__paths, paths);
+      this.watch_files(paths, ()=>{
+          delete this.files[name];
+          this.load_terms(terms, name, ...dirs);
+      });
+      return this.files[name] = result;
     })
   }
 
   read_config() {
     return this.load_terms({}, "app-config")
-      .then(config => this.load_terms(config, config.site_config, '[.]'))
+      .then(config => this.load_terms(config, config.site_config, '.'))
       .then(config => {
         util.replace_fields(config, config);
         this.search_paths.push(config.brand_path);
         debug("BRAND PATH", config.brand_path);
+        this.watch_terms(config, () => this.read_config())
        return this.config = config;
      });
   }
@@ -100,9 +112,10 @@ class Didi {
     debug("SEARCH PATHS", this.search_paths);
     return this.load_terms({}, "controls")
       .then(controls => this.load_terms(controls, "fields"))
-      .then(fields => {
-        util.replace_fields(fields, this.config);
-        this.types = this.fields = fields;
+      .then(types => {
+        util.replace_fields(types, this.config);
+        this.watch_terms(types, () => this.load_fields())
+        return this.types = types;
       })
   }
 
@@ -167,15 +180,19 @@ class Didi {
   }
 
 
-  load_page(page) {
+  load_page(page, reload) {
     var existing = this.pages[page];
-    if (existing)
+    if (existing && !reload)
       return Promise.resolve(existing);
 
     var already_included = [];
-    return this.pages[page] = this.load_terms({}, page)
+    return this.load_terms({}, page)
       .then(terms => this.include_all(terms, already_included))
-      .then(included => this.update_page_terms(page, included))
+      .then(terms => {
+        terms = this.merge({}, this.types, terms);
+        this.watch_terms(terms, ()=> this.load_page(page, true))
+        return this.pages[page] = terms;
+      })
   }
 
   include_all(terms, already) {
@@ -195,13 +212,29 @@ class Didi {
   }
 
 
-  update_page_terms(page, terms) {
-    var types = {};
-    for (var key in terms) {
-      if (!terms.hasOwnProperty(key)) continue;
-      types[key] = this.merge({}, this.types[key], terms[key]);
+  init_file_watcher() {
+    this.watched = {};
+    file_watcher.on('change', path => {
+      debug("DETECTED CHANGE", path);
+        var watchers = this.watched[path];
+        for (var watcher of watchers) {
+          watcher(path);
+        }
+    });
+  }
+
+  watch_terms(terms, callback) {
+    this.watch_files(terms.__paths, callback);
+  }
+
+  watch_files(paths, callback) {
+    for (var path of paths) {
+      if (!(path in this.watched)) {
+        this.watched[path] = [callback];
+        file_watcher.add(path);
+      }
+      this.watched[path].push(callback);
     }
-    return this.pages[page] = this.merge({}, this.types, types);
   }
 
   read(client, path, types) {
