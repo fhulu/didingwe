@@ -301,10 +301,10 @@ class Didi {
     if (req.method != 'GET') return false;
 
     var parsed = url.parse(req.url, true);
-    var query = parsed.query;
+    var query = Object.assign({}, parsed.query);
     if (query.action) return false;
 
-    client.log("SERVE SPA", parsed.pathname);
+    client.log("SERVE SPA", parsed.pathname, JSON.stringify(query));
     this.load_spa(client, query, res)
       .then(data=> res.end(data))
     return true;

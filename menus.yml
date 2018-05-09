@@ -10,16 +10,16 @@ quick_menu:
 
 font_awesome:
   class: [pad-x pad-tiny]
-  on_click:
-    - script: |
-       var field = this.data('didi-field');
-       if (!field.action) return;
-       dataLayer.push({
-          'event': 'VirtualPageView',
-          'virtualPageURL': field.path,
-          'virtualPageTitle' : field.desc
-       });
-       console.log("dataLayer", dataLayer)
+  # on_click:
+  #   - script: |
+  #      var field = this.data('didi-field');
+  #      if (!field.action) return;
+  #      dataLayer.push({
+  #         'event': 'VirtualPageView',
+  #         'virtualPageURL': field.path,
+  #         'virtualPageTitle' : field.desc
+  #      });
+  #      console.log("dataLayer", dataLayer)
 
 main_menu:
   type: menu
