@@ -37,7 +37,7 @@ util.merge = (target, ...sources) => {
   function doit(x, y) {
     // if (!options.is_mergeable(y)) return clone(y);
     if (!y) return x;
-    if (util.is_primitive(y) || util.is_primitive(x)) return y;
+    if (util.is_primitive(y) || util.is_primitive(x)) return util.clone(y);
     var is_array = util.is_array(x);
     var same_type = is_array === util.is_array(y);
     if (!same_type) return util.clone(y);
@@ -70,7 +70,7 @@ util.walk = (obj, callback) => {
   if (util.is_array(obj)) {
     var len = obj.length;
     for (var i = 0; i< len; ++i) {
-      if (callback(obj[i], i, obj) === false) return obj;
+      if (callback(obj[i], i, obj) === false) continue;
       var diff = len - obj.length;
       if (diff) {
         i -= diff;
@@ -83,7 +83,7 @@ util.walk = (obj, callback) => {
   }
   for (var key in obj) {
     if (!obj.hasOwnProperty(key)) continue;
-    if (callback(obj[key], key, obj) === false) return obj;
+    if (callback(obj[key], key, obj) === false) continue;
     util.walk(obj[key], callback)
   }
   return obj;
