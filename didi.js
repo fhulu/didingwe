@@ -27,7 +27,7 @@ const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 
 
 const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
 
-const non_expandables = ['post', 'audit','action', 'access', 'attr', 'css', 'html', 'script', 'sql', 'style', 'template', 'valid'];
+const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'html', 'post', 'script', 'sql', 'style', 'template', 'valid', 'values'];
 
 const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
   'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
@@ -189,9 +189,8 @@ class Didi {
     return this.load_terms({}, page)
       .then(terms => this.include_all(terms, already_included))
       .then(terms => {
-        terms = this.merge({}, this.types, terms);
         this.watch_terms(terms, ()=> this.load_page(page, true))
-        return this.pages[page] = terms;
+        return this.pages[page] = this.merge({}, this.types, terms);
       })
   }
 
@@ -303,28 +302,31 @@ class Didi {
   }
 
   expand_types(client, item, types, expanded) {
-
     var removed = [];
-
     util.walk(item, (val, key, node)=>{
-      if (util.is_numeric(val)) return;
-      var is_array = util.is_array(node);
-      if (is_array && util.is_string(val) || key == 'type') {
+      if (key == 'type')
+        key = val;
+      else if (util.is_array(node)) {
+        if (!util.is_string(val)) return;
         key = val;
       }
-      node = types[key];
-      if (!node || non_expandables.includes(key) || key in expanded || key.includes("."))
+      else if (util.is_atomic(val))
         return;
 
-      removed.push(...client.remove_unauthorized(node));
-      this.remove_server_items(node);
-      if (removed.includes[key]) return is_array;
-      if (util.is_empty(node)) {
+      if (non_expandables.includes(key) || post_items.includes(key) || key in expanded)
+        return false;
+
+      var type = types[key];
+      if (!type) return;
+      removed.push(...client.remove_unauthorized(type));
+      this.remove_server_items(type);
+      if (removed.includes[key]) return false;
+      if (util.is_empty(type)) {
         removed.push(key);
-        return is_array;
+        return false;
       }
-      expanded[key] = node;
-      removed.push(...this.expand_types(client, node, types, expanded));
+      expanded[key] = type;
+      removed.push(...this.expand_types(client, type, types, expanded));
     });
     return removed;
   }
@@ -339,7 +341,10 @@ class Didi {
 
     client.log("SERVE SPA", parsed.pathname, JSON.stringify(query));
     this.load_spa(client, query, res)
-      .then(data=> res.end(data))
+      .then(data=>{
+        res.setHeader('Content-type', 'text/html');
+        res.end(data)
+      });
     return true;
   }
 
