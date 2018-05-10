@@ -140,11 +140,11 @@ list:
   sort_order: desc
   flags: [show_titles,filter]
 
-login:
+login_page:
   desc: Please provide the following details to log into the system
   actions_pane: { class: [^grid]}
   actions:
-    - login: {push: merge, class: [widest,vspace,^pad-medium]}
+    - login: {push: merge, class: [widest,vspace,^pad-medium], type: input}
     - forgot_password: {type: link, push: merge, class: [center-text, vspace]}
     - register: { type: link, class: [vspace, center-text] }
   post:

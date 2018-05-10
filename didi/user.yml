@@ -439,7 +439,7 @@ list_all:
 
 
 
-login_dialog:
+login_page:
   access: public
   type: input_page
   position: { my: 'top', at: 'top+150' }
