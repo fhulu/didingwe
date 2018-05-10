@@ -6,7 +6,7 @@ util.is_primitive = x => typeof x == "string" || !isNaN(x);
 util.is_numeric = x => !isNaN(x);
 util.is_string = x => typeof x == "string";
 util.is_array = x => Array.isArray(x);
-util.is_object = x => !util.is_primitive(x) && x == Object(x);
+util.is_object = x => !util.is_primitive(x) && !util.is_array(x) && x == Object(x);
 util.is_iteratable = x => Symbol.iterator in Object(obj);
 util.last = x => x[x.length]
 
