@@ -2,7 +2,8 @@
 
 var util = {};
 
-util.is_primitive = x => typeof x == "string" || !isNaN(x);
+util.is_atomic = x => typeof x == "string" || !isNaN(x);
+util.is_primitive = util.is_atomic
 util.is_numeric = x => !isNaN(x);
 util.is_string = x => typeof x == "string";
 util.is_array = x => Array.isArray(x);
