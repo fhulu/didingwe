@@ -78,8 +78,6 @@ modal:
     top: -8
     right: -8
 
-
-
 navigator:
   class: [same-height]
   navigation:

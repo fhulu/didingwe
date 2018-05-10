@@ -18,9 +18,9 @@ datatable:
     class: []
   cell:
     class: [didi]
-  script: [/common/datatable.js]
+  script: [/didi/datatable.js]
   row_creator: { type: table_row }
-  css: [/common/datatable.css]
+  css: [/didi/datatable.css]
   flags: []
   values:
     - collection.sort_on: [sort]
