@@ -383,7 +383,8 @@ class Didi {
 
   serve_mime(client, req, res) {
     if (req.method != 'GET') return false;
-    let path = path_util.resolve(this.config['resource_dir'] + '/' + req.url);
+    var parsed = url.parse(req.url, true);
+    let path = path_util.resolve(this.config['resource_dir'] + '/' + parsed.pathname);
     let ext = path_util.extname(path);
     if (!ext) return false;
 
@@ -399,8 +400,11 @@ class Didi {
         this.send404(res);
         return;
       }
-
-      res.writeHead(200, {'Content-Type': content_type});
+      var headers = {
+        "Content-Type": content_type,
+        "Cache-Control": `public, max-age=${this.config.cache_age}`
+      };
+      res.writeHead(200, headers);
       fs.createReadStream(path).pipe(res, ()=>res.end());
     });
     return true;
