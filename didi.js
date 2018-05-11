@@ -3,8 +3,8 @@
 var http = require("http");
 const yaml = require("yamljs");
 const util = require("./util.js");
+const {after} = util;
 const fs = require("fs");
-const after = require("./after.js");
 const Client = require("./client.js");
 var async = require("async");
 var sessions = require("client-sessions");
@@ -387,7 +387,7 @@ class Didi {
     let ext = path_util.extname(path);
     if (!ext) return false;
 
-    let content_type = mime.contentType(path_util.extname(path));
+    let content_type = mime.contentType(ext);
 
     if(!content_type)
       return this.send404(res);
@@ -395,12 +395,13 @@ class Didi {
     fs.exists(path, (exists) => {
       client.log("SERVING", path);
       if(!exists) {
+        client.log("ERROR", path);
         this.send404(res);
         return;
       }
 
       res.writeHead(200, {'Content-Type': content_type});
-      fs.createReadStream(path).pipe(res);
+      fs.createReadStream(path).pipe(res, ()=>res.end());
     });
     return true;
   }
