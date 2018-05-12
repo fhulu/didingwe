@@ -3,6 +3,18 @@ const qs = require("querystring")
 const util = require("./util.js");
 var debug = require("debug")("DIDI");
 
+const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
+  'q', 'valid', 'validate', 'write_session'];
+
+const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
+
+const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'html', 'post', 'script', 'sql', 'style', 'template', 'valid', 'values'];
+
+const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
+  'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
+  'sql_insert', 'sql_update', 'style', 'trigger', 'valid', 'validate', 'write_session'];
+
+
 class Client {
   constructor(server, id) {
     this.server = server;
@@ -10,18 +22,16 @@ class Client {
     this.seq = 0;
     this.variables = {};
     this.auth_token = null;
-    this.config = server.config['landing'];
+    this.config = server.config;
     this.roles = ['public'];
   }
 
-  process(req, res) {
-    var request = { request: req, response: res}
-    this.response = req;
+  process(request, response) {
     ++this.seq;
     this.parse_query(request)
       .then(query => this.load_page(request))
-      .then(types => this.respond(request, types))
-      .catch(err=> this.report_error(request.response, err) )
+      .then(types => this.respond(request, response, types))
+      .catch(err=> this.report_error(response, err) )
   }
 
   log(type, message) {
@@ -35,14 +45,13 @@ class Client {
     response.end();
   }
 
-  parse_query(request) {
-    var req = request.request;
+  parse_query(req) {
     var parsed = url.parse(req.url, true);
     var get = Object.assign({}, parsed.query);
 
-    if (req.method !== 'POST') return Promise.resolve(request.query = get);
+    if (req.method !== 'POST') return Promise.resolve(req.query = get);
     return this.read_post(req)
-      .then(post => request.query = Object.assign(post, get));
+      .then(post => req.query = Object.assign(post, get));
   }
 
   load_page(request) {
@@ -76,14 +85,24 @@ class Client {
     });
   }
 
-  respond(request, types) {
-    this[request.query.action](request, types);
+  respond(request, response, types) {
+    var item = this.follow_path(request.query.path, types);
+    var result = this[request.query.action](request, item, types);
+    this.output(response, result);
   }
 
-  read(request, types) {
-    var result = this.server.read(this, request.query.path, types);
-    this.output(request.response, result);
+  follow_path(path, types) {
+    path = path.split('/').slice(1);
+    var item = types;
+    var parent = item;
+    for (var branch of path) {
+      item = item[branch];
+      if (!item)
+        throw Error("Invalid path " + path.join('/'));
+    }
+    return item;
   }
+
 
   output(response, result) {
     result = JSON.stringify(result);
@@ -96,12 +115,13 @@ class Client {
     return this.auth_token != null;
   }
 
-  get_config() {
-    return this.config;
-  }
-
-  update_config(config) {
-    Object.assign(this.config, config);
+  get_spa_config() {
+    var spa = this.config.spa;
+    var conf = util.clone(spa.default);
+    for (const role of this.roles) {
+      util.merge(conf, spa[role]);
+    }
+    return conf;
   }
 
   get_roles() {
@@ -138,6 +158,80 @@ class Client {
     });
     return removed;
   }
+
+  read(request, item, types) {
+    var roles = this.get_roles().join('.')
+    request.query
+    var cache_key = `${roles}@${request.url}`;
+    var loaded = this.server.reads[cache_key];
+
+    if (loaded)
+      return loaded;
+
+    util.replace_fields(item, this.config);
+    this.remove_server_items(item, ['access']);
+    this.remove_unauthorized(item);
+    util.remove_keys(item, ['access']);
+
+    var expanded = {};
+    var page = util.last(request.query.path.split('/'));
+    expanded[page] = item;
+    var removed = this.expand_types(item, types, expanded);
+    removed.push('acccess');
+    util.remove_keys(item, removed);
+    if (!expanded.control) expanded.control = types.control
+    if (!expanded.template) expanded.template = types.template;
+
+    util.replace_fields(expanded, this.server.config);
+    removed.push(page);
+    util.remove_keys(expanded, removed);
+
+    return this.server.reads[cache_key] = { path: request.query.path, fields: item, types: expanded }
+  }
+
+
+  remove_server_items(root, exclusions=[]) {
+    util.walk(root, (val, key, node) =>{
+      if (!exclusions.includes(key) && this.is_server_item(key))
+        delete node[key];
+    })
+  }
+
+  is_server_item(key) {
+    return post_items.includes(key)
+      || query_items.includes(key)
+  }
+
+  expand_types(item, types, expanded) {
+    var removed = [];
+    util.walk(item, (val, key, node)=>{
+      if (key == 'type')
+        key = val;
+      else if (util.is_array(node)) {
+        if (!util.is_string(val)) return;
+        key = val;
+      }
+      else if (util.is_atomic(val))
+        return;
+
+      if (non_expandables.includes(key) || post_items.includes(key) || key in expanded)
+        return false;
+
+      var type = types[key];
+      if (!type) return;
+      removed.push(...this.remove_unauthorized(type));
+      this.remove_server_items(type);
+      if (removed.includes[key]) return false;
+      if (util.is_empty(type)) {
+        removed.push(key);
+        return false;
+      }
+      expanded[key] = type;
+      removed.push(...this.expand_types(type, types, expanded));
+    });
+    return removed;
+  }
+
 }
 
 

@@ -5,16 +5,14 @@ resource_dir: ./resources
 brand_name: $program_name
 brand_path: ../$brand_name
 image_path: /images
-landing:
-  template: ./resources/didi/spa.html
-  page: /index
-  path: /home
-  content: $path
-authenticated:
-  template: ./resources/didi/spa.html
-  page: /index
-  path: /home
-  content: $path
+spa:
+  default:
+    page: /index
+    template: ./resources/didi/spa.html
+    path: /home
+    content: $path
+  public: {}
+  auth: {}
 log_dir: ../log
 log_file: $brand_name.log
 upload_dir: ../uploads
