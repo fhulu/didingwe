@@ -9,7 +9,7 @@ util.is_string = x => typeof x == "string";
 util.is_array = x => Array.isArray(x);
 util.is_object = x => !util.is_primitive(x) && !util.is_array(x) && x == Object(x);
 util.is_iteratable = x => Symbol.iterator in Object(obj);
-util.last = x => x[x.length]
+util.last = x => x[x.length-1]
 
 util.clone = (x, option) => {
   if (util.is_primitive(x)) return x;
@@ -142,5 +142,33 @@ util.empty = x => {
 }
 
 util.default = (x, d) => x === undefined? d: x;
+
+util.remove_keys = (root, keys) => {
+  util.walk(root, (val, key, node) => {
+    if (util.is_numeric(val)) return;
+    if (util.is_array(node)) {
+      if (util.is_object(val)) val = util.first_key(val);
+      if (keys.includes(val)) node.splice(key, 1);
+    }
+    else if (keys.includes(key)) {
+      delete node[key];
+    }
+  })
+}
+
+util.promise = function(func, ...args) {
+  var context = null;
+  if (Array.isArray(func)) {
+    context = func[0];
+    func = func[1];
+  }
+  return new Promise((resolve, reject) => {
+    args.push((err,result)=>{
+      if (err) return reject(err);
+      return resolve(result);
+    })
+    func.apply(context, args);
+  })
+};
 
 module.exports = util;
