@@ -42,7 +42,7 @@ class Didi {
       .catch(e=>this.report_error(e))
   }
 
-  load_terms(terms, name, ...dirs) {
+  load_terms(name, ...dirs) {
     var loaded = this.files[name];
     if (loaded) {
       debug("CACHE-HIT", name);
@@ -55,7 +55,8 @@ class Didi {
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
     var paths = [];
-    return this.files[name] = promise(async.reduce, dirs, terms, (terms, path, callback)=>{
+    var terms = {};
+    return promise(async.reduce, dirs, terms, (terms, path, callback)=>{
       path = `${path}/${file}`;
       paths.push(path);
       if (!fs.existsSync(path))
@@ -76,32 +77,38 @@ class Didi {
     .then(result => {
       if (!result)
         throw new Error(`File(s) for '${name}' must exist`);
-      result.__paths = util.merge(result.__paths, paths);
-      this.watch_files(paths, ()=>{
+      result.__paths = paths;
+      this.watch_terms(result, () => {
           delete this.files[name];
-          this.load_terms(terms, name, ...dirs);
+          this.load_terms(name, ...dirs);
       });
+
       return this.files[name] = result;
     })
   }
 
   read_config() {
-    return this.load_terms({}, "app-config")
-      .then(config => this.load_terms(config, config.site_config, '.'))
-      .then(config => {
-        util.replace_fields(config, config);
-        this.search_paths.push(config.brand_path);
-        debug("BRAND PATH", config.brand_path);
-        this.watch_terms(config, () => this.read_config())
-       return this.config = config;
-     });
+    var config = {};
+    debug("LOADING CONFIGURATION");
+    return this.load_terms("app-config")
+      .then(app_config => (config = app_config, this.load_terms(config.site_config, '.')))
+      .then(site_config  => {
+          this.merge(config, site_config);
+          util.replace_fields(config, config);
+          this.search_paths.push(config.brand_path);
+          debug("BRAND PATH", config.brand_path);
+          this.watch_terms(config, () => this.read_config());
+          return this.config = config;
+        });
   }
 
   load_fields() {
     debug("SEARCH PATHS", this.search_paths);
-    return this.load_terms({}, "controls")
-      .then(controls => this.load_terms(controls, "fields"))
-      .then(types => {
+    var types = {};
+    return this.load_terms("controls")
+      .then(controls => (types = controls, this.load_terms("fields")))
+      .then(fields => {
+        util.merge(types, fields);
         util.replace_fields(types, this.config);
         this.watch_terms(types, () => this.load_fields())
         return this.types = types;
@@ -109,8 +116,11 @@ class Didi {
   }
 
   load_validators() {
-    return this.load_terms({}, "validators")
-      .then(validators => this.validators = validators)
+    return this.load_terms("validators")
+      .then(validators => {
+        this.watch_terms(validators, () => this.load_validators());
+        this.validators = validators;
+      });
 
   }
 
@@ -123,7 +133,6 @@ class Didi {
     }
     return util.merge(target, ...sources)
   }
-
 
   get_cookie(req, cookie) {
     if (!req.headers.cookie)
@@ -168,14 +177,13 @@ class Didi {
     debug("listening on port",this.config.server_port);
   }
 
-
   load_page(page, reload) {
     var existing = this.pages[page];
     if (existing && !reload)
       return Promise.resolve(existing);
 
     var already_included = [];
-    return this.load_terms({}, page)
+    return this.load_terms(page)
       .then(terms => this.include_all(terms, already_included))
       .then(terms => {
         this.watch_terms(terms, ()=> this.load_page(page, true))
@@ -195,33 +203,34 @@ class Didi {
     if (already.includes(page))
       return Promise.resolve({});
     already.push(page);
-    return this.load_terms({}, page)
+    return this.load_terms(page)
       .then(terms => this.include_all(terms, already))
   }
-
 
   init_file_watcher() {
     this.watched = {};
     file_watcher.on('change', path => {
+      var watchers = this.watched[path];
+      var len = watchers.length;
       debug("DETECTED CHANGE", path);
-        var watchers = this.watched[path];
-        for (var watcher of watchers) {
-          watcher(path);
-        }
+      for (var watcher of watchers) {
+        watcher(path);
+      }
+      watchers.splice(0, len);
     });
   }
 
   watch_terms(terms, callback) {
-    this.watch_files(terms.__paths, callback);
-  }
-
-  watch_files(paths, callback) {
+    var paths = terms.__paths;
+    if (!paths) return;
     for (var path of paths) {
       if (!(path in this.watched)) {
         this.watched[path] = [callback];
         file_watcher.add(path);
       }
-      this.watched[path].push(callback);
+      else {
+        this.watched[path].push(callback);
+      }
     }
   }
 

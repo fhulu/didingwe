@@ -144,7 +144,7 @@ login_page:
   desc: Please provide the following details to log into the system
   actions_pane: { class: [^grid]}
   actions:
-    - login: {push: merge, class: [widest,vspace,^pad-medium], type: input}
+    - login: {push: merge, class: [widest,vspace,^pad-medium] }
     - forgot_password: {type: link, push: merge, class: [center-text, vspace]}
     - register: { type: link, class: [vspace, center-text] }
   post:
