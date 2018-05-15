@@ -13,15 +13,8 @@ const path_util = require("path");
 const mime = require("mime-types");
 const url = require("url");
 var file_watcher = require("filewatcher")();
-
-var session = sessions({
-  cookieName: 'didi',
-  secret: 'blargadeeblargblarg',
-  duration: 24 * 60 * 60 * 1000,
-  activeDuration: 1000 * 60 * 5
-});
-
-
+const log4js = require("log4js");
+var {log} = util;
 
 class Didi {
   constructor() {
@@ -29,23 +22,45 @@ class Didi {
     this.clients = {};
     this.client_seq = 0;
     this.request_seq = 0;
-    this.types = {};
     this.pages = {};
     this.reads = {};
     this.search_paths = ['./didi', '.'];
     this.config = {};
     this.init_file_watcher();
     this.read_config()
-      .then(()=>this.load_fields())
+      .then(config=>this.init_logging(config.logging))
       .then(()=>this.load_validators())
       .then(()=>this.init_server())
       .catch(e=>this.report_error(e))
   }
 
+  init_logging(config) {
+    log4js.configure({
+      appenders: {
+        console: { type: "stdout", level: config.stdout_level },
+        didi: { type: "file", filename: config.path, level: config.file_level}
+      },
+      categories: {
+        default: { appenders: ['didi', 'console'], level: "debug" }
+      }
+    });
+    log = log4js.getLogger('didi');
+  }
+
+
+  init_session() {
+    this.session = sessions({
+      cookieName: 'didi',
+      secret: 'Mukoni Software @ 2018',
+      duration: 24 * 60 * 60 * 1000,
+      activeDuration: 1000 * 60 * 5
+    });
+  }
+
   load_terms(name, ...dirs) {
     var loaded = this.files[name];
     if (loaded) {
-      debug("CACHE-HIT", name);
+      log.debug("CACHE-HIT", name);
       return Promise.resolve(loaded);
     }
 
@@ -61,12 +76,12 @@ class Didi {
       paths.push(path);
       if (!fs.existsSync(path))
         return callback(null, terms);
-      debug(`LOADING ${path} ...`);
+      log.debug(`LOADING ${path} ...`);
       fs.readFile(path, "utf8", (err,data)=>{
         try {
           var term = yaml.parse(data);
           this.merge(terms, term);
-          debug(`LOADED ${path}`)
+          log.debug(`LOADED ${path}`)
           callback(null, terms);
         }
         catch(err) {
@@ -78,40 +93,37 @@ class Didi {
       if (!result)
         throw new Error(`File(s) for '${name}' must exist`);
       result.__paths = paths;
-      this.watch_terms(result, () => {
-          delete this.files[name];
-          this.load_terms(name, ...dirs);
+      this.watch_terms(result, (path) => {
+        log.debug("changaed", path)
+        delete this.files[name];
+        return this.load_terms(name, ...dirs);
       });
-
       return this.files[name] = result;
     })
   }
 
   read_config() {
     var config = {};
-    debug("LOADING CONFIGURATION");
+    console.log("LOADING CONFIGURATION");
     return this.load_terms("app-config")
-      .then(app_config => (config = app_config, this.load_terms(config.site_config, '.')))
+      .then(app_config => (config = util.clone(app_config), this.load_terms(config.site_config, '.')))
       .then(site_config  => {
           this.merge(config, site_config);
           util.replace_fields(config, config);
           this.search_paths.push(config.brand_path);
-          debug("BRAND PATH", config.brand_path);
+          console.log("BRAND PATH", config.brand_path);
           this.watch_terms(config, () => this.read_config());
           return this.config = config;
         });
   }
 
-  load_fields() {
-    debug("SEARCH PATHS", this.search_paths);
-    var types = {};
+  load_fields(terms) {
     return this.load_terms("controls")
-      .then(controls => (types = controls, this.load_terms("fields")))
+      .then(controls => (util.merge(terms, controls), this.load_terms("fields")))
       .then(fields => {
-        util.merge(types, fields);
-        util.replace_fields(types, this.config);
-        this.watch_terms(types, () => this.load_fields())
-        return this.types = types;
+        util.merge(terms, fields);
+        util.replace_fields(terms, this.config);
+        return terms;
       })
   }
 
@@ -159,8 +171,9 @@ class Didi {
   }
 
   init_server() {
+    this.init_session();
     http.createServer((req, res) => {
-      session(req, res, () => {
+      this.session(req, res, () => {
         if (req.didi.seenyou) {
           res.setHeader('X-Seen-You', 'true');
         } else {
@@ -174,20 +187,24 @@ class Didi {
       })
     }).listen(this.config.server_port);
 
-    debug("listening on port",this.config.server_port);
+    log.info("listening on port",this.config.server_port);
   }
 
   load_page(page, reload) {
     var existing = this.pages[page];
+    log.debug("LOADING PAGE", page)
     if (existing && !reload)
       return Promise.resolve(existing);
 
     var already_included = [];
     return this.load_terms(page)
       .then(terms => this.include_all(terms, already_included))
+      .then(terms => this.load_fields(terms))
       .then(terms => {
+        terms = util.clone(terms);
+        log.debug("PAGE PATHS", JSON.stringify(terms.__paths));
         this.watch_terms(terms, ()=> this.load_page(page, true))
-        return this.pages[page] = this.merge({}, this.types, terms);
+        return this.pages[page] = terms;
       })
   }
 
@@ -196,7 +213,7 @@ class Didi {
     if (!includes) return Promise.resolve(terms);
     var promises = includes.map( page => this.include_one(page, already));
     return Promise.all(promises)
-      .then(results => this.merge(terms, ...results))
+      .then(results => this.merge({}, terms, ...results))
   }
 
   include_one(page, already) {
@@ -210,13 +227,14 @@ class Didi {
   init_file_watcher() {
     this.watched = {};
     file_watcher.on('change', path => {
+      log.info("DETECTED CHANGE", path);
       var watchers = this.watched[path];
       var len = watchers.length;
-      debug("DETECTED CHANGE", path);
-      for (var watcher of watchers) {
-        watcher(path);
-      }
-      watchers.splice(0, len);
+      const r = watchers.reduce((m, p) => m.then(v => Promise.all([...v, p()])),
+          Promise.resolve([])
+        );
+      // get result
+      r.then((r) => this.watched[path].splice(0, len))
     });
   }
 
@@ -224,13 +242,11 @@ class Didi {
     var paths = terms.__paths;
     if (!paths) return;
     for (var path of paths) {
-      if (!(path in this.watched)) {
-        this.watched[path] = [callback];
+      if (!this.watched[path]) {
+        this.watched[path] = [];
         file_watcher.add(path);
       }
-      else {
-        this.watched[path].push(callback);
-      }
+      this.watched[path].push(callback);
     }
   }
 
@@ -322,7 +338,7 @@ class Didi {
   }
 
   report_error(e) {
-    debug("ERROR", e.message);
+    log.error("ERROR", e.message);
     if (this.is_debug_mode()) throw e;
   }
 

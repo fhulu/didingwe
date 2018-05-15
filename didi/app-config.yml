@@ -13,8 +13,10 @@ spa:
     content: $path
   public: {}
   auth: {}
-log_dir: ../log
-log_file: $brand_name.log
+logging:
+  path: ../log/$brand_name.log
+  file_level: debug
+  stdout_level: debug
 upload_dir: ../uploads
 start_page: /home
 css:
