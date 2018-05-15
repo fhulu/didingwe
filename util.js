@@ -156,7 +156,7 @@ util.remove_keys = (root, keys) => {
   })
 }
 
-util.promise = function(func, ...args) {
+util.promise = (func, ...args) => {
   var context = null;
   if (Array.isArray(func)) {
     context = func[0];
@@ -169,6 +169,17 @@ util.promise = function(func, ...args) {
     })
     func.apply(context, args);
   })
+};
+
+util.unique = array => a.filter( (value, index, array) => array.indexOf(value) === index)
+
+util.log = {
+  trace: console.log,
+  debug: console.log,
+  info: console.log,
+  warn: console.log,
+  error: console.log,
+  fatal: console.log,
 };
 
 module.exports = util;
