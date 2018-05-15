@@ -58,15 +58,11 @@ class Didi {
   }
 
   load_terms(name, ...dirs) {
-    var loaded = this.files[name];
-    if (loaded) {
-      log.debug("CACHE-HIT", name);
-      return Promise.resolve(loaded);
-    }
+    var loader = this.check_loader(this.files, name);
+    if (!('__waiting' in loader)) return loader;
 
     if (!dirs.length)
       dirs =  this.search_paths;
-
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
     var paths = [];
@@ -81,7 +77,6 @@ class Didi {
         try {
           var term = yaml.parse(data);
           this.merge(terms, term);
-          log.debug(`LOADED ${path}`)
           callback(null, terms);
         }
         catch(err) {
@@ -92,15 +87,60 @@ class Didi {
     .then(result => {
       if (!result)
         throw new Error(`File(s) for '${name}' must exist`);
+      log.debug("LOADED", name)
       result.__paths = paths;
+      loader.__resolve(result);
       this.watch_terms(result, (path) => {
-        log.debug("changaed", path)
         delete this.files[name];
         return this.load_terms(name, ...dirs);
       });
       return this.files[name] = result;
     })
+    .catch(error => {
+      loader.__reject(error);
+      throw error;
+    });
   }
+
+  check_loader(container, key) {
+    var loader = container[key];
+    if (!loader) {
+      loader = container[key] = {};
+      loader.__waiting = [];
+      loader.__promise = new Promise((resolve, reject)=> {
+          loader.__resolve = resolve;
+          loader.__reject = reject;
+        })
+        .then(result => {
+          if (loader.__waiting.length) {
+            log.debug("RESOLVING PENDING", key)
+            loader.__waiting.forEach(watcher=>watcher.resolve(result));
+          }
+          delete loader.__waiting;
+          delete loader.__promise;
+          return result;
+        })
+        .catch(error=> {
+          log.error("REJECTING PENDING", key)
+          loader.__waiting.forEach(watcher=>watcher.reject(error));
+          delete loader.__waiting;
+          delete loader.__promise;
+          throw error;
+        });
+      return loader;
+    }
+
+    if (!loader.__waiting) {
+      log.debug("CACHE-HIT", key);
+      return Promise.resolve(loader);
+    }
+
+    log.debug("WAITING FOR", key)
+    return new Promise((resolve, reject) => {
+      loader.__waiting.push({resolve: resolve, reject: reject})
+    })
+  };
+
 
   read_config() {
     var config = {};
@@ -191,18 +231,19 @@ class Didi {
   }
 
   load_page(page, reload) {
-    var existing = this.pages[page];
     log.debug("LOADING PAGE", page)
-    if (existing && !reload)
-      return Promise.resolve(existing);
+    var loader = this.check_loader(this.pages, page);
+    if (!('__waiting' in loader) && !reload)
+      return loader;
 
     var already_included = [];
     return this.load_terms(page)
       .then(terms => this.include_all(terms, already_included))
       .then(terms => this.load_fields(terms))
       .then(terms => {
+        log.debug("LOADED PAGE", page)
         terms = util.clone(terms);
-        log.debug("PAGE PATHS", JSON.stringify(terms.__paths));
+        if (loader.__resolve) loader.__resolve(terms)
         this.watch_terms(terms, ()=> this.load_page(page, true))
         return this.pages[page] = terms;
       })
@@ -230,11 +271,8 @@ class Didi {
       log.info("DETECTED CHANGE", path);
       var watchers = this.watched[path];
       var len = watchers.length;
-      const r = watchers.reduce((m, p) => m.then(v => Promise.all([...v, p()])),
-          Promise.resolve([])
-        );
-      // get result
-      r.then((r) => this.watched[path].splice(0, len))
+      Promise.all(watchers.map(watcher => watcher(path)))
+        .then(() => this.watched[path].splice(0, len))
     });
   }
 
