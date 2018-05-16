@@ -35,18 +35,19 @@ class Didi {
   }
 
   init_logging(config) {
+    var layout = { type: 'pattern',  pattern: "%[%d %p %c %X{user} %m%]"};
     log4js.configure({
       appenders: {
-        console: { type: "stdout", level: config.stdout_level },
-        didi: { type: "file", filename: config.path, level: config.file_level}
+        console: { type: "stdout", layout: layout },
+        didi: { type: "file", filename: config.path, layout: layout}
       },
       categories: {
         default: { appenders: ['didi', 'console'], level: "debug" }
       }
     });
     log = log4js.getLogger('didi');
+    log.addContext('user', ()=>this.get_client().get_session_info());
   }
-
 
   init_session() {
     this.session = sessions({
@@ -187,7 +188,7 @@ class Didi {
   }
 
   get_cookie(req, cookie) {
-    if (!req.headers.cookie)
+    if (!req || !req.headers || !req.headers.cookie)
       return null;
 
     var cookies = req.headers.cookie.split(";");
@@ -220,7 +221,7 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        var client = this.get_client(req);
+        var client = this.client = this.get_client(req);
         this.serve_mime(client, req, res)
           || this.serve_spa(client, req, res)
           || client.process(req, res);
@@ -294,8 +295,7 @@ class Didi {
     var parsed = url.parse(req.url, true);
     var query = Object.assign({}, parsed.query);
     if (query.action) return false;
-
-    client.log("SERVE SPA", parsed.pathname, JSON.stringify(query));
+    log.info("SERVE SPA", parsed.pathname, JSON.stringify(query));
     this.load_spa(client, query, res)
       .then(data=>{
         res.setHeader('Content-type', 'text/html');
@@ -350,9 +350,9 @@ class Didi {
       return this.send404(res);
 
     fs.exists(path, (exists) => {
-      client.log("SERVING", path);
+      log.debug("SERVING", path);
       if(!exists) {
-        client.log("ERROR", path);
+        log.error(path, "not found");
         this.send404(res);
         return;
       }

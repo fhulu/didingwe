@@ -1,7 +1,8 @@
 const url = require("url");
 const qs = require("querystring")
 const util = require("./util.js");
-var debug = require("debug")("DIDI");
+const log4js = require('@log4js-node/log4js-api');
+const log = log4js.getLogger('didi');
 
 const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
   'q', 'valid', 'validate', 'write_session'];
@@ -24,6 +25,7 @@ class Client {
     this.auth_token = null;
     this.config = server.config;
     this.roles = ['public'];
+    this.user_name = "--anon--";
   }
 
   process(request, response) {
@@ -34,14 +36,10 @@ class Client {
       .catch(err=> this.report_error(response, err) )
   }
 
-  log(type, message) {
-    debug(`CLIENT ${this.id} ${this.seq} ${type} ${message}`);
-  }
-
 
   report_error(response, err) {
     if (this.server.is_debug_mode()) throw err;
-    this.log("ERROR", err);
+    log.error(err);
     response.end();
   }
 
@@ -57,7 +55,7 @@ class Client {
   load_page(request) {
 
     util.replace_fields(request.query, request.query);
-    this.log("REQUEST", JSON.stringify(request.query));
+    log.info("REQUEST", JSON.stringify(request.query));
 
     var path = request.query.path.split('/');
     if (path[0] == '') path.shift();
@@ -106,13 +104,21 @@ class Client {
 
   output(response, result) {
     result = JSON.stringify(result);
-    this.log("RESPONSE", result.substring(0,127));
+    log.debug("RESPONSE", result.substring(0,127));
     response.setHeader('Content-Type', 'application/json')
     response.end(result);
   }
 
   is_logged_in() {
     return this.auth_token != null;
+  }
+
+  get_user_name() {
+    return this.user_name;
+  }
+
+  get_session_info() {
+    return this.get_user_name() + "#" + this.id;
   }
 
   get_spa_config() {
@@ -231,6 +237,7 @@ class Client {
     });
     return removed;
   }
+
 
 }
 
