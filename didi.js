@@ -6,12 +6,9 @@ const util = require("./util.js");
 const {promise} = util;
 const fs = require("fs");
 const Client = require("./client.js");
+const Handler = require("./handler.js");
 var async = require("async");
 var sessions = require("client-sessions");
-const debug = require("debug")("DIDI");
-const path_util = require("path");
-const mime = require("mime-types");
-const url = require("url");
 var file_watcher = require("filewatcher")();
 const log4js = require("log4js");
 var {log} = util;
@@ -31,7 +28,7 @@ class Didi {
       .then(config=>this.init_logging(config.logging))
       .then(()=>this.load_validators())
       .then(()=>this.init_server())
-      .catch(e=>this.report_error(e))
+      .catch(e=>this.report_exception(e))
   }
 
   init_logging(config) {
@@ -46,7 +43,7 @@ class Didi {
       }
     });
     log = log4js.getLogger('didi');
-    log.addContext('user', ()=>this.get_client().get_session_info());
+    log.addContext('user', "--INITIALIZING--");
   }
 
   init_session() {
@@ -81,7 +78,7 @@ class Didi {
           callback(null, terms);
         }
         catch(err) {
-          this.report_error(err)
+          this.report_exception(err)
         }
       });
     })
@@ -221,11 +218,11 @@ class Didi {
           req.didi.seenyou = true;
           res.setHeader('X-Seen-You', 'false');
         }
-        var client = this.client = this.get_client(req);
-        this.serve_mime(client, req, res)
-          || this.serve_spa(client, req, res)
-          || client.process(req, res);
-      })
+        var client = this.get_client(req);
+        var handler = new Handler(this, ++this.request_seq);
+        log = handler.get_logger();
+        handler.process(client, req, res);
+      });
     }).listen(this.config.server_port);
 
     log.info("listening on port",this.config.server_port);
@@ -289,94 +286,12 @@ class Didi {
     }
   }
 
-  serve_spa(client, req, res) {
-    if (req.method != 'GET') return false;
-
-    var parsed = url.parse(req.url, true);
-    var query = Object.assign({}, parsed.query);
-    if (query.action) return false;
-    log.info("SERVE SPA", parsed.pathname, JSON.stringify(query));
-    this.load_spa(client, query, res)
-      .then(data=>{
-        res.setHeader('Content-type', 'text/html');
-        res.end(data)
-      });
-    return true;
-  }
-
-  load_spa(client, query, res) {
-    var config = client.get_spa_config();
-    var spa = config['template'];
-    delete config.template;
-    return promise(fs.readFile, spa, "utf8")
-      .then(data=>{
-        data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
-        data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
-        data = data.replace("$request_method", this.config['request_method']);
-
-        util.replace_fields(config, query);
-        util.replace_fields(config, config);
-        var options = { path:  config.page, request: config };
-        return data = data.replace("$options", JSON.stringify(options));
-    })
-    .catch(err => {
-      client.report_error(res, err);
-      this.send404(res);
-    });
-  }
-
-  replace_links(html, type, template) {
-    var urls = this.config[type];
-    var links = "";
-    if (!urls)
-      return html;
-
-    for (var url of urls) {
-      links += template.replace('$script', url);
-    }
-    return html.replace(`$${type}_links`, links);
-  }
-
-  serve_mime(client, req, res) {
-    if (req.method != 'GET') return false;
-    var parsed = url.parse(req.url, true);
-    let path = path_util.resolve(this.config['resource_dir'] + '/' + parsed.pathname);
-    let ext = path_util.extname(path);
-    if (!ext) return false;
-
-    let content_type = mime.contentType(ext);
-
-    if(!content_type)
-      return this.send404(res);
-
-    fs.exists(path, (exists) => {
-      log.debug("SERVING", path);
-      if(!exists) {
-        log.error(path, "not found");
-        this.send404(res);
-        return;
-      }
-      var headers = {
-        "Content-Type": content_type,
-        "Cache-Control": `public, max-age=${this.config.cache_age}`
-      };
-      res.writeHead(200, headers);
-      fs.createReadStream(path).pipe(res, ()=>res.end());
-    });
-    return true;
-  }
-
-  send404(res) {
-    res.writeHead(404, {'Content-Type': 'text/plain'});
-    res.end('Error 404: Resource not found.');
-  }
-
   is_debug_mode() {
     return util.default(this.config['debug'], true);
   }
 
-  report_error(e) {
-    log.error("ERROR", e.message);
+  report_exception(e) {
+    log.error(e.message);
     if (this.is_debug_mode()) throw e;
   }
 
