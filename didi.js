@@ -23,6 +23,8 @@ class Didi {
     this.reads = {};
     this.search_paths = ['./didi', '.'];
     this.config = {};
+    this.log = log;
+    this.seq = 0;
     this.init_file_watcher();
     this.read_config()
       .then(config=>this.init_logging(config.logging))
@@ -42,8 +44,16 @@ class Didi {
         default: { appenders: ['didi', 'console'], level: "debug" }
       }
     });
-    log = log4js.getLogger('didi');
-    log.addContext('user', "--INITIALIZING--");
+    log = this.syslog = log4js.getLogger('didi');
+    log.addContext('user', ()=>`[${this.request_seq}] - *system* [0]`);
+  }
+
+  get_logger() {
+    return log4js.getLogger('didi')
+  }
+
+  set_logger(logger) {
+    this.log = logger;
   }
 
   init_session() {
@@ -56,6 +66,7 @@ class Didi {
   }
 
   load_terms(name, ...dirs) {
+    var log = this.log;
     var loader = this.check_loader(this.files, name);
     if (!('__waiting' in loader)) return loader;
 
@@ -78,7 +89,7 @@ class Didi {
           callback(null, terms);
         }
         catch(err) {
-          this.report_exception(err)
+          this.report_exception(log,err)
         }
       });
     })
@@ -101,6 +112,7 @@ class Didi {
   }
 
   check_loader(container, key) {
+    var log = this.log;
     var loader = container[key];
     if (!loader) {
       loader = container[key] = {};
@@ -220,7 +232,6 @@ class Didi {
         }
         var client = this.get_client(req);
         var handler = new Handler(this, ++this.request_seq);
-        log = handler.get_logger();
         handler.process(client, req, res);
       });
     }).listen(this.config.server_port);
@@ -229,6 +240,7 @@ class Didi {
   }
 
   load_page(page, reload) {
+    var log = this.log;
     log.debug("LOADING PAGE", page)
     var loader = this.check_loader(this.pages, page);
     if (!('__waiting' in loader) && !reload)
@@ -266,7 +278,9 @@ class Didi {
   init_file_watcher() {
     this.watched = {};
     file_watcher.on('change', path => {
-      log.info("DETECTED CHANGE", path);
+      ++this.seq;
+      this.log = this.syslog;
+      this.log.info("DETECTED CHANGE", path);
       var watchers = this.watched[path];
       var len = watchers.length;
       Promise.all(watchers.map(watcher => watcher(path)))
@@ -290,7 +304,7 @@ class Didi {
     return util.default(this.config['debug'], true);
   }
 
-  report_exception(e) {
+  report_exception(log,e) {
     log.error(e.message);
     if (this.is_debug_mode()) throw e;
   }

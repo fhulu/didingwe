@@ -3,12 +3,10 @@ const qs = require("querystring")
 const util = require("./util.js");
 const {promise} = util;
 const fs = require("fs");
-const log4js = require('@log4js-node/log4js-api');
-const log = log4js.getLogger('didi');
 const path_util = require("path");
 const mime = require("mime-types");
 const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
-  'q', 'valid', 'validate', 'write_session'];
+  'q', 'read', 'valid', 'validate', 'write_session'];
 
 const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
 
@@ -23,13 +21,15 @@ class Handler {
   constructor(server, sequence) {
     this.server = server;
     this.seq = sequence;
+    this.log = server.get_logger();
   }
 
   process(client, request, response) {
     this.client = client;
     this.request = request;
     this.response = response;
-    log.addContext('user', ()=>`[${this.seq}] - ${client.user_name} [${client.id}]`);
+    this.log.addContext('user', ()=>`[${this.seq}] - ${client.user_name} [${client.id}]`);
+    this.server.set_logger(this.log);
     this.serve_mime(this.request)
       || this.serve_spa()
       || this.serve_ajax();
@@ -46,7 +46,7 @@ class Handler {
     var parsed = url.parse(req.url, true);
     var query = Object.assign({}, parsed.query);
     if (query.action) return false;
-    log.info("SERVE SPA", parsed.pathname, JSON.stringify(query));
+    this.log.info("SERVE SPA", parsed.pathname, JSON.stringify(query));
     this.load_spa(query)
       .then(data => this.respond("text/html", data))
       .catch(err => this.send404(err))
@@ -56,7 +56,7 @@ class Handler {
 
   respond(type, result, code=null) {
     if (['application/json', 'text/plain', 'text/html'].includes(type))
-      log.debug("RESPONSE", result.length, result.substring(0,127).replace(/\r?\n|\r/,'.'));
+      this.log.debug("RESPONSE", result.length, result.substring(0,127).replace(/\r?\n|\r/,'.'));
     var res = this.response;
     if (code)
       res.writeHead(code, {"Content-Type": type})
@@ -108,7 +108,7 @@ class Handler {
       return this.send404();
 
     fs.exists(path, (exists) => {
-      log.debug("SERVING", path);
+      this.log.debug("SERVING", path);
       if(!exists)
         return this.send404(path + " not found");
 
@@ -124,7 +124,7 @@ class Handler {
   }
 
   send404(err) {
-    log.error(err);
+    this.log.error(err);
     this.respond("text/plain", "Resource not found", 404)
   }
 
@@ -148,7 +148,7 @@ class Handler {
   load_page() {
     var query = this.request.query;
     util.replace_fields(query, query);
-    log.info("REQUEST", JSON.stringify(query));
+    this.log.info("REQUEST", JSON.stringify(query));
 
     var path = query.path.split('/');
     if (path[0] == '') path.shift();
@@ -198,7 +198,7 @@ class Handler {
 
   output(response, result) {
     result = JSON.stringify(result);
-    log.debug("RESPONSE", result.substring(0,127));
+    this.log.debug("RESPONSE", result.substring(0,127));
     response.setHeader('Content-Type', 'application/json')
     response.end(result);
   }
