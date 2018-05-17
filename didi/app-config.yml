@@ -1,4 +1,5 @@
 site_config: .site-config.yml
+server_ip: 127.0.0.1
 server_port: 80
 cache_age: 8460000
 resource_dir: ./resources
