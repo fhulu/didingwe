@@ -21,23 +21,18 @@ class Handler {
   constructor(server, sequence) {
     this.server = server;
     this.seq = sequence;
-    this.log = server.get_logger();
   }
 
   process(client, request, response) {
     this.client = client;
     this.request = request;
     this.response = response;
-    this.log.addContext('user', ()=>`[${this.seq}] - ${client.user_name} [${client.id}]`);
-    this.server.set_logger(this.log);
+    this.log = this.server.get_logger({seq: this.seq, user_name: client.user_name, host: request.connection.remoteAddress, client_id: client.id});
+    this.server.log = this.log;
     this.serve_mime(this.request)
       || this.serve_spa()
       || this.serve_ajax();
   };
-
-  get_logger() {
-    return log;
-  }
 
   serve_spa() {
     var req = this.request;
@@ -130,7 +125,7 @@ class Handler {
 
   serve_ajax() {
     this.parse_query()
-      .then(()=> this.load_page())
+      .then(()=> this.read_page())
       .then(types => this.process_ajax(types))
       .catch(err=> this.server.report_exception(err) )
   }
@@ -145,7 +140,7 @@ class Handler {
       .then(post => req.query = Object.assign(post, get));
   }
 
-  load_page() {
+  read_page() {
     var query = this.request.query;
     util.replace_fields(query, query);
     this.log.info("REQUEST", JSON.stringify(query));
@@ -158,7 +153,46 @@ class Handler {
     if (path.length ==1) path.unshift(path[0]);
     query.path = path.join('/');
 
-    return this.server.load_page(page);
+    return this.load_page(page);
+  }
+
+  load_page(page, reload) {
+    this.server.log = this.log;
+    this.log.debug("LOADING PAGE", page)
+    var loader = this.server.check_loader(this.server.pages, page);
+    if (!('__waiting' in loader) && !reload)
+      return loader;
+
+    var already_included = [];
+    this.server.log = this.log;
+    return this.server.load_terms(page)
+      .then(terms => this.include_all(terms, already_included))
+      .then(terms => this.server.load_fields(terms))
+      .then(terms => {
+        this.log.debug("LOADED PAGE", page)
+        terms = util.clone(terms);
+        if (loader.__resolve) loader.__resolve(terms)
+        this.server.watch_terms(terms, ()=> this.load_page(page, true))
+        return this.server.pages[page] = terms;
+      })
+  }
+
+  include_all(terms, already) {
+    this.server.log = this.log;
+    var includes = terms.include;
+    if (!includes) return Promise.resolve(terms);
+    var promises = includes.map( page => this.include_one(page, already));
+    return Promise.all(promises)
+      .then(results => this.server.merge({}, terms, ...results))
+  }
+
+  include_one(page, already) {
+    this.server.log = this.log;
+    if (already.includes(page))
+      return Promise.resolve({});
+    already.push(page);
+    return this.server.load_terms(page)
+      .then(terms => this.include_all(terms, already))
   }
 
   read_post(req) {

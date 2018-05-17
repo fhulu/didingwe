@@ -23,7 +23,7 @@ class Didi {
     this.reads = {};
     this.search_paths = ['./didi', '.'];
     this.config = {};
-    this.log = log;
+    this.log = util.log;
     this.seq = 0;
     this.init_file_watcher();
     this.read_config()
@@ -44,16 +44,13 @@ class Didi {
         default: { appenders: ['didi', 'console'], level: "debug" }
       }
     });
-    log = this.syslog = log4js.getLogger('didi');
-    log.addContext('user', ()=>`[${this.request_seq}] - *system* [0]`);
+    log = this.syslog = this.get_logger({seq: 0, user_name: "*system*", host: this.config.server_ip, client_id: 0});
   }
 
-  get_logger() {
-    return log4js.getLogger('didi')
-  }
-
-  set_logger(logger) {
-    this.log = logger;
+  get_logger(context) {
+    var logger = log4js.getLogger('didi');
+    logger.addContext('user', ()=>`#${context.seq} ${context.user_name}@${context.host} #${context.client_id}`);
+    return logger;
   }
 
   init_session() {
@@ -234,45 +231,8 @@ class Didi {
         var handler = new Handler(this, ++this.request_seq);
         handler.process(client, req, res);
       });
-    }).listen(this.config.server_port);
-
-    log.info("listening on port",this.config.server_port);
-  }
-
-  load_page(page, reload) {
-    var log = this.log;
-    log.debug("LOADING PAGE", page)
-    var loader = this.check_loader(this.pages, page);
-    if (!('__waiting' in loader) && !reload)
-      return loader;
-
-    var already_included = [];
-    return this.load_terms(page)
-      .then(terms => this.include_all(terms, already_included))
-      .then(terms => this.load_fields(terms))
-      .then(terms => {
-        log.debug("LOADED PAGE", page)
-        terms = util.clone(terms);
-        if (loader.__resolve) loader.__resolve(terms)
-        this.watch_terms(terms, ()=> this.load_page(page, true))
-        return this.pages[page] = terms;
-      })
-  }
-
-  include_all(terms, already) {
-    var includes = terms.include;
-    if (!includes) return Promise.resolve(terms);
-    var promises = includes.map( page => this.include_one(page, already));
-    return Promise.all(promises)
-      .then(results => this.merge({}, terms, ...results))
-  }
-
-  include_one(page, already) {
-    if (already.includes(page))
-      return Promise.resolve({});
-    already.push(page);
-    return this.load_terms(page)
-      .then(terms => this.include_all(terms, already))
+    }).listen(this.config.server_port, this.config.server_ip);
+    log.info("listening");
   }
 
   init_file_watcher() {
@@ -304,8 +264,8 @@ class Didi {
     return util.default(this.config['debug'], true);
   }
 
-  report_exception(log,e) {
-    log.error(e.message);
+  report_exception(e) {
+    this.log.error(e.message);
     if (this.is_debug_mode()) throw e;
   }
 
