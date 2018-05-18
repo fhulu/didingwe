@@ -94,6 +94,7 @@ class Handler {
     if (req.method != 'GET') return false;
     var parsed = url.parse(req.url, true);
     let path = path_util.resolve(this.server.config['resource_dir'] + '/' + parsed.pathname);
+    path = decodeURI(path);
     let ext = path_util.extname(path);
     if (!ext) return false;
 
