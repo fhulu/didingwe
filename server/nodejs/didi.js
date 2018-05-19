@@ -189,9 +189,13 @@ class Didi {
   merge(target, ...sources) {
     const enforce_reset = (a, b) =>  b[0]=='_reset'? (b.shift(), b): util.merge_array(a,b);
     var last = util.last(sources);
+    var options = { array_merger: enforce_reset };
     if (typeof last == 'function') {
-      var options = Object.assign(last(), { array_merger: enforce_reset});
+      var options = Object.assign(last(), options);
       sources.splice(options.length-1, 1, ()=>options)
+    }
+    else {
+      sources.push(() => options)
     }
     return util.merge(target, ...sources)
   }
