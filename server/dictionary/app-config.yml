@@ -9,7 +9,7 @@ image_path: /images
 spa:
   default:
     page: /index
-    template: /didi/html/spa.html
+    template: /didi/spa.html
     path: /home
     content: $path
   public: {}
@@ -21,15 +21,15 @@ logging:
 upload_dir: ../uploads
 start_page: /home
 css:
-  - /didi/css/didi.css
+  - /didi/didi.css
 script:
-  - /didi/js/jquery/jquery-3.2.1.min.js
-  - /didi/js/jquery/jquery-ui-1.12.1/jquery-ui.min.js
-  - /didi/js/enquire.min.js
-  - /didi/js/mukoni.jquery.js
-  - /didi/js/mkn.js
-  - /didi/js/mkn.render.js
-  - /didi/js/page.js
+  - /didi/jquery-3.2.1.min.js
+  - /didi/jquery-ui-1.12.1.min.js
+  - /didi/enquire.min.js
+  - /didi/mukoni.jquery.js
+  - /didi/mkn.js
+  - /didi/mkn.render.js
+  - /didi/page.js
 modules:
   - auth
   - collection
@@ -37,7 +37,7 @@ modules:
   - sms
   - document
 
-search_paths: [../didi/js/,.,$brand_path]
+search_paths: [../didi/,.,$brand_path]
 collections:
   default: collection
   auth: [user,partner,user_group,user_group_member]

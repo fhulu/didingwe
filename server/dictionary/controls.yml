@@ -169,8 +169,8 @@ date_future:
 datetime:
   type: input
   create: datetimepicker
-  script: [/didi/js/jquery.datetimepicker.js]
-  css: [/didi/css/jquery.datetimepicker.css]
+  script: [/didi/jquery.datetimepicker.js]
+  css: [/didi/jquery.datetimepicker.css]
   format: Y-m-d H:i
   validateOnBlur: false
   allowBlanks: false
@@ -261,7 +261,7 @@ form:
 flag_icon:
   tag: span
   class: [flag-icon flag-icon-$country]
-  css: [/didi/css/flag-icon-css/css/flag-icon.min.css]
+  css: [/didi/flag-icon-css/flag-icon.min.css]
   country: $id
   text: " "
 
@@ -281,7 +281,7 @@ filled_text:
 google_icon:
   tag: i
   class: [material-icons]
-  css: [/didi/css/google-material-icons.css]
+  css: [/didi/google-material-icons.css]
   icon: $id
   text: $icon
 
@@ -633,13 +633,13 @@ plot:
   tag: div
   fixed_xaxis: yes
   script:
-    - /didi/js/jquery.jqplot.min.js
-    - /didi/js/jquery.jqplot.canvasTextRenderer.min.js
-    - /didi/js/jquery.jqplot.canvasAxisTickRenderer.min.js
-    - /didi/js/jquery.jqplot.dateAxisRenderer.min.js
-    - /didi/js/jquery.jqplot.highlighter.min.js
-    - /didi/js/plot.js
-  css: [/didi/css/jquery.jqplot.min.css]
+    - /didi/jquery.jqplot.min.js
+    - /didi/jquery.jqplot.canvasTextRenderer.min.js
+    - /didi/jquery.jqplot.canvasAxisTickRenderer.min.js
+    - /didi/jquery.jqplot.dateAxisRenderer.min.js
+    - /didi/jquery.jqplot.highlighter.min.js
+    - /didi/plot.js
+  css: [/didi/jquery.jqplot.min.css]
   text: ""
   create: plotter
 
