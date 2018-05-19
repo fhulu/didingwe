@@ -159,33 +159,34 @@ class Handler {
   }
 
   load_page(page, reload) {
-    this.server.log = this.log;
-    this.log.debug("LOADING PAGE", page)
-    var loader = this.server.check_loader(this.server.pages, page);
+    var {server} = this;
+    server.log = this.log;
+    var loader = server.check_loader(this.server.pages, page, "page");
     if (!('__waiting' in loader) && !reload)
       return loader;
 
-    var already_included = [];
-    this.server.log = this.log;
-    return this.server.load_terms(page)
-      .then(terms => this.include_all(terms, already_included))
-      .then(terms => this.server.load_fields(terms))
-      .then(terms => {
-        this.log.debug("LOADED PAGE", page)
-        terms = util.clone(terms);
+    server.log = this.log;
+
+    return Promise.all([
+      server.load_terms("controls"),
+      server.load_terms("fields"),
+      server.load_terms(page).then(terms => this.include_all(terms))
+    ])
+    .then(results => {
+        var terms = server.merge({}, ...results);
         if (loader.__resolve) loader.__resolve(terms)
-        this.server.watch_terms(terms, ()=> this.load_page(page, true))
-        return this.server.pages[page] = terms;
+        server.watch_terms(terms, ()=> this.load_page(page, true))
+        return server.pages[page] = terms;
       })
   }
 
-  include_all(terms, already) {
+  include_all(terms, already=[]) {
     this.server.log = this.log;
     var includes = terms.include;
     if (!includes) return Promise.resolve(terms);
     var promises = includes.map( page => this.include_one(page, already));
     return Promise.all(promises)
-      .then(results => this.server.merge({}, terms, ...results))
+      .then(results => this.server.merge({}, ...results, terms))
   }
 
   include_one(page, already) {

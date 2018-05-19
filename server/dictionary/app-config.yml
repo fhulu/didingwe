@@ -16,8 +16,7 @@ spa:
   auth: {}
 logging:
   path: ../log/$brand_name.log
-  file_level: debug
-  stdout_level: debug
+  level: trace  
 upload_dir: ../uploads
 start_page: /home
 css:

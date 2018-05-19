@@ -43,7 +43,7 @@ class Didi {
         didi: { type: "file", filename: this.config.logging.path, layout: layout}
       },
       categories: {
-        default: { appenders: ['didi', 'console'], level: "debug" }
+        default: { appenders: ['didi', 'console'], level: this.config.logging.level }
       }
     });
     log = this.syslog = this.get_logger({seq: 0, user_name: "*system*", host: this.config.server_ip, client_id: 0});
@@ -66,7 +66,7 @@ class Didi {
 
   load_terms(name, ...dirs) {
     var log = this.log;
-    var loader = this.check_loader(this.files, name);
+    var loader = this.check_loader(this.files, name, "terms");
     if (!('__waiting' in loader)) return loader;
 
     if (!dirs.length)
@@ -74,45 +74,41 @@ class Didi {
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
     var paths = [];
-    var terms = {};
-    return promise(async.reduce, dirs, terms, (terms, path, callback)=>{
-      path = `${path}/${file}`;
+    var readers = dirs.map(dir=> {
+      var path = `${dir}/${file}`;
       paths.push(path);
-      if (!fs.existsSync(path))
-        return callback(null, terms);
-      log.debug(`LOADING file ${path} ...`);
-      fs.readFile(path, "utf8", (err,data)=>{
-        try {
-          var term = yaml.parse(data);
-          this.merge(terms, term);
-          callback(null, terms);
-        }
-        catch(err) {
-          this.report_exception(log,err)
-        }
-      });
-    })
-    .then(result => {
-      if (util.is_empty(result))
-        throw new Error(`At least one YML file for '${name}' must exist`);
-      log.debug("LOADED", name)
-      result.__paths = paths;
-      loader.__resolve(result);
-      this.watch_terms(result, (path) => {
-        delete this.files[name];
-        return this.load_terms(name, ...dirs);
-      });
-      return this.files[name] = result;
-    })
-    .catch(error => {
-      loader.__reject(error);
-      throw error;
+      log.trace(`LOADING file ${path} ...`);
+      return promise(fs.readFile, path, "utf8")
+        .then(data=>(log.trace(`LOADED file ${path}`), yaml.parse(data)))
+        .catch(err=> {
+          if (err.code === 'ENOENT') return {};
+          throw err;
+        })
     });
+
+    return Promise.all(readers)
+      .then(results => {
+        var terms = this.merge(...results);
+        if (util.is_empty(terms))
+          throw new Error(`At least one YML file for '${name}' must exist`);
+        terms.__paths = paths;
+        loader.__resolve(terms);
+        this.watch_terms(terms, (path) => {
+          delete this.files[name];
+          return this.load_terms(name, ...dirs);
+        });
+        return this.files[name] = terms;
+      })
+      .catch(error => {
+        loader.__reject(error);
+        throw error;
+      });
   }
 
-  check_loader(container, key) {
+  check_loader(container, key, type) {
     var log = this.log;
     var loader = container[key];
+    log.debug("LOADING", key, type)
     if (!loader) {
       loader = container[key] = {};
       loader.__waiting = [];
@@ -121,8 +117,9 @@ class Didi {
           loader.__reject = reject;
         })
         .then(result => {
+          log.debug("LOADED", key, type)
           if (loader.__waiting.length) {
-            log.debug("RESOLVING PENDING", key)
+            log.debug("RESOLVING PENDING", key, type)
             loader.__waiting.forEach(watcher=>watcher.resolve(result));
           }
           delete loader.__waiting;
@@ -130,7 +127,7 @@ class Didi {
           return result;
         })
         .catch(error=> {
-          log.error("REJECTING PENDING", key)
+          log.error("REJECTING PENDING", key, type)
           loader.__waiting.forEach(watcher=>watcher.reject(error));
           delete loader.__waiting;
           delete loader.__promise;
@@ -165,16 +162,6 @@ class Didi {
           this.watch_terms(config, () => this.read_config());
           return this.config = config;
         });
-  }
-
-  load_fields(terms) {
-    return this.load_terms("controls")
-      .then(controls => (util.merge(terms, controls), this.load_terms("fields")))
-      .then(fields => {
-        util.merge(terms, fields);
-        util.replace_fields(terms, this.config);
-        return terms;
-      })
   }
 
   load_validators() {
