@@ -6,7 +6,7 @@ const fs = require("fs");
 const path_util = require("path");
 const mime = require("mime-types");
 const UIReader = require("./ui_reader");
-const PostProcessor = require("./post_processor");
+const Actioner = require("./actioner");
 
 
 const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
@@ -93,7 +93,7 @@ class Handler {
   serve_mime() {
     var req = this.request;
     if (req.method != 'GET') return false;
-    let path = path_util.resolve(this.server.config['resource_dir'] + '/' + req.pathname);
+    let path = req.pathname;
     path = decodeURI(path);
     let ext = path_util.extname(path);
     if (!ext) return false;
@@ -101,21 +101,24 @@ class Handler {
     let content_type = mime.contentType(ext);
 
     if(!content_type)
-      return this.send404();
+      return (this.send404(), true);
 
-    fs.exists(path, (exists) => {
-      this.log.debug("SERVING", path);
-      if(!exists)
-        return this.send404(path + " not found");
 
-      var headers = {
-        "Content-Type": content_type,
-        "Cache-Control": `public, max-age=${this.server.config.cache_age}`
-      };
-      var res = this.response;
-      res.writeHead(200, headers);
-      fs.createReadStream(path).pipe(res, ()=>res.end());
-    });
+    var paths = this.server.config.search_paths;
+    var file_path = paths.reverse().find(dir => fs.existsSync(path_util.resolve(dir) + '/web/' + path))
+
+    if (!file_path)
+      return (this.send404(path + " not found"), true);
+
+    file_path += '/web/' + path;
+    this.log.debug("SERVING", path, "from", file_path);
+    var headers = {
+      "Content-Type": content_type,
+      "Cache-Control": `public, max-age=${this.server.config.cache_age}`
+    };
+    var res = this.response;
+    res.writeHead(200, headers);
+    fs.createReadStream(file_path).pipe(res, ()=>res.end());
     return true;
   }
 
@@ -216,7 +219,7 @@ class Handler {
     if (query.action == "read")
       responder = new UIReader(this.server, this.client, this.request, query.action);
     else
-      responder = new PostProcessor(this.server, this.client, this.request, query.action);
+      responder = new Actioner(this.server, this.client, this.request, query.action);
 
     responder.process(item, types)
       .then(result=>this.respond("application/json", JSON.stringify(result)));
