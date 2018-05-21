@@ -5,33 +5,32 @@ const util = require("./util");
 const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
   'q', 'read', 'valid', 'validate', 'write_session'];
 
-const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
+const query_items = ['call', 'let', 'keep_values', 'read_header', 'read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
 
 const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'html', 'post', 'script', 'sql', 'style', 'template', 'valid', 'values'];
 
 class UIReader {
-  constructor(server, client, request) {
-    this.server = server;
-    this.client = client;
-    this.request = request;
+  constructor(router) {
+    this.router = router;
   }
 
   process(item, types) {
-    var req = this.request;
-    var roles = this.client.get_roles().join('.')
-    var cache_key = `${roles}@${req.url}`;
-    var loaded = this.server.reads[cache_key];
+    var {request, client, server} = this.router;
+    var roles = client.get_roles().join('.')
+    var cache_key = `${roles}@${request.url}`;
+    var loaded = server.reads[cache_key];
 
     if (loaded)
       return Promise.resolve(loaded);
 
-    util.replace_fields(item, this.server.config);
+    item = util.clone(item);
+    util.replace_fields(item, server.config);
     this.remove_server_items(item, ['access']);
-    this.client.remove_unauthorized(item);
+    client.remove_unauthorized(item);
     util.remove_keys(item, ['access']);
 
     var expanded = {};
-    var page = util.last(req.query.path.split('/'));
+    var page = util.last(request.query.path.split('/'));
     expanded[page] = item;
     var removed = this.expand_types(item, types, expanded);
     removed.push('acccess');
@@ -39,11 +38,11 @@ class UIReader {
     if (!expanded.control) expanded.control = types.control
     if (!expanded.template) expanded.template = types.template;
 
-    util.replace_fields(expanded, this.server.config);
+    util.replace_fields(expanded, server.config);
     removed.push(page);
     util.remove_keys(expanded, removed);
 
-    return Promise.resolve(this.server.reads[cache_key] = { path: req.query.path, fields: item, types: expanded })
+    return Promise.resolve(server.reads[cache_key] = { path: request.query.path, fields: item, types: expanded })
   }
 
 
@@ -51,6 +50,8 @@ class UIReader {
     util.walk(root, (val, key, node) =>{
       if (!exclusions.includes(key) && this.is_server_item(key))
         delete node[key];
+      if (query_items.includes(key))
+        node.query = " ";
     })
   }
 
@@ -61,6 +62,7 @@ class UIReader {
 
   expand_types(item, types, expanded) {
     var removed = [];
+    var {client} = this.router;
     util.walk(item, (val, key, node)=>{
       if (key == 'type')
         key = val;
@@ -76,7 +78,7 @@ class UIReader {
 
       var type = types[key];
       if (!type) return;
-      removed.push(...this.client.remove_unauthorized(type));
+      removed.push(...client.remove_unauthorized(type));
       this.remove_server_items(type);
       if (removed.includes[key]) return false;
       if (util.is_empty(type)) {

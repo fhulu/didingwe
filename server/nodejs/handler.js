@@ -217,11 +217,11 @@ class Handler {
     var item = this.follow_path(query.path, types);
     var responder;
     if (query.action == "read")
-      responder = new UIReader(this.server, this.client, this.request, query.action);
+      responder = new UIReader(this);
     else
-      responder = new Actioner(this.server, this.client, this.request, query.action);
+      responder = new Actioner(this);
 
-    responder.process(item, types)
+    responder.process(item, types, query.action)
       .then(result=>this.respond("application/json", JSON.stringify(result)));
   }
 
