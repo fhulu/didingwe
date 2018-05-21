@@ -157,7 +157,7 @@ class Didi {
           this.merge(config, site_config);
           util.replace_fields(config, config);
           util.replace_fields(config, process.env);
-          this.search_paths.push(config.brand_path);
+          this.search_paths.push(config.brand_path + '/dictionary');
           console.log("BRAND PATH", config.brand_path);
           this.watch_terms(config, () => this.read_config());
           return this.config = config;
