@@ -26,7 +26,10 @@ class Handler {
     this.response = response;
     this.log = this.server.get_logger({seq: this.seq, user_name: client.user_name, host: request.connection.remoteAddress, client_id: client.id});
     this.server.log = this.log;
-    this.serve_mime(this.request)
+    var parsed = url.parse(request.url, true);
+    request.pathname = parsed.pathname;
+    request.query = Object.assign({}, parsed.query);
+    this.serve_mime()
       || this.serve_spa()
       || this.serve_ajax();
   };
@@ -35,10 +38,9 @@ class Handler {
     var req = this.request;
     if (req.method != 'GET') return false;
 
-    var parsed = url.parse(req.url, true);
-    var query = Object.assign({}, parsed.query);
+    var query = req.query;
     if (query.action) return false;
-    this.log.info("SERVE SPA", parsed.pathname, JSON.stringify(query));
+    this.log.info("SERVE SPA", req.pathname, JSON.stringify(query));
     this.load_spa(query)
       .then(data => this.respond("text/html", data))
       .catch(err => this.send404(err))
@@ -57,7 +59,7 @@ class Handler {
     res.end(result);
   }
 
-  load_spa(query) {
+  load_spa() {
     var config = this.client.get_spa_config();
     let path = path_util.resolve(this.server.config['resource_dir'] + '/' + config.template);
 
@@ -68,9 +70,10 @@ class Handler {
         data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
         data = data.replace("$request_method", this.server.config['request_method']);
 
-        util.replace_fields(config, query);
+        util.replace_fields(config, this.request.query);
         util.replace_fields(config, config);
-        var options = { path:  config.page, request: config };
+        var options = { path: config.page, request: config };
+        if (this.request.pathname != '/') options.request.content = this.request.pathname
         return data = data.replace("$options", JSON.stringify(options));
     })
   }
@@ -90,8 +93,7 @@ class Handler {
   serve_mime() {
     var req = this.request;
     if (req.method != 'GET') return false;
-    var parsed = url.parse(req.url, true);
-    let path = path_util.resolve(this.server.config['resource_dir'] + '/' + parsed.pathname);
+    let path = path_util.resolve(this.server.config['resource_dir'] + '/' + req.pathname);
     path = decodeURI(path);
     let ext = path_util.extname(path);
     if (!ext) return false;
@@ -131,10 +133,7 @@ class Handler {
 
   parse_query() {
     var req = this.request;
-    var parsed = url.parse(req.url, true);
-    var get = Object.assign({}, parsed.query);
-
-    if (req.method !== 'POST') return Promise.resolve(req.query = get);
+    if (req.method !== 'POST') return Promise.resolve(req.query);
     return this.read_post(req)
       .then(post => req.query = Object.assign(post, get));
   }
@@ -217,7 +216,7 @@ class Handler {
     if (query.action == "read")
       responder = new UIReader(this.server, this.client, this.request, query.action);
     else
-      responder = new PostProcessor(thiis.server, this.client, this.request, query.action);
+      responder = new PostProcessor(this.server, this.client, this.request, query.action);
 
     responder.process(item, types)
       .then(result=>this.respond("application/json", JSON.stringify(result)));
