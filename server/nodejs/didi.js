@@ -21,7 +21,7 @@ class Didi {
     this.client_seq = 0;
     this.request_seq = 0;
     this.pages = {};
-    this.reads = {};
+    this.ui = {};
     this.search_paths = [path_util.resolve(process.env.DIDI_PATH) + '/server/dictionary', './server/dictionary'];
     this.config = {};
     this.log = util.log;

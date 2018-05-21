@@ -26,6 +26,7 @@ class Handler {
     this.response = response;
     this.log = this.server.get_logger({seq: this.seq, user_name: client.user_name, host: request.connection.remoteAddress, client_id: client.id});
     this.server.log = this.log;
+    request.url = request.url.replace(/&_=\w+/,'')
     var parsed = url.parse(request.url, true);
     request.pathname = parsed.pathname;
     request.query = Object.assign({}, parsed.query);

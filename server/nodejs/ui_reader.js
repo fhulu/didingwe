@@ -18,10 +18,9 @@ class UIReader {
     var {request, client, server} = this.router;
     var roles = client.get_roles().join('.')
     var cache_key = `${roles}@${request.url}`;
-    var loaded = server.reads[cache_key];
-
-    if (loaded)
-      return Promise.resolve(loaded);
+    var loader = server.check_loader(server.ui, cache_key, "ui");
+    if (!('__waiting' in loader))
+      return loader;
 
     item = util.clone(item);
     util.replace_fields(item, server.config);
@@ -41,8 +40,10 @@ class UIReader {
     util.replace_fields(expanded, server.config);
     removed.push(page);
     util.remove_keys(expanded, removed);
+    var result = { path: request.query.path, fields: item, types: expanded };
+    if (loader.__resolve) loader.__resolve(result);
 
-    return Promise.resolve(server.reads[cache_key] = { path: request.query.path, fields: item, types: expanded })
+    return Promise.resolve(server.ui[cache_key] = result);
   }
 
 
