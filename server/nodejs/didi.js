@@ -6,7 +6,7 @@ const util = require("./util.js");
 const {promise} = util;
 const fs = require("fs");
 const Client = require("./client.js");
-const Handler = require("./handler.js");
+const Router = require("./router.js");
 var async = require("async");
 var sessions = require("client-sessions");
 var file_watcher = require("filewatcher")();
@@ -222,8 +222,8 @@ class Didi {
           res.setHeader('X-Seen-You', 'false');
         }
         var client = this.get_client(req);
-        var handler = new Handler(this, ++this.request_seq);
-        handler.process(client, req, res);
+        var router = new Router(this, ++this.request_seq);
+        router.process(client, req, res);
       });
     }).listen(this.config.server_port, this.config.server_ip);
     log.info("listening on port", this.config.server_port);

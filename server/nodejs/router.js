@@ -14,7 +14,7 @@ const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
   'sql_insert', 'sql_update', 'style', 'trigger', 'valid', 'validate', 'write_session'];
 
 
-class Handler {
+class Router {
   constructor(server, sequence) {
     this.server = server;
     this.seq = sequence;
@@ -247,4 +247,4 @@ class Handler {
   }
 }
 
-module.exports = Handler;
+module.exports = Router;
