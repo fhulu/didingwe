@@ -129,7 +129,7 @@ $.send = function(url, options, callback)
     showResult: false,
     invoker: undefined,
     eval: true,
-    data: {_fakeDataToAvoidCache: new Date() },
+    data: {},
     dataType: undefined,
     error: undefined,
     event: undefined
