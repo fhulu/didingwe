@@ -5,12 +5,9 @@ const {promise} = util;
 const fs = require("fs");
 const path_util = require("path");
 const mime = require("mime-types");
-const post_items = ['access', 'audit', 'call', 'clear_session', 'clear_values', 'db_name', 'error', 'let', 'keep_values','post',
-  'q', 'read', 'valid', 'validate', 'write_session'];
+const UIReader = require("./ui_reader");
+const PostProcessor = require("./post_processor");
 
-const query_items = ['call', 'let', 'keep_values','read_session', 'read_config', 'read_values', 'ref_list', 'sql', 'sql_values', 'refresh'];
-
-const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'html', 'post', 'script', 'sql', 'style', 'template', 'valid', 'values'];
 
 const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
   'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
@@ -216,8 +213,14 @@ class Handler {
   process_ajax(types) {
     var query = this.request.query;
     var item = this.follow_path(query.path, types);
-    var result = this[query.action](item, types);
-    this.respond("application/json", JSON.stringify(result));
+    var responder;
+    if (query.action == "read")
+      responder = new UIReader(this.server, this.client, this.request, query.action);
+    else
+      responder = new PostProcessor(thiis.server, this.client, this.request, query.action);
+
+    responder.process(item, types)
+      .then(result=>this.respond("application/json", JSON.stringify(result)));
   }
 
   follow_path(path, types) {
@@ -239,81 +242,6 @@ class Handler {
     response.setHeader('Content-Type', 'application/json')
     response.end(result);
   }
-
-
-  read(item, types) {
-    var req = this.request;
-    var roles = this.client.get_roles().join('.')
-    var cache_key = `${roles}@${req.url}`;
-    var loaded = this.server.reads[cache_key];
-
-    if (loaded)
-      return loaded;
-
-    util.replace_fields(item, this.server.config);
-    this.remove_server_items(item, ['access']);
-    this.client.remove_unauthorized(item);
-    util.remove_keys(item, ['access']);
-
-    var expanded = {};
-    var page = util.last(req.query.path.split('/'));
-    expanded[page] = item;
-    var removed = this.expand_types(item, types, expanded);
-    removed.push('acccess');
-    util.remove_keys(item, removed);
-    if (!expanded.control) expanded.control = types.control
-    if (!expanded.template) expanded.template = types.template;
-
-    util.replace_fields(expanded, this.server.config);
-    removed.push(page);
-    util.remove_keys(expanded, removed);
-
-    return this.server.reads[cache_key] = { path: req.query.path, fields: item, types: expanded }
-  }
-
-
-  remove_server_items(root, exclusions=[]) {
-    util.walk(root, (val, key, node) =>{
-      if (!exclusions.includes(key) && this.is_server_item(key))
-        delete node[key];
-    })
-  }
-
-  is_server_item(key) {
-    return post_items.includes(key)
-      || query_items.includes(key)
-  }
-
-  expand_types(item, types, expanded) {
-    var removed = [];
-    util.walk(item, (val, key, node)=>{
-      if (key == 'type')
-        key = val;
-      else if (util.is_array(node)) {
-        if (!util.is_string(val)) return;
-        key = val;
-      }
-      else if (util.is_atomic(val))
-        return;
-
-      if (non_expandables.includes(key) || post_items.includes(key) || key in expanded)
-        return false;
-
-      var type = types[key];
-      if (!type) return;
-      removed.push(...this.client.remove_unauthorized(type));
-      this.remove_server_items(type);
-      if (removed.includes[key]) return false;
-      if (util.is_empty(type)) {
-        removed.push(key);
-        return false;
-      }
-      expanded[key] = type;
-      removed.push(...this.expand_types(type, types, expanded));
-    });
-    return removed;
-  }
 }
-
 
 module.exports = Handler;
