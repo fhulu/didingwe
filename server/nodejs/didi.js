@@ -243,8 +243,15 @@ class Didi {
   }
 
   watch_terms(terms, callback) {
-    var paths = terms.__paths;
-    if (!paths) return;
+    var paths;
+    if (!util.is_array(terms))
+      paths = terms.__paths;
+    else
+      paths = terms.reduce((acc, cur) => acc.concat(cur.__paths), []);
+
+    if (!paths)
+      return this.log.warn("No watch paths supplied");
+
     for (var path of paths) {
       if (!this.watched[path]) {
         this.watched[path] = [];
