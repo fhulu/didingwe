@@ -18,6 +18,7 @@ class Router {
   constructor(server, sequence) {
     this.server = server;
     this.seq = sequence;
+    this.terms = {}
   }
 
   process(client, request, response) {
@@ -143,7 +144,7 @@ class Router {
   }
 
   read_page() {
-    var query = this.request.query;
+    var {query} = this.request;
     util.replace_fields(query, query);
     this.log.info("REQUEST", JSON.stringify(query));
 
@@ -155,7 +156,11 @@ class Router {
     if (path.length ==1) path.unshift(path[0]);
     query.path = path.join('/');
 
-    return this.load_page(page);
+    return this.load_page(page)
+      .then(terms => {
+        this.page = terms[page];
+        return this.terms = terms;
+      });
   }
 
   load_page(page, reload) {
@@ -174,7 +179,7 @@ class Router {
     ])
     .then(results => {
         var terms = server.merge({}, ...results);
-        if (loader.__resolve) loader.__resolve(terms)
+        if (loader.__resolve) loader.__resolve(terms);
         server.watch_terms(terms, ()=> this.load_page(page, true))
         return server.pages[page] = terms;
       })
@@ -215,7 +220,7 @@ class Router {
 
   process_ajax(types) {
     var query = this.request.query;
-    var item = this.follow_path(query.path, types);
+    var item = this.root = this.follow_path(query.path, types);
     var responder;
     if (query.action == "read")
       responder = new UIReader(this);

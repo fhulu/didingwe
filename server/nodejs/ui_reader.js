@@ -14,15 +14,25 @@ class UIReader {
     this.router = router;
   }
 
-  process(item, types) {
-    var {request, client, server} = this.router;
+  process(item, types, reload=false) {
+    var {request, client, server, terms} = this.router;
     var roles = client.get_roles().join('.')
     var cache_key = `${roles}@${request.url}`;
     var loader = server.check_loader(server.ui, cache_key, "ui");
-    if (!('__waiting' in loader))
+    if (!('__waiting' in loader) && !reload)
       return loader;
 
+    var result = this.minimize(item, types);
+    if (loader.__resolve) loader.__resolve(result);
+    server.watch_terms([this.router.terms, server.config],() => this.process(item, types, true));
+
+    return Promise.resolve(server.ui[cache_key] = result);
+  }
+
+  minimize(item, types) {
     item = util.clone(item);
+
+    var {request, client, server} = this.router;
     util.replace_fields(item, server.config);
     this.remove_server_items(item, ['access']);
     client.remove_unauthorized(item);
@@ -40,12 +50,8 @@ class UIReader {
     util.replace_fields(expanded, server.config);
     removed.push(page);
     util.remove_keys(expanded, removed);
-    var result = { path: request.query.path, fields: item, types: expanded };
-    if (loader.__resolve) loader.__resolve(result);
-
-    return Promise.resolve(server.ui[cache_key] = result);
-  }
-
+    return { path: request.query.path, fields: item, types: expanded};
+}
 
   remove_server_items(root, exclusions=[]) {
     util.walk(root, (val, key, node) =>{
