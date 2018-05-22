@@ -14,19 +14,15 @@ class UIReader {
     this.router = router;
   }
 
-  process(item, types, reload=false) {
-    var {request, client, server, terms} = this.router;
-    var roles = client.get_roles().join('.')
-    var cache_key = `${roles}@${request.url}`;
-    var loader = server.check_loader(server.ui, cache_key, "ui");
-    if (!('__waiting' in loader) && !reload)
-      return loader;
+  process(item, types, options = {reload: false} ) {
+    var {request, client, server, terms, log} = this.router;
+    var roles = client.get_joined_roles();
+    var cache = server.cached("ui", `${roles}@${request.url}`, options);
+    if (cache.data) return cache.promise();
 
+    server.watch_terms([this.router.terms, server.config],() => this.process(item, types, {reload: true}));
     var result = this.minimize(item, types);
-    if (loader.__resolve) loader.__resolve(result);
-    server.watch_terms([this.router.terms, server.config],() => this.process(item, types, true));
-
-    return Promise.resolve(server.ui[cache_key] = result);
+    return Promise.resolve(cache.resolve(result));
   }
 
   minimize(item, types) {

@@ -36,8 +36,8 @@ class Client {
     return conf;
   }
 
-  get_roles() {
-    return this.roles;
+  get_joined_roles() {
+    return this.roles.join('.');
   }
 
   is_authorized(rights) {

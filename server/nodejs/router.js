@@ -43,8 +43,8 @@ class Router {
     var query = req.query;
     if (query.action) return false;
     this.log.info("SERVE SPA", req.pathname, JSON.stringify(query));
-    this.load_spa(query)
-      .then(data => this.respond("text/html", data))
+    this.load_spa()
+      .then(data => this.respond("text/html", data.html))
       .catch(err => this.send404(err))
 
     return true;
@@ -61,22 +61,28 @@ class Router {
     res.end(result);
   }
 
-  load_spa() {
-    var config = this.client.get_spa_config();
-    let path = path_util.resolve(this.server.config['resource_dir'] + '/' + config.template);
+  load_spa(options = { reload: false }) {
+    var {client,server,request} = this;
+    var cache = server.cached("SPA", client.get_joined_roles(), options);
+    if (cache.data) return cache.promise();
+
+    var config = client.get_spa_config();
+    let path = path_util.resolve(server.config['resource_dir'] + '/' + config.template);
 
     delete config.template;
     return promise(fs.readFile, path, "utf8")
       .then(data=>{
         data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
         data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
-        data = data.replace("$request_method", this.server.config['request_method']);
+        data = data.replace("$request_method", server.config['request_method']);
 
-        util.replace_fields(config, this.request.query);
+        util.replace_fields(config, request.query);
         util.replace_fields(config, config);
         var options = { path: config.page, request: config };
-        if (this.request.pathname != '/') options.request.content = this.request.pathname
-        return data = data.replace("$options", JSON.stringify(options));
+        if (this.request.pathname != '/') options.request.content = request.pathname
+        var result = { html: data.replace("$options", JSON.stringify(options)) };
+        server.watch_terms(server.config, ()=>this.load_spa({reload: true}))
+        return cache.resolve(result);
     })
   }
 
@@ -163,12 +169,11 @@ class Router {
       });
   }
 
-  load_page(page, reload) {
+  load_page(page, options = { reload: false }) {
     var {server} = this;
     server.log = this.log;
-    var loader = server.check_loader(this.server.pages, page, "page");
-    if (!('__waiting' in loader) && !reload)
-      return loader;
+    var cache = server.cached("page", page, options);
+    if (cache.data) return cache.promise();
 
     server.log = this.log;
 
@@ -179,9 +184,8 @@ class Router {
     ])
     .then(results => {
         var terms = server.merge({}, ...results);
-        if (loader.__resolve) loader.__resolve(terms);
         server.watch_terms(terms, ()=> this.load_page(page, true))
-        return server.pages[page] = terms;
+        return cache.resolve(terms);
       })
   }
 

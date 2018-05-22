@@ -16,12 +16,10 @@ var {log} = util;
 
 class Didi {
   constructor() {
-    this.files = {};
     this.clients = {};
+    this.caches = {};
     this.client_seq = 0;
     this.request_seq = 0;
-    this.pages = {};
-    this.ui = {};
     this.search_paths = [path_util.resolve(process.env.DIDI_PATH) + '/server/dictionary', './server/dictionary'];
     this.config = {};
     this.log = util.log;
@@ -64,95 +62,94 @@ class Didi {
     });
   }
 
-  load_terms(name, ...dirs) {
+  load_terms(name, dirs = [], options = { reload: false} ) {
     var log = this.log;
-    var loader = this.check_loader(this.files, name, "terms");
-    if (!('__waiting' in loader)) return loader;
+    var cache = this.cached("terms", name);
+    if (cache.data) return cache.promise();
 
     if (!dirs.length)
       dirs =  this.search_paths;
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
-    var paths = [];
-    var readers = dirs.map(dir=> {
-      var path = `${dir}/${file}`;
-      paths.push(path);
-      log.trace(`LOADING file ${path} ...`);
-      return promise(fs.readFile, path, "utf8")
-        .then(data=>(log.trace(`LOADED file ${path}`), yaml.parse(data)))
-        .catch(err=> {
-          if (err.code === 'ENOENT') return {};
-          throw err;
-        })
-    });
+    var paths = dirs.map(dir => `${dir}/${file}` );
 
-    return Promise.all(readers)
+    return Promise.all(paths.map(path=>this.load_yaml(path)))
       .then(results => {
         var terms = this.merge(...results);
         if (util.is_empty(terms))
           throw new Error(`At least one YML file for '${name}' must exist`);
         terms.__paths = paths;
-        loader.__resolve(terms);
-        this.watch_terms(terms, (path) => {
-          delete this.files[name];
-          return this.load_terms(name, ...dirs);
-        });
-        return this.files[name] = terms;
+        this.watch_terms(terms, () => this.load_terms(name, dirs, {reload: true}));
+        return cache.resolve(terms);
       })
-      .catch(error => {
-        loader.__reject(error);
-        throw error;
-      });
+      .catch(error => cache.reject(error));
   }
 
-  check_loader(container, key, type) {
-    var log = this.log;
-    var loader = container[key];
-    log.debug("LOADING", key, type)
-    if (!loader) {
-      loader = container[key] = {};
-      loader.__waiting = [];
-      loader.__promise = new Promise((resolve, reject)=> {
-          loader.__resolve = resolve;
-          loader.__reject = reject;
+  load_yaml(path) {
+    var {log} = this;
+    log.trace(`LOADING file ${path} ...`);
+    return promise(fs.readFile, path, "utf8")
+      .then(data=>(log.trace(`LOADED file ${path}`), yaml.parse(data)))
+      .catch(err=> {
+        if (err.code === 'ENOENT') return {};
+        throw err;
+      })
+  }
+
+  cached(type, key, options = {reload: false}) {
+    var {log} = this;;
+
+    var cache = this.caches[type];
+    if (!cache)
+      cache = this.caches[type] = {};
+    var store = cache[key];
+
+    if (!store || options.reload) {
+      log.debug("LOADING", type, key)
+      store = cache[key] = { watchers: [] }
+      store.loader = new Promise((resolve, reject)=> {
+          store.resolver = resolve;
+          store.rejector = reject;
         })
         .then(result => {
-          log.debug("LOADED", key, type)
-          if (loader.__waiting.length) {
-            log.debug("RESOLVING PENDING", key, type)
-            loader.__waiting.forEach(watcher=>watcher.resolve(result));
-          }
-          delete loader.__waiting;
-          delete loader.__promise;
-          return result;
+          log.debug("LOADED", type, key)
+          store.watchers.forEach(watcher=>watcher.resolve(result));
+          delete store.watchers;
+          delete store.loader;
+          return store.data = result;
         })
         .catch(error=> {
-          log.error("REJECTING PENDING", key, type)
-          loader.__waiting.forEach(watcher=>watcher.reject(error));
-          delete loader.__waiting;
-          delete loader.__promise;
+          log.error("REJECTING PENDING", type, key, error)
+          store.watchers.forEach(watcher=>watcher.reject(error));
+          delete store.watchers;
+          delete store.loader;
           throw error;
         });
-      return loader;
+      store.promise = () => Promise.resolve(store.data);
+      store.resolve = result => (store.resolver(result), result);
+      store.reject = error => (store.rejector(error), error);
+      return store;
     }
 
-    if (!loader.__waiting) {
-      log.debug("CACHE-HIT", key);
-      return Promise.resolve(loader);
+    if (store.data) {
+      log.debug("CACHE-HIT", type, key);
+      return store;
     }
 
-    log.debug("WAITING FOR", key)
-    return new Promise((resolve, reject) => {
-      loader.__waiting.push({resolve: resolve, reject: reject})
-    })
-  };
-
+    log.debug("WAITING FOR", type, key)
+    return {
+      data: "waiting",
+      promise: new Promise((resolve, reject) => {
+        store.watchers.push({resolve: resolve, reject: reject})
+      })
+    };
+  }
 
   read_config() {
     var config = {};
     console.log("LOADING CONFIGURATION");
     return this.load_terms("app-config")
-      .then(app_config => (config = util.clone(app_config), this.load_terms(config.site_config, '.')))
+      .then(app_config => (config = util.clone(app_config), this.load_terms(config.site_config, ['.'])))
       .then(site_config  => {
           this.merge(config, site_config);
           util.replace_fields(config, config);
