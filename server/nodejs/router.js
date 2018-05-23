@@ -66,10 +66,8 @@ class Router {
     var cache = server.cached("SPA", client.get_joined_roles(), options);
     if (cache.data) return cache.promise();
 
-    var config = client.get_spa_config();
-    let path = path_util.resolve(server.config['resource_dir'] + '/' + config.template);
-
-    delete config.template;
+    var config = util.clone(client.get_spa_config());
+    let path = this.get_resource_path(config.template);
     return promise(fs.readFile, path, "utf8")
       .then(data=>{
         data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
@@ -81,7 +79,7 @@ class Router {
         var options = { path: config.page, request: config };
         if (this.request.pathname != '/') options.request.content = request.pathname
         var result = { html: data.replace("$options", JSON.stringify(options)) };
-        server.watch_terms(server.config, ()=>this.load_spa({reload: true}))
+        server.watch_terms([path, server.config], ()=>this.load_spa({reload: true}))
         return cache.resolve(result);
     })
   }
@@ -112,13 +110,11 @@ class Router {
       return (this.send404(), true);
 
 
-    var paths = this.server.config.search_paths;
-    var file_path = paths.reverse().find(dir => fs.existsSync(path_util.resolve(dir) + '/web/' + path))
+    var file_path = this.get_resource_path(path);
 
     if (!file_path)
       return (this.send404(path + " not found"), true);
 
-    file_path += '/web/' + path;
     this.log.debug("SERVING", path, "from", file_path);
     var headers = {
       "Content-Type": content_type,
@@ -128,6 +124,14 @@ class Router {
     res.writeHead(200, headers);
     fs.createReadStream(file_path).pipe(res, ()=>res.end());
     return true;
+  }
+
+  get_resource_path(web_path) {
+    var paths = this.server.config.search_paths;
+    var file_path = paths.reverse().find(dir => fs.existsSync(path_util.resolve(dir) + '/web/' + web_path))
+    if (!file_path)
+      return false;
+    return file_path + "/web/" + web_path;
   }
 
   send404(err) {

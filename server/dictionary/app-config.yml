@@ -9,14 +9,14 @@ image_path: /images
 spa:
   default:
     page: /index
-    template: /didi/spa.html
+    template: /spa.html
     path: /home
     content: $path
   public: {}
   auth: {}
 logging:
   path: ../log/$brand_name.log
-  level: trace  
+  level: trace
 upload_dir: ../uploads
 start_page: /home
 css:
