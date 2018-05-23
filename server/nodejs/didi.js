@@ -62,12 +62,12 @@ class Didi {
     });
   }
 
-  load_terms(name, dirs = [], options = { reload: false} ) {
+  load_terms(name, dirs = null, options = { reload: false} ) {
     var log = this.log;
-    var cache = this.cached("terms", name);
+    var cache = this.cached("terms", name, options);
     if (cache.data) return cache.promise();
 
-    if (!dirs.length)
+    if (!dirs)
       dirs =  this.search_paths;
     var file = name;
     if (!/\.\w+$/.test(name)) file += ".yml";
@@ -139,13 +139,13 @@ class Didi {
     log.debug("WAITING FOR", type, key)
     return {
       data: "waiting",
-      promise: new Promise((resolve, reject) => {
+      promise: () => new Promise((resolve, reject) => {
         store.watchers.push({resolve: resolve, reject: reject})
       })
     };
   }
 
-  read_config() {
+  read_config(options) {
     var config = {};
     console.log("LOADING CONFIGURATION");
     return this.load_terms("app-config")
@@ -244,7 +244,7 @@ class Didi {
     if (!util.is_array(terms))
       paths = terms.__paths;
     else
-      paths = terms.reduce((acc, cur) => acc.concat(cur.__paths), []);
+      paths = terms.reduce((acc, cur) => acc.concat(util.is_string(cur)? cur: cur.__paths), []);
 
     if (!paths)
       return this.log.warn("No watch paths supplied");
