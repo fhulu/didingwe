@@ -3,8 +3,11 @@ server_ip: 127.0.0.1
 server_port: 3434
 cache_age: 8460000
 resource_dir: ./web
+program_name: Didi SPA
 brand_name: $program_name
 brand_path: branding/$brand_name
+didi_path: ../didi/
+search_paths: [$didi_path,.,$brand_path]
 image_path: /images
 spa:
   default:
@@ -37,7 +40,6 @@ modules:
   - sms
   - document
 
-search_paths: [../didi/,.,$brand_path]
 collections:
   default: collection
   auth: [user,partner,user_group,user_group_member]

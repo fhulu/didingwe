@@ -27,7 +27,6 @@ class Didi {
     this.init_file_watcher();
     this.load_config()
       .then(()=>this.init_logging())
-      .then(()=>this.init_resources())
       .then(()=>this.init_server())
       .catch(e=>this.report_exception(e))
   }
@@ -274,16 +273,6 @@ class Didi {
     return Promise.all(names.map(name=>this.load_terms(name)))
   }
 
-  init_resources() {
-    let symlink = this.config.resource_dir+'/didi';
-    let target = path_util.resolve(process.env.DIDI_PATH)+'/web';
-    log.debug("CREATE SYMLINK", symlink, "pointing to", target);
-    return promise(fs.unlink, symlink)
-      .then(()=>promise(fs.symlink, target, symlink, 'dir'))
-      .catch(()=>promise(fs.symlink, target, symlink, 'dir'))
-      .catch(()=>{});
-
-  }
-};
+}
 
 var didi = new Didi();
