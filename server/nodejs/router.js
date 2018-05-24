@@ -25,7 +25,8 @@ class Router {
     this.client = client;
     this.request = request;
     this.response = response;
-    this.log = this.server.get_logger({seq: this.seq, user_name: client.user_name, host: request.connection.remoteAddress, client_id: client.id});
+    var log_context = {seq: this.seq, user_name: client.user_name, host: request.connection.remoteAddress, client_id: client.id};
+    this.log = this.server.get_logger(()=>log_context);
     this.server.log = this.log;
     request.url = request.url.replace(/&_=\w+/,'')
     var parsed = url.parse(request.url, true);
@@ -44,7 +45,7 @@ class Router {
     if (query.action) return false;
     this.log.info("SERVE SPA", req.pathname, JSON.stringify(query));
     this.load_spa()
-      .then(data => this.respond("text/html", data.html))
+      .then(html => this.respond("text/html", html))
       .catch(err => this.send404(err))
 
     return true;
@@ -52,7 +53,7 @@ class Router {
 
   respond(type, result, code=null) {
     if (['application/json', 'text/plain', 'text/html'].includes(type))
-      this.log.debug("RESPONSE", result.length, result.substring(0,127).replace(/\r?\n|\r/,'.'));
+      this.log.debug("RESPONSE", result.length, result.substring(0, this.server.config.logging.max_response).replace(/\r?\n|\r/,'.'));
     var res = this.response;
     if (code)
       res.writeHead(code, {"Content-Type": type})
@@ -62,26 +63,42 @@ class Router {
   }
 
   load_spa(options = { reload: false }) {
-    var {client,server,request} = this;
-    var cache = server.cached("SPA", client.get_joined_roles(), options);
+    var {client,server,request,log} = this;
+    var cache = server.cached("SPA", this.get_url_key(), options);
     if (cache.data) return cache.promise();
 
-    var config = util.clone(client.get_spa_config());
-    let path = this.get_resource_path(config.template);
-    return promise(fs.readFile, path, "utf8")
-      .then(data=>{
-        data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
-        data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
-        data = data.replace("$request_method", server.config['request_method']);
-
-        util.replace_fields(config, request.query);
-        util.replace_fields(config, config);
-        var options = { path: config.page, request: config };
-        if (this.request.pathname != '/') options.request.content = request.pathname
-        var result = { html: data.replace("$options", JSON.stringify(options)) };
-        server.watch_terms([path, server.config], ()=>this.load_spa({reload: true}))
-        return cache.resolve(result);
+    server.log = log;
+    var path, config;
+    return server.load_terms("app-config")
+    .then(()=> {
+      config = util.clone(client.get_spa_config());
+      path = this.get_resource_path(config.template);
+      return promise(fs.readFile, path, "utf8")
     })
+    .then(data=>{
+      data = this.replace_links(data, 'script', "<script src='$script'></script>\n");
+      data = this.replace_links(data, 'css', "<link href='$script' media='screen' rel='stylesheet' type='text/css' />\n");
+      data = data.replace("$request_method", server.config.request_method);
+
+      if (request.pathname != '/')
+        config.path = request.pathname;
+
+      util.replace_fields(config, request.query);
+      util.replace_fields(config, config);
+      var options = { path: config.page, request: config };
+
+      // reload spa when spa template or config changes
+      server.watch_terms([path, server.config], ()=>this.load_spa({reload: true}))
+
+      var html = data.replace("$options", JSON.stringify(options));
+      return cache.resolve(html);
+    })
+  }
+
+  get_url_key() {
+    var {request, client} = this;
+    var roles = client.roles.join('.');
+    return `${roles}@${request.url}`;
   }
 
   replace_links(html, type, template) {
@@ -142,7 +159,7 @@ class Router {
   serve_ajax() {
     this.parse_query()
       .then(()=> this.read_page())
-      .then(types => this.process_ajax(types))
+      .then(()=> this.process_ajax())
       .catch(err=> this.server.report_exception(err) )
   }
 
@@ -160,37 +177,34 @@ class Router {
 
     var path = query.path.split('/');
     if (path[0] == '') path.shift();
-    var page = path[0];
+    this.page_id = path[0];
 
     // if no branch given, assume page = branch
     if (path.length ==1) path.unshift(path[0]);
-    query.path = path.join('/');
-
-    return this.load_page(page)
-      .then(terms => {
-        this.page = terms[page];
-        return this.terms = terms;
-      });
+    this.path = path.join('/');
+    return this.load_page(this.page_id)
   }
 
   load_page(page, options = { reload: false }) {
-    var {server} = this;
-    server.log = this.log;
-    var cache = server.cached("page", page, options);
-    if (cache.data) return cache.promise();
+    var {server,log} = this;
+    server.log = log;
+    return (()=> {
+      var cache = server.cached("page", page, options);
+      if (cache.data) return cache.promise();
 
-    server.log = this.log;
-
-    return Promise.all([
-      server.load_terms("controls"),
-      server.load_terms("fields"),
-      server.load_terms(page).then(terms => this.include_all(terms))
-    ])
-    .then(results => {
-        var terms = server.merge({}, ...results);
-        server.watch_terms(terms, ()=> this.load_page(page, true))
-        return cache.resolve(terms);
-      })
+      server.log = log;
+      return Promise.all([
+        server.load_terms("controls"),
+        server.load_terms("fields"),
+        server.load_terms(page)
+      ])
+      .then(results => this.include_all(server.merge({}, ...results)))
+      .then(terms => cache.resolve(terms, ()=> this.load_page(page, { reload: true})));
+    })()
+    .then(terms => {
+      this.page_terms = terms[this.page_id];
+      return this.terms = terms;
+    })
   }
 
   include_all(terms, already=[]) {
@@ -226,27 +240,29 @@ class Router {
     });
   }
 
-  process_ajax(types) {
-    var query = this.request.query;
-    var item = this.root = this.follow_path(query.path, types);
+  process_ajax() {
+    var {action} = this.request.query;
     var responder;
-    if (query.action == "read")
+    if (action == "read")
       responder = new UIReader(this);
     else
       responder = new Actioner(this);
 
-    responder.process(item, types, query.action)
+    responder.process(action)
       .then(result=>this.respond("application/json", JSON.stringify(result)));
   }
 
-  follow_path(path, types) {
+  follow_path(path) {
+    if (!path) path = this.path;
     path = path.split('/').slice(1);
-    var item = types;
+    var item = this.  terms;
     var parent = item;
     for (var branch of path) {
       item = item[branch];
-      if (!item)
+      if (!item) {
+        this.log.debug("terms", this.page_terms)
         throw Error("Invalid path " + path.join('/'));
+      }
     }
     return item;
   }

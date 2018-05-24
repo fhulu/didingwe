@@ -1,9 +1,7 @@
-load_values:
+values_test:
   type: input_page
   inputs:
     - first_name
     - cookie
-  actions:
-    - test
   values:
     - read_header: [cookie]

@@ -5,16 +5,15 @@ class Actioner {
   constructor(router) {
     this.router = router;
     this.log = router.log;
-    this.results = {};
+    this.answer = {};
   }
 
 
-  process(item, types, action) {
+  process(action) {
     if (!this.has_method(action))
       return Promise.reject("No such action: " + action);
-    this.item = item;
-    this.types = types;
-    return this[action](item)
+    this.item = this.router.follow_path();
+    return this[action]()
   }
 
   has_method(method) {
@@ -51,10 +50,22 @@ class Actioner {
   }
 
   read_values(source, ...args) {
+    if (!args.length) return util.clone(source);
     var result = {};
     args.forEach(arg => result[arg] = source[arg]);
-    return result
+    return result;
   }
+
+  action() {
+    var {log} = this;
+    log.debug(l )
+  }
+
+  read_session(...args) {
+    return this.read_values(this.router.client.variables, ...args);
+  }
+
+
 }
 
 module.exports = Actioner;

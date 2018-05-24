@@ -36,10 +36,6 @@ class Client {
     return conf;
   }
 
-  get_joined_roles() {
-    return this.roles.join('.');
-  }
-
   is_authorized(rights) {
     if (rights === undefined) return true;
     if (!util.is_array(rights)) rights = [rights]

@@ -25,9 +25,8 @@ class Didi {
     this.log = util.log;
     this.seq = 0;
     this.init_file_watcher();
-    this.read_config()
+    this.load_config()
       .then(()=>this.init_logging())
-      .then(()=>this.load_validators())
       .then(()=>this.init_resources())
       .then(()=>this.init_server())
       .catch(e=>this.report_exception(e))
@@ -44,12 +43,15 @@ class Didi {
         default: { appenders: ['didi', 'console'], level: this.config.logging.level }
       }
     });
-    log = this.syslog = this.get_logger({seq: 0, user_name: "*system*", host: this.config.server_ip, client_id: 0});
+    log = this.syslog = this.get_logger(()=> { return {seq: this.request_seq, user_name: "*system*", host: this.config.server_ip, client_id: 0};});
   }
 
-  get_logger(context) {
+  get_logger(functor) {
     var logger = log4js.getLogger('didi');
-    logger.addContext('user', ()=>`#${context.seq} ${context.user_name}@${context.host} #${context.client_id}`);
+    logger.addContext('user', ()=>{
+      var context = functor();
+      return `#${context.seq} ${context.user_name}@${context.host} #${context.client_id}`;
+    });
     return logger;
   }
 
@@ -79,8 +81,7 @@ class Didi {
         if (util.is_empty(terms))
           throw new Error(`At least one YML file for '${name}' must exist`);
         terms.__paths = paths;
-        this.watch_terms(terms, () => this.load_terms(name, dirs, {reload: true}));
-        return cache.resolve(terms);
+        return cache.resolve(terms, () => this.load_terms(name, dirs, {reload: true}));
       })
       .catch(error => cache.reject(error));
   }
@@ -102,8 +103,8 @@ class Didi {
     var cache = this.caches[type];
     if (!cache)
       cache = this.caches[type] = {};
-    var store = cache[key];
 
+    var store = cache[key];
     if (!store || options.reload) {
       log.debug("LOADING", type, key)
       store = cache[key] = { watchers: [] }
@@ -112,11 +113,12 @@ class Didi {
           store.rejector = reject;
         })
         .then(result => {
-          log.debug("LOADED", type, key)
+          log.debug("LOADED", type, key);
+          store.data = result;
           store.watchers.forEach(watcher=>watcher.resolve(result));
           delete store.watchers;
           delete store.loader;
-          return store.data = result;
+          return result;
         })
         .catch(error=> {
           log.error("REJECTING PENDING", type, key, error)
@@ -126,7 +128,12 @@ class Didi {
           throw error;
         });
       store.promise = () => Promise.resolve(store.data);
-      store.resolve = result => (store.resolver(result), result);
+      store.resolve = (result, watcher) => {
+        if (util.is_array(result)) result = this.merge({}, ...result);
+        if (watcher) this.watch_terms(result, watcher);
+        store.resolver(result);
+        return result;
+      }
       store.reject = error => (store.rejector(error), error);
       return store;
     }
@@ -145,9 +152,12 @@ class Didi {
     };
   }
 
-  read_config(options) {
-    var config = {};
-    console.log("LOADING CONFIGURATION");
+  load_config(options = {reload: false}) {
+    var cache = this.cached("SERVER", "CONFIGURATION", options);
+    if (cache.loaded) return cache.promise();
+
+    var config;
+    var {log} = this;
     return this.load_terms("app-config")
       .then(app_config => (config = util.clone(app_config), this.load_terms(config.site_config, ['.'])))
       .then(site_config  => {
@@ -155,19 +165,10 @@ class Didi {
           util.replace_fields(config, config);
           util.replace_fields(config, process.env);
           this.search_paths.push(config.brand_path + '/dictionary');
-          console.log("BRAND PATH", config.brand_path);
-          this.watch_terms(config, () => this.read_config());
-          return this.config = config;
+          log.info("BRAND PATH", config.brand_path);
+          this.config = config;
+          cache.resolve(config, () => this.load_config({reload: true}));
         });
-  }
-
-  load_validators() {
-    return this.load_terms("validators")
-      .then(validators => {
-        this.watch_terms(validators, () => this.load_validators());
-        this.validators = validators;
-      });
-
   }
 
   merge(target, ...sources) {
@@ -229,7 +230,7 @@ class Didi {
   init_file_watcher() {
     this.watched = {};
     file_watcher.on('change', path => {
-      ++this.seq;
+      ++this.request_seq;
       this.log = this.syslog;
       this.log.info("DETECTED CHANGE", path);
       var watchers = this.watched[path];
@@ -241,7 +242,9 @@ class Didi {
 
   watch_terms(terms, callback) {
     var paths;
-    if (!util.is_array(terms))
+    if (util.is_string(terms))
+      paths = [terms]
+    else if (!util.is_array(terms))
       paths = terms.__paths;
     else
       paths = terms.reduce((acc, cur) => acc.concat(util.is_string(cur)? cur: cur.__paths), []);
@@ -265,6 +268,10 @@ class Didi {
   report_exception(e) {
     this.log.error(e.message);
     if (this.is_debug_mode()) throw e;
+  }
+
+  wait_for_terms(...names) {
+    return Promise.all(names.map(name=>this.load_terms(name)))
   }
 
   init_resources() {

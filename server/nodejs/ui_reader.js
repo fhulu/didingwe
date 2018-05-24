@@ -14,21 +14,25 @@ class UIReader {
     this.router = router;
   }
 
-  process(item, types, options = {reload: false} ) {
-    var {request, client, server, terms, log} = this.router;
-    var roles = client.get_joined_roles();
-    var cache = server.cached("ui", `${roles}@${request.url}`, options);
+  process(options = {reload: false} ) {
+    var router = this.router;
+    var {request, server, terms, log} = router;
+    var cache = server.cached("ui", router.get_url_key(), options);
     if (cache.data) return cache.promise();
 
-    server.watch_terms([this.router.terms, server.config],() => this.process(item, types, {reload: true}));
-    var result = this.minimize(item, types);
-    return Promise.resolve(cache.resolve(result));
+    return router.load_page(router.page_id, options)
+      .then(()=> {
+        var item = router.follow_path();
+        var result = this.minimize(item);
+        server.watch_terms([this.router.terms, server.config],() => this.process({reload: true}));
+        return cache.resolve(result);
+      });
   }
 
-  minimize(item, types) {
+  minimize(item) {
     item = util.clone(item);
 
-    var {request, client, server} = this.router;
+    var {request, client, server, terms} = this.router;
     util.replace_fields(item, server.config);
     this.remove_server_items(item, ['access']);
     client.remove_unauthorized(item);
@@ -37,11 +41,11 @@ class UIReader {
     var expanded = {};
     var page = util.last(request.query.path.split('/'));
     expanded[page] = item;
-    var removed = this.expand_types(item, types, expanded);
+    var removed = this.expand_types(item, terms, expanded);
     removed.push('acccess');
     util.remove_keys(item, removed);
-    if (!expanded.control) expanded.control = types.control
-    if (!expanded.template) expanded.template = types.template;
+    if (!expanded.control) expanded.control = terms.control
+    if (!expanded.template) expanded.template = terms.template;
 
     util.replace_fields(expanded, server.config);
     removed.push(page);

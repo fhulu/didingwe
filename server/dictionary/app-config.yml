@@ -17,18 +17,19 @@ spa:
 logging:
   path: ../log/$brand_name.log
   level: trace
+  max_response: 127
 upload_dir: ../uploads
 start_page: /home
 css:
-  - /didi/didi.css
+  - /didi.css
 script:
-  - /didi/jquery-3.2.1.min.js
-  - /didi/jquery-ui-1.12.1.min.js
-  - /didi/enquire.min.js
-  - /didi/mukoni.jquery.js
-  - /didi/mkn.js
-  - /didi/mkn.render.js
-  - /didi/page.js
+  - /jquery-3.2.1.min.js
+  - /jquery-ui-1.12.1.min.js
+  - /enquire.min.js
+  - /mukoni.jquery.js
+  - /mkn.js
+  - /mkn.render.js
+  - /page.js
 modules:
   - auth
   - collection
