@@ -182,4 +182,55 @@ util.log = {
   fatal: console.log,
 };
 
+util.reserved_words = [
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "new",
+  "return",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+];
+
+util.is_reserved_word = x => util.reserved_words.includes(x);
+
+util.name = x => x.replace(/\s[a-z]/i, a => a.toUpperCase());
+
+util.object_with_key = (array,key) => {
+  for (var val of array) {
+    if (val == key) return val;
+    if (!util.is_object(val)) continue;
+    var [k,v] = util.first_object(val);
+    if (k == key) return v;
+  }
+  return null;
+}
+
+
 module.exports = util;
