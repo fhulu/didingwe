@@ -20,11 +20,11 @@ class UIReader {
     var cache = server.cached("ui", router.get_url_key(), options);
     if (cache.data) return cache.promise();
 
-    return router.load_page(router.page_id, options)
+    return router.load_terms(router.path[0], options)
       .then(()=> {
         var item = router.follow_path();
         var result = this.minimize(item);
-        server.watch_terms([this.router.terms, server.config],() => this.process({reload: true}));
+        server.watch_terms([router.terms, server.config],() => this.process({reload: true}));
         return cache.resolve(result);
       });
   }

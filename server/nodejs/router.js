@@ -8,12 +8,6 @@ const mime = require("mime-types");
 const UIReader = require("./ui_reader");
 const Actioner = require("./actioner");
 
-
-const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
-  'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
-  'sql_insert', 'sql_update', 'style', 'trigger', 'valid', 'validate', 'write_session'];
-
-
 class Router {
   constructor(server, sequence) {
     this.server = server;
@@ -158,7 +152,7 @@ class Router {
 
   serve_ajax() {
     this.parse_query()
-      .then(()=> this.read_page())
+      .then(()=> this.read_terms())
       .then(()=> this.process_ajax())
       .catch(err=> this.server.report_exception(err) )
   }
@@ -170,39 +164,46 @@ class Router {
       .then(post => req.query = Object.assign(post, get));
   }
 
-  read_page() {
+  read_terms() {
     var {query} = this.request;
     util.replace_fields(query, query);
     this.log.info("REQUEST", JSON.stringify(query));
 
     var path = query.path.split('/');
     if (path[0] == '') path.shift();
-    this.page_id = path[0];
 
     // if no branch given, assume page = branch
-    if (path.length ==1) path.unshift(path[0]);
-    this.path = path.join('/');
-    return this.load_page(this.page_id)
+    if (path.length == 1)
+      path.unshift(path[0]);
+    this.page_id = path[1];
+    this.path = path;
+    return this.load_terms(path[0]);
   }
 
-  load_page(page, options = { reload: false }) {
+  load_terms(name, options = { reload: false }) {
     var {server,log} = this;
     server.log = log;
     return (()=> {
-      var cache = server.cached("page", page, options);
+      var cache = server.cached("page_terms", name, options);
       if (cache.data) return cache.promise();
 
       server.log = log;
       return Promise.all([
         server.load_terms("controls"),
         server.load_terms("fields"),
-        server.load_terms(page)
+        server.load_terms(name)
       ])
       .then(results => this.include_all(server.merge({}, ...results)))
-      .then(terms => cache.resolve(terms, ()=> this.load_page(page, { reload: true})));
+      .then(terms => cache.resolve(terms, ()=> this.load_terms(name, { reload: true})));
     })()
     .then(terms => {
-      this.page_terms = terms[this.page_id];
+      var page = terms[this.page_id];
+      if (!page) {
+        this.path.unshift(this.path[0]);
+        this.page_id = this.path[1];
+        page = terms[this.page_id];
+      }
+      this.page = page;
       return this.terms = terms;
     })
   }
@@ -211,17 +212,17 @@ class Router {
     this.server.log = this.log;
     var includes = terms.include;
     if (!includes) return Promise.resolve(terms);
-    var promises = includes.map( page => this.include_one(page, already));
+    var promises = includes.map( name => this.include_one(name, already));
     return Promise.all(promises)
       .then(results => this.server.merge({}, ...results, terms))
   }
 
-  include_one(page, already) {
+  include_one(name, already) {
     this.server.log = this.log;
-    if (already.includes(page))
+    if (already.includes(name))
       return Promise.resolve({});
-    already.push(page);
-    return this.server.load_terms(page)
+    already.push(name);
+    return this.server.load_terms(name)
       .then(terms => this.include_all(terms, already))
   }
 
@@ -253,20 +254,26 @@ class Router {
   }
 
   follow_path(path) {
-    if (!path) path = this.path;
-    path = path.split('/').slice(1);
-    var item = this.  terms;
-    var parent = item;
+    if (!path) path = this.path.slice(2);
+    var item = this.page;
+    var parent;
     for (var branch of path) {
-      item = item[branch];
+      parent = item;
+      if (util.is_object(item))
+        item = item[branch];
+      else
+        item = util.object_with_key(item, branch);
       if (!item) {
-        this.log.debug("terms", this.page_terms)
+        this.log.error("error on branch", branch, util.is_object(parent),JSON.stringify(parent))
         throw Error("Invalid path " + path.join('/'));
       }
     }
+
+    if (!item.id) item.id = path.length? util.last(path): this.page_id;
+    if (!item.name) item.name = util.name(item.id);
+
     return item;
   }
-
 
   output(response, result) {
     result = JSON.stringify(result);
