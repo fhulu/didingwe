@@ -5,7 +5,7 @@ cache_age: 8460000
 resource_dir: ./web
 program_name: Didi SPA
 brand_name: $program_name
-brand_path: branding/$brand_name
+brand_path: .
 didi_path: ../didi/
 search_paths: [$didi_path,.,$brand_path]
 image_path: /images
