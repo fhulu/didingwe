@@ -220,7 +220,7 @@ util.reserved_words = [
 
 util.is_reserved_word = x => util.reserved_words.includes(x);
 
-util.name = x => x.replace(/\s[a-z]/i, a => a.toUpperCase());
+util.name = str => str.replace('_', ' ').replace(/\s[a-z]/, letter => letter.toUpperCase());
 
 util.object_with_key = (array,key) => {
   for (var val of array) {
@@ -232,5 +232,6 @@ util.object_with_key = (array,key) => {
   return null;
 }
 
+util.count_keys = x => Object.keys(x).length;
 
 module.exports = util;

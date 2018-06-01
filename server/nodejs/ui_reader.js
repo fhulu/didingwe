@@ -15,42 +15,48 @@ class UIReader {
   }
 
   process(options = {reload: false} ) {
-    var router = this.router;
+    var {router} = this;
     var {request, server, terms, log} = router;
     var cache = server.cached("ui", router.get_url_key(), options);
     if (cache.data) return cache.promise();
 
-    return router.load_terms(router.path[0], options)
+    return router.load_path(router.path[0], options)
       .then(()=> {
-        var item = router.follow_path();
-        var result = this.minimize(item);
+        var result = this.gather_terms(router.path);
+
         server.watch_terms([router.terms, server.config],() => this.process({reload: true}));
         return cache.resolve(result);
       });
   }
 
-  minimize(item) {
-    item = util.clone(item);
+  gather_terms(path, terms = null, expanded = {}) {
+    var {router} = this;
+    var {request, client, server} = router;
+    if (!terms) terms = router.terms;
+    var item = router.follow_path(path, terms);
 
-    var {request, client, server, terms} = this.router;
+    item = util.clone(item);
     util.replace_fields(item, server.config);
     this.remove_server_items(item, ['access']);
     client.remove_unauthorized(item);
     util.remove_keys(item, ['access']);
 
-    var expanded = {};
-    var page = util.last(request.query.path.split('/'));
+    var page = util.last(path);
     expanded[page] = item;
-    var removed = this.expand_types(item, terms, expanded);
-    removed.push('acccess');
-    util.remove_keys(item, removed);
-    if (!expanded.control) expanded.control = terms.control
-    if (!expanded.template) expanded.template = terms.template;
+    var external = [];
+    var removed = this.expand_types(item, terms, expanded, external);
+    return  Promise.all(external)
+      .then(() => {
+        removed.push('acccess');
+        util.remove_keys(item, removed);
+        if (!expanded.control) expanded.control = terms.control
+        if (!expanded.template) expanded.template = terms.template;
 
-    util.replace_fields(expanded, server.config);
-    removed.push(page);
-    util.remove_keys(expanded, removed);
-    return { path: request.query.path, fields: item, types: expanded};
+        util.replace_fields(expanded, server.config);
+        removed.push(page);
+        util.remove_keys(expanded, removed);
+        return { path: path.join('/'), fields: item, types: expanded};
+      });
 }
 
   remove_server_items(root, exclusions=[]) {
@@ -67,12 +73,17 @@ class UIReader {
       || query_items.includes(key)
   }
 
-  expand_types(item, types, expanded) {
+
+
+  expand_types(item, types, expanded, external) {
     var removed = [];
-    var {client} = this.router;
+    var {client,log} = this.router;
     util.walk(item, (val, key, node)=>{
-      if (key == 'type')
+      if (key == 'type') {
+        if (val.includes('/'))
+          return external.push(this.load_external(node, expanded))
         key = val;
+      }
       else if (util.is_array(node)) {
         if (!util.is_string(val)) return;
         key = val;
@@ -93,9 +104,19 @@ class UIReader {
         return false;
       }
       expanded[key] = type;
-      removed.push(...this.expand_types(type, types, expanded));
+      removed.push(...this.expand_types(type, types, expanded, external));
     });
     return removed;
+  }
+
+  load_external(node, expanded) {
+    var {router, log} = this;
+    var path = node.type.split('/');
+    node.type = util.last(path);
+    node.sub_page = false;
+    return router.load_path(path)
+      .then(result => this.gather_terms(result.path, result.terms, expanded))
+      .then(result => expanded[node.type] = result.fields);
   }
 }
 

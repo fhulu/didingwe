@@ -169,42 +169,41 @@ class Router {
     util.replace_fields(query, query);
     this.log.info("REQUEST", JSON.stringify(query));
 
-    var path = query.path.split('/');
-    if (path[0] == '') path.shift();
+    return this.load_path(query.path)
+      .then(result => {
+        this.path = result.path;
+        this.page_id = result.path[1];
+        this.page = result.terms[this.page_id];
+        return this.terms = result.terms;
+      })
+  }
 
+  load_path(path, options = { reload: false }) {
+    var {server,log} = this;
+    server.log = log;
+    if (util.is_string(path)) path = path.split('/');
+    if (path[0] == '') path.shift();
+    var file_name = path[0];
     // if no branch given, assume page = branch
     if (path.length == 1)
       path.unshift(path[0]);
-    this.page_id = path[1];
-    this.path = path;
-    return this.load_terms(path[0]);
-  }
 
-  load_terms(name, options = { reload: false }) {
-    var {server,log} = this;
-    server.log = log;
     return (()=> {
-      var cache = server.cached("page_terms", name, options);
+      var cache = server.cached("page_terms", file_name, options);
       if (cache.data) return cache.promise();
 
       server.log = log;
       return Promise.all([
         server.load_terms("controls"),
         server.load_terms("fields"),
-        server.load_terms(name)
+        server.load_terms(file_name)
       ])
       .then(results => this.include_all(server.merge({}, ...results)))
-      .then(terms => cache.resolve(terms, ()=> this.load_terms(name, { reload: true})));
+      .then(terms => cache.resolve(terms, ()=> this.load_path(path, { reload: true})));
     })()
     .then(terms => {
-      var page = terms[this.page_id];
-      if (!page) {
-        this.path.unshift(this.path[0]);
-        this.page_id = this.path[1];
-        page = terms[this.page_id];
-      }
-      this.page = page;
-      return this.terms = terms;
+      if (!terms[path[1]]) path.unshift(path[0])
+      return { path: path, terms: terms };
     })
   }
 
@@ -253,9 +252,10 @@ class Router {
       .then(result=>this.respond("application/json", JSON.stringify(result)));
   }
 
-  follow_path(path) {
-    if (!path) path = this.path.slice(2);
-    var item = this.page;
+  follow_path(path, item) {
+    if (!path) path = this.path;
+    if (!item) item = this.terms;
+    path = path.slice(1);
     var parent;
     for (var branch of path) {
       parent = item;
