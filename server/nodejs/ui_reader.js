@@ -80,7 +80,7 @@ class UIReader {
     var {client,log} = this.router;
     util.walk(item, (val, key, node)=>{
       if (key == 'type') {
-        if (val.includes('/'))
+        if (util.is_string(val) && val.includes('/'))
           return external.push(this.load_external(node, expanded))
         key = val;
       }

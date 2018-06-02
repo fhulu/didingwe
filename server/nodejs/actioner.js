@@ -22,7 +22,7 @@ class Actioner {
       return Promise.reject("No such action: " + action);
     var {router,log} = this;
     router.page = this.expand_node(router.page);
-    this.item = router.follow_path();
+    this.item = router.follow_path(router.path.slice(1), router.page);
     return this[action]()
   }
 
