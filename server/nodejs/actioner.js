@@ -5,7 +5,7 @@ const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
   'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
   'sql_insert', 'sql_update', 'style', 'trigger', 'valid', 'validate', 'write_session'];
 
-const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'html', 'post', 'script', 'sql', 'style', 'template', 'valid', 'values'];
+const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'derive', 'html', 'post', 'script', 'sql', 'style', 'template', 'valid', 'values'];
 
 
 class Actioner {
@@ -21,6 +21,7 @@ class Actioner {
     if (!this.has_method(action))
       return Promise.reject("No such action: " + action);
     var {router,log} = this;
+    this.expanded = [].concat(non_mergeable, non_expandables);
     router.page = this.expand_node(router.page);
     this.item = router.follow_path(router.path.slice(1), router.page);
     return this[action]()
@@ -42,7 +43,7 @@ class Actioner {
   action() {
     var {item} = this;
     var pre_validation = item.pre_validation;
-    var promise = pre_validation? this.reply(pre_validation): Promise.reslove();
+    var promise = pre_validation? this.reply(pre_validation): Promise.resolve();
     return promise.then(()=>this.validate())
       .then(()=>{
         if (item.audit_first)
@@ -96,11 +97,11 @@ class Actioner {
     return this.read_values(this.router.client.variables, ...args);
   }
 
-  expand_node(node, parent = null, grandparent = null) {
+  expand_node(node, parent = null) {
     if (util.is_object(node))
       return this.expand_object(node, parent);
     if (util.is_array(node))
-      return this.expand_array(node, grandparent);
+      return this.expand_array(node, parent);
     this.log.warn("???", JSON.stringify(node));
     return node;
   }
@@ -118,9 +119,10 @@ class Actioner {
     for (var key in node) {
       var val = node[key];
       if (!node.hasOwnProperty(key)
-        || non_expandables.includes[key]
+        || this.expanded.includes(key)
         || util.is_primitive(val)) continue;
-      node[key] = this.expand_node(node[key], node, parent);
+      this.expanded.push(key);
+      node[key] = this.expand_node(node[key], node);
     }
     return node;
   }
@@ -145,6 +147,10 @@ class Actioner {
         key = val, val = {};
       }
       if (non_mergeable.includes(key)) continue;
+      if (key[0] == '$') {
+        key = key.substr(1);
+        val = util.merge({}, val, parent[key]);
+      }
       if (key == "type")
         default_type = terms[key];
       if (key == "default")
@@ -155,7 +161,7 @@ class Actioner {
       if (default_node) val = util.merge({}, default_node, val);
       val = util.merge({}, terms[key], val);
       var expanded = {};
-      expanded[key] = this.expand_object(val, parent);
+      expanded[key] = this.expand_object(val);
       node[index] = expanded;
     }
     return node;
