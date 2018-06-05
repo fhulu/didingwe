@@ -5,3 +5,13 @@ values_test:
     - cookie
   values:
     - read_header: [cookie]
+
+
+test_select:
+  type: input_page
+  inputs:
+    - country: { type: dropdown   }
+
+country:
+  options:
+    - db.data: [collection, [], v0,v1]

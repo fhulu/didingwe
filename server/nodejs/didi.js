@@ -22,6 +22,7 @@ class Didi {
     this.request_seq = 0;
     this.search_paths = [path_util.resolve(process.env.DIDI_PATH) + '/server/dictionary', './server/dictionary'];
     this.config = {};
+    this.modules = {};
     this.log = util.log;
     this.seq = 0;
     this.init_file_watcher();
@@ -33,13 +34,14 @@ class Didi {
 
   init_logging() {
     var layout = { type: 'pattern',  pattern: "%[%d %p %c %X{user} %m%]"};
+    const config = this.config.logging;
     log4js.configure({
       appenders: {
         console: { type: "stdout", layout: layout },
-        didi: { type: "file", filename: this.config.logging.path, layout: layout}
+        didi: { type: "file", filename: config.path, layout: layout}
       },
       categories: {
-        default: { appenders: ['didi', 'console'], level: this.config.logging.level }
+        default: { appenders: ['didi', 'console'], level: config.level }
       }
     });
     log = this.syslog = this.get_logger(()=> { return {seq: this.request_seq, user_name: "*system*", host: this.config.server_ip, client_id: 0};});

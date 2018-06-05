@@ -40,7 +40,6 @@ class UIReader {
     this.remove_server_items(item, ['access']);
     client.remove_unauthorized(item);
     util.remove_keys(item, ['access']);
-
     var page = util.last(path);
     expanded[page] = item;
     var external = [];
@@ -61,19 +60,21 @@ class UIReader {
 
   remove_server_items(root, exclusions=[]) {
     util.walk(root, (val, key, node) =>{
+      if (!util.is_string(key)) return;
       if (!exclusions.includes(key) && this.is_server_item(key))
         delete node[key];
-      if (query_items.includes(key))
+      if (this.is_query_item(key))
         node.query = " ";
     })
   }
 
   is_server_item(key) {
-    return post_items.includes(key)
-      || query_items.includes(key)
+    return post_items.includes(key) || this.is_query_item(key);
   }
 
-
+  is_query_item(key) {
+    return query_items.includes(key) || key.indexOf('.') >= 0;
+  }
 
   expand_types(item, types, expanded, external) {
     var removed = [];
@@ -96,6 +97,7 @@ class UIReader {
 
       var type = types[key];
       if (!type) return;
+      type = util.clone(type);
       removed.push(...client.remove_unauthorized(type));
       this.remove_server_items(type);
       if (removed.includes[key]) return false;

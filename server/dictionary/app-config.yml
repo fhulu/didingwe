@@ -33,12 +33,22 @@ script:
   - /mkn.js
   - /mkn.render.js
   - /page.js
+
 modules:
-  - auth
-  - collection
-  - emailer
-  - sms
-  - document
+  auth:
+  collection:
+  emailer:
+  sms:
+  document:
+  db: mysql-db
+
+db:
+  host: localhost
+  port: 3306
+  schema: didi
+  password: mukoni
+  connectionLimit: 10
+
 
 collections:
   default: collection
@@ -47,8 +57,8 @@ collections:
   billing: [rate,payment,credit,transaction,country_rate]
   document: [document]
   trigger: [trigger,hook,promo_entry]
-use_triggers: no
 
+use_triggers: no
 
 registrar: Mukoni Software
 registrar_role: admin

@@ -1,5 +1,7 @@
 "use strict";
 const util = require("./util");
+const { promise } = util;
+var async = require("async")
 
 const non_mergeable = ['action', 'attr', 'audit', 'call', 'clear_session',
   'clear_values', 'error', 'for_each', 'load_lineage', 'keep_values', 'read_session', 'refresh', 'show_dialog',
@@ -13,6 +15,7 @@ class Actioner {
     this.router = router;
     this.terms = router.terms;
     this.log = router.log;
+    this.modules = {};
     this.answer = {};
   }
 
@@ -37,7 +40,8 @@ class Actioner {
   }
 
   data() {
-    return this.reply(this.item, "DATA");
+    return this.reply(this.item, "DATA")
+      .then(rows => ({ data: rows, count: rows.length}) )
   }
 
   action() {
@@ -57,28 +61,52 @@ class Actioner {
   }
 
   validate() {
-
+    return Promise.resolve();
   }
 
   reply(actions, action) {
     var {log} = this;
     log.debug(action, "ACTIONS", JSON.stringify(actions));
-    var results = {};
-    for (var action of actions) {
-      var method, args;
+    return promise(async.reduce, actions, {}, (results, action, callback) => {
+      var method, args = [];
       if (util.is_object(action))
         [method,args] = util.first_object(action)
       else
         method = action;
       log.debug("ACTION", method, args);
       if (util.is_reserved_word(method)) method = method+'_';
-      if (!this.has_method(method)) {
-        log.error("No such method", method);
-        continue;
-      }
-      util.merge(results,this[method](...args));
-    }
-    return Promise.resolve(results);
+      var [instance, method] = this.get_module(method);
+      if (!method)
+        return callback(null, results);
+
+      instance[method](...args)
+        .then(result => {
+          if (result !== false)
+            results = util.merge(results, result);
+          callback(null, results);
+        })
+        .catch(error => callback(error));
+    })
+  }
+
+  get_module(arg) {
+    var [instance,method] = (()=> {
+      var [name, method] = arg.split('.');
+      if (!method) return [this, arg];
+
+      var instance = this.modules[name];
+      if (instance) return [instance, method];
+
+      var {server} = this.router;
+      var source = server.config.modules[name];
+      if (!source) source = name;
+      var type = require("./" + source);
+      this.modules[name] = instance = new type(this.router);
+      return [instance, method];
+    })();
+
+    if (typeof instance[method] != "function") method = false;
+    return [instance, method];
   }
 
   read_header(...args) {
