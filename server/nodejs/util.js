@@ -163,10 +163,7 @@ util.promise = (func, ...args) => {
     func = func[1];
   }
   return new Promise((resolve, reject) => {
-    args.push((err,result)=>{
-      if (err) return reject(err);
-      return resolve(result);
-    })
+    args.push((err,result)=> err? reject(err): resolve(result));
     func.apply(context, args);
   })
 };
@@ -220,7 +217,7 @@ util.reserved_words = [
 
 util.is_reserved_word = x => util.reserved_words.includes(x);
 
-util.name = str => str.replace('_', ' ').replace(/\s[a-z]/, letter => letter.toUpperCase());
+util.name = str => str.replace('_', ' ').replace(/\b[a-z]/, letter => letter.toUpperCase());
 
 util.object_with_key = (array,key) => {
   for (var val of array) {
