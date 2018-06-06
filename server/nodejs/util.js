@@ -90,19 +90,20 @@ util.walk = (obj, callback) => {
   return obj;
 }
 
-util.replace_vars = (str, values) => {
+util.replace_vars = (str, values, replacer = null) => {
+  if (!replacer) replacer = x => x;
   if (!str.includes('$')) return str;
   for (var key in values) {
     if (!values.hasOwnProperty(key)) continue;
-    str = str.replace('$'+key, values[key]);
+    str = str.replace('$'+key, replacer(values[key]));
   }
   return str;
 }
 
-util.replace_fields = (obj, values) => {
+util.replace_fields = (obj, values, replacer) => {
   util.walk(obj, (val, key, node) => {
     if (typeof val != 'string') return;
-    var new_val = util.replace_vars(val, values);
+    var new_val = util.replace_vars(val, values, replacer);
     if (new_val != val) node[key] = new_val;
   })
 }
