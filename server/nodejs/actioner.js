@@ -13,6 +13,7 @@ const non_expandables = ['action', 'access', 'attr', 'audit', 'class', 'css', 'd
 class Actioner {
   constructor(router) {
     this.router = router;
+    this.server = router.server;
     this.terms = router.terms;
     this.log = router.log;
     this.modules = {};
@@ -54,6 +55,7 @@ class Actioner {
           this.audit()
         return this.reply(item.post, "ACTION");
       })
+      .catch(err=>this.log.error(err))
   }
 
   audit() {
@@ -73,16 +75,17 @@ class Actioner {
         [method,args] = util.first_object(action)
       else
         method = action;
+      if (!util.is_array(args)) args = [args];
       log.debug("ACTION", method, args);
       if (util.is_reserved_word(method)) method = method+'_';
       var [instance, method] = this.get_module(method);
       if (!method)
         return callback(null, results);
 
-      instance[method](...args)
+      return instance[method](...args)
         .then(result => {
           if (result !== false)
-            results = util.merge(results, result);
+            this.answer = results = util.merge(results, result);
           callback(null, results);
         })
         .catch(error => callback(error));
@@ -90,9 +93,10 @@ class Actioner {
   }
 
   get_module(arg) {
+    var self = this;
     var [instance,method] = (()=> {
       var [name, method] = arg.split('.');
-      if (!method) return [this, arg];
+      if (!method) return [self, arg];
 
       var instance = this.modules[name];
       if (instance) return [instance, method];
@@ -101,7 +105,7 @@ class Actioner {
       var source = server.config.modules[name];
       if (!source) source = name;
       var type = require("./" + source);
-      this.modules[name] = instance = new type(this.router);
+      this.modules[name] = instance = new type(this);
       return [instance, method];
     })();
 
@@ -114,10 +118,10 @@ class Actioner {
   }
 
   read_values(source, ...args) {
-    if (!args.length) return util.clone(source);
+    if (!args.length) return Promise.resolve(util.clone(source));
     var result = {};
     args.forEach(arg => result[arg] = source[arg]);
-    return result;
+    return Promise.resolve(result);
   }
 
 
@@ -193,6 +197,12 @@ class Actioner {
       node[index] = expanded;
     }
     return node;
+  }
+
+  replace_vars(str, replacer) {
+    str = util.replace_vars(str, this.answer, replacer);
+    str = util.replace_vars(str, this.page, replacer);
+    return util.replace_vars(str, this.router.request.query, replacer);
   }
 
 }

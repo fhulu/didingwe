@@ -1,4 +1,4 @@
-"use strict";
+  "use strict";
 
 var mysql = require("mysql");
 var util = require("./util");
@@ -30,19 +30,6 @@ class DB {
           connection.destroy();
         }
       });
-
-      // allow text substitution to replace :key with value in values
-      connection.config.queryFormat = function (sql, values) {
-        if (values !== undefined) {
-          sql = sql.replace(/\:(\w+)/g,  function(txt, key) {
-            if (values.hasOwnProperty(key))
-              return this.escape(values[key]);
-            return txt;
-          }.bind(this));
-        }
-        log.debug("SQL:", sql);
-        return sql;
-      };
     })
     .on('acquire', connection=> {
       log.debug('connection %d acquired', connection.threadId);
@@ -52,20 +39,16 @@ class DB {
     });
   }
 
-  query(sql, args, callback) {
-    return this.connection.query(sql, ...args, (err, rows)=> {
-      if (err) this.reportError(err);
-      if (callback) callback(err, rows);
-    });
-  }
-
   reportError(err) {
     this.log.error("(%s, FATAL=%s) %s <%s>", err.code, err.fatal, err.sqlMessage, err.sql);
     if (err.fatal) this.close();
   }
 
-  exec(sql, ...args) {
-    return util.promise([this, this.query], sql, args);
+  exec(sql) {
+    sql = this.router.replace_vars(sql, mysql.escape);
+    this.log.debug("SQL: "+ sql);
+    return util.promise([this.connection, this.connection.query], sql)
+      .catch(err=>this.reportError(err));
   }
 
   insert(sql, ...args) {
@@ -89,12 +72,31 @@ class DB {
 
   data(table, conditions, ...args) {
     var sql = `select ${args.join(', ')} from ${table}`;
-    if (Array.isArray(conditions) && conditions.length)
-      sql += ` where ${conditions.join(' and ')}`;
-    return this.exec(sql)
+    conditions = this.extract_pairs(conditions).join(" and ");
+    if (conditions)
+      sql += ` where ${conditions}`;
+    return this.exec(sql, this.context)
       .then(results=> results.map(row=>Object.values(row)))
   }
 
+  extract_pairs(list) {
+    var pairs = [];
+    for (var value of list) {
+      this.log.trace("value", value);
+      pairs.push(this.get_value(value))
+    }
+    this.log.trace("pairs", pairs);
+    return pairs;
+  }
+
+  get_value(obj) {
+    var [key, value] = util.first_object(obj);
+    if (value === undefined || value === null || util.is_empty(value))
+      return `${key} = $${key}`;
+    if (value[0] == '/')
+      return `${key} ` + value.substr(1);
+    return `${key} = ` + mysql.escape(value);
+  }
 
   close() {
     return util.promise([this.connection, this.connection.end]);
