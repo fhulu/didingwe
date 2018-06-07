@@ -275,6 +275,27 @@ class Didi {
     return Promise.all(names.map(name=>this.load_terms(name)))
   }
 
+  get_module(arg, router) {
+    var [instance,method] = (()=> {
+      var [name, method] = arg.split('.');
+      if (!method) return [router, arg];
+
+      var instance = this.modules[name];
+      if (instance) return [instance, method];
+
+      var source = this.config.modules[name];
+      if (!source) source = name;
+      var type = require(`./${source}`);
+      this.modules[name] = instance = new type(this, this.config[source]);
+      return [instance, method];
+    })();
+
+    if (typeof instance[method] != "function") return [null,null];
+    if (instance != router)
+      instance.setContext(router);
+    return [instance, method];
+  }
+
 }
 
 var didi = new Didi();

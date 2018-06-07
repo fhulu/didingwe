@@ -78,7 +78,7 @@ class Actioner {
       if (!util.is_array(args)) args = [args];
       log.debug("ACTION", method, args);
       if (util.is_reserved_word(method)) method = method+'_';
-      var [instance, method] = this.get_module(method);
+      var [instance, method] = this.server.get_module(method, this);
       if (!method)
         return callback(null, results);
 
@@ -90,27 +90,6 @@ class Actioner {
         })
         .catch(error => callback(error));
     })
-  }
-
-  get_module(arg) {
-    var self = this;
-    var [instance,method] = (()=> {
-      var [name, method] = arg.split('.');
-      if (!method) return [self, arg];
-
-      var instance = this.modules[name];
-      if (instance) return [instance, method];
-
-      var {server} = this.router;
-      var source = server.config.modules[name];
-      if (!source) source = name;
-      var type = require("./" + source);
-      this.modules[name] = instance = new type(this);
-      return [instance, method];
-    })();
-
-    if (typeof instance[method] != "function") method = false;
-    return [instance, method];
   }
 
   read_header(...args) {
