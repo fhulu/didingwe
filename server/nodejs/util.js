@@ -201,6 +201,7 @@ util.reserved_words = [
   "import",
   "in",
   "instanceof",
+  "let",
   "new",
   "return",
   "super",

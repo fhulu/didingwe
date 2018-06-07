@@ -275,7 +275,7 @@ class Didi {
     return Promise.all(names.map(name=>this.load_terms(name)))
   }
 
-  get_module(arg, router) {
+  get_module_function(arg, router) {
     var [instance,method] = (()=> {
       var [name, method] = arg.split('.');
       if (!method) return [router, arg];
@@ -290,10 +290,22 @@ class Didi {
       return [instance, method];
     })();
 
-    if (typeof instance[method] != "function") return [null,null];
+    if (util.is_reserved_word(method)) method += "_";
+    if (typeof instance[method] != "function") return this.invalid_method(method);
     if (instance != router)
       instance.setContext(router);
-    return [instance, method];
+    return this.run_module_function(instance, method)
+  }
+
+  invalid_method(method) {
+    return () => {
+      this.log.error("INVALID METHOD", method);
+      return Promise.resolve(false);
+    };
+  }
+
+  run_module_function(instance, method) {
+    return (...args) => instance[method](...args);
   }
 
 }

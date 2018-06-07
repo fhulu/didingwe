@@ -78,11 +78,8 @@ class Actioner {
       if (!util.is_array(args)) args = [args];
       log.debug("ACTION", method, args);
       if (util.is_reserved_word(method)) method = method+'_';
-      var [instance, method] = this.server.get_module(method, this);
-      if (!method)
-        return callback(null, results);
-
-      return instance[method](...args)
+      var func = this.server.get_module_function(method, this);
+      return func(...args)
         .then(result => {
           if (result !== false)
             this.answer = results = util.merge(results, result);
@@ -103,6 +100,7 @@ class Actioner {
     return Promise.resolve(result);
   }
 
+  let_(values) { return this.read_values(values) }
 
   read_session(...args) {
     return this.read_values(this.router.client.variables, ...args);

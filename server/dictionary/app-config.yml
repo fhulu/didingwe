@@ -40,14 +40,16 @@ modules:
   emailer:
   sms:
   document:
-  db: mysql-db
+  db: didi-mysql
 
-db:
+didi-mysql:
   host: localhost
   port: 3306
-  schema: didi
+  database: didi
+  user: didi
   password: mukoni
-  connectionLimit: 10
+  connectionLimit: 1
+  multipleStatements: no
 
 
 collections:
