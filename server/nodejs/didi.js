@@ -1,7 +1,7 @@
 "use strict";
 
 var http = require("http");
-const yaml = require("yamljs");
+const yaml = require("js-yaml");
 const util = require("./util.js");
 const {promise} = util;
 const fs = require("fs");
@@ -91,7 +91,7 @@ class Didi {
     var {log} = this;
     log.trace(`LOADING file ${path} ...`);
     return promise(fs.readFile, path, "utf8")
-      .then(data=>(log.trace(`LOADED file ${path}`), yaml.parse(data)))
+      .then(data=>(log.trace(`LOADED file ${path}`), yaml.load(data)))
       .catch(err=> {
         if (err.code === 'ENOENT') return {};
         throw err;

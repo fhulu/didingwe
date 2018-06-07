@@ -14,5 +14,4 @@ test_select:
 
 country:
   options:
-    - let: { collection: country }
-    - db.data: [collection, [collection], v0, v1]
+    - db.data: [collection, [collection: country], v0, v1]
