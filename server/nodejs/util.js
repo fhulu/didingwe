@@ -95,7 +95,7 @@ util.replace_vars = (str, values, replacer = null) => {
   if (!str.includes('$')) return str;
   for (var key in values) {
     if (!values.hasOwnProperty(key)) continue;
-    str = str.replace('$'+key, replacer(values[key]));
+    str = str.replace(new RegExp('\\$'+key+"(\W|\b|$)", 'g'), replacer(values[key]) + "$1");
   }
   return str;
 }
