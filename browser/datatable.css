@@ -74,11 +74,6 @@ table.data .filtering[on]
   background-image:url('filter_del32.png');
 }
 
-table.data .filter input
-{
-  height: 20px;
-}
-
 table.data tr.sort
 {
   cursor: pointer;
@@ -123,20 +118,4 @@ table.data .slide>[action]
 table.data thead div
 {
   display: inline-block;
-}
-
-table.data td>input
-{
-  width: 100%;
-  height: 100%;
-}
-
-table.data>tfoot tr
-{
-  height: 30px;
-  line-height: 30px;
-}
-
-table.data .hidden {
-  display: none;
 }
