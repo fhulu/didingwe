@@ -1,22 +1,21 @@
-site_config: .site-config.yml
 server_ip: 127.0.0.1
 server_port: 3434
 cache_age: 8460000
 program_name: Didi SPA
-brand_name: $program_name
-brand_path: $brand_name
 root_path: ..
 didi_root: $root_path/didi
 didi_path: $didi_root/vocab
 didi_web: $didi_root/web
 image_path: $web_path/images
 themes: [$didi_path/themes/didi]
+program_path: $root_path/vocab
+site_config: $program_path/.site-config.yml
 image_url: /images
 search_paths:
   - $didi_path
   - $themes
-  - vocab
-  - $brand_path
+  - $program_path
+
 spa:
   default:
   page: /index
@@ -26,7 +25,7 @@ spa:
   public: {}
   auth: {}
 log:
-  path: $root_path/log/$brand_name.log
+  path: $root_path/log/$program_name.log
   level: 4
   max_response: 127
 upload_dir: $root_path/uploads
