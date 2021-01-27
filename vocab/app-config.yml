@@ -2,56 +2,53 @@ site_config: .site-config.yml
 server_ip: 127.0.0.1
 server_port: 3434
 cache_age: 8460000
-resource_dir: ./browser
 program_name: Didi SPA
 brand_name: $program_name
 brand_path: $brand_name
-didi_path: ./didi
-image_path: $brand_link/images
-theme: $didi_path/themes/didi
-theme_path: $theme
-root_path: .
+root_path: ..
+didi_root: $root_path/didi
+didi_path: $didi_root/vocab
+didi_web: $didi_root/web
+image_path: $web_path/images
+themes: [$didi_path/themes/didi]
 image_url: /images
-search_paths: 
-  - didi
-  - $theme_path
-  - .
+search_paths:
+  - $didi_path
+  - $themes
+  - vocab
   - $brand_path
 spa:
   default:
   page: /index
-    template: /spa.html
-  content: $path
-authenticated:
-  page: /index
+  template: /spa.html
   path: /home
   content: $path
   public: {}
   auth: {}
-logging:
-  path: ../log/$brand_name.log
-  level: trace
+log:
+  path: $root_path/log/$brand_name.log
+  level: 4
   max_response: 127
-upload_dir: uploads
+upload_dir: $root_path/uploads
 start_page: /home
 css:
-  - /didi/font-awesome/css/font-awesome.min.css
-  - /didi/didi.css
+  - /didi/css/font-awesome/css/font-awesome.min.css
+  - /didi/css/didi.css
 scripts:
-  - /didi/jquery/jquery-3.2.1.min.js
-  - /didi/jquery/jquery-ui-1.12.1/jquery-ui.min.js
-  - /didi/enquire.min.js
-  - /didi/mukoni.jquery.js
-  - /didi/mkn.js
-  - /didi/mkn.render.js
-  - /didi/page.js
+  - /didi/js/jquery-3.2.1.min.js
+  - /didi/js/jquery-ui-1.12.1.min.js
+  - /didi/js/enquire.min.js
+  - /didi/js/mukoni.jquery.js
+  - /didi/js/mkn.js
+  - /didi/js/mkn.render.js
+  - /didi/js/page.js
 modules:
-  auth:
-  collection:
-  emailer:
-  sms:
-  document:
-  db: didi-mysql
+  - auth
+  - collection
+  - emailer
+  - sms
+  - document
+  #- db: didi-mysql
 
 didi-mysql:
   host: localhost
