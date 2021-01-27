@@ -13,7 +13,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 (function( $ ) {
-  $.widget( "ui.datatable", {
+  $.widget( "ui.datagrid", {
     options: {
       name: 'Untitled',
       flags: [],
@@ -23,24 +23,27 @@
     {
       var me = this;
       me.widths = [];
+      me.args = {};
       var opts = me.options;
       if (opts.sort) opts.flags.push('sortable');
       var r = opts.render;
       r.expandFields(opts, "fields", opts.fields);
       var row = r.initField(opts.row, opts);
       me.row_classes = opts.row.class.join(' ');
-      me.cell = r.initField(opts.cell, opts);
-      me.cell.class = me.cell.class.join(' ')
       $.extend(opts.row_styles,opts.row.styles);
-      opts.row_actions = opts.row_actions.concat(opts.row.actions);
+      me.title = r.initField(opts.title, opts);
+
+      $.extend(opts.row.actions, opts.row_actions);
+      me.row_actions = r.initField(opts.row.actions, opts);
       opts.render.expandFields(opts, "row_actions", opts.row_actions);
+      me.cell = r.initField(opts.cell, opts);
+      me.slider = r.initField(opts.slider, opts);
       me.auto_widths = [];
       me._init_params();
+      me.initColumns();
       var el = me.element;
-      me.head().addClass(opts.head.class.join(' ')).prependTo(el);
       me.showHeader();
       me.showTitles();
-      me.createRowBlueprint();
       if (opts.no_records)
         this.no_records = this.element.find('#no_records');
       me.head().toggle(me.hasFlag('show_titles') || me.hasFlag('show_header') || me.hasFlag('filter'));
@@ -50,9 +53,11 @@
         me.showData(args);
       }
       el.on('refresh', function(e, args) {
-        el.trigger('refreshing', args);
+        el.trigger('refreshing', [args]);
         me.showData(args);
         return opts.propagated_events.indexOf(e.type) >= 0;
+      })
+      el.on('refreshed', function() {
       })
       .on('addData', function(e, args) {
         el.trigger('addingData', args);
@@ -64,9 +69,64 @@
         el.trigger('updatingData', args);
         me.updateData(args);
         return opts.propagated_events.indexOf(e.type) >= 0;
-      });
+      })
+      .on('mousemove', '.titles>.cell', function(e)  {
+        me.updateSizing(e);
+      })
+      .on('mousedown', '.titles>.cell', function(e)  {
+        me.startSizing(e);
+      })
+      .on('mouseup', function(e)  {
+        me.stopSizing(e);
+      })
       me.body().scroll($.proxy(me._scroll,me));
       me.bindRowActions()
+    },
+
+    updateWidths: function() {
+      var widths = this.widths.join('px ') + 'px';
+      this.body().css('grid-template-columns', widths);
+      this.titles().css('grid-template-columns', widths);
+    },
+
+    updateSizing: function(e) {
+      if (this.sizing === undefined) {
+        var el = $(e.target);
+        var offset = el.offset();
+        var left = offset.left + this.options.sizing_width/2;
+        var col = parseInt(el.attr('col'));
+        var right = offset.left + this.widths[col] - this.options.sizing_width/2;
+        el.toggleClass('col-resize-cursor',  e.pageX < left || e.pageX > right);
+        return;
+      }
+      var sizing = this.sizing;
+      var diff = e.pageX - sizing.start_x;
+      col = sizing.col;
+      if (sizing.dragging_left) {
+        this.widths[col] -= diff;
+        this.widths[col-1] += diff;
+      }
+      else {
+        this.widths[col] += diff;
+        this.widths[col+1] -= diff;
+      }
+      sizing.start_x = e.pageX;
+      this.updateWidths();
+    },
+
+    startSizing: function(e) {
+      var el = $(e.target);
+      if (!el.hasClass('col-resize-cursor')) return;
+      var left_margin = el.offset().left + this.options.sizing_width/2;
+      this.sizing = {
+        start_x: e.pageX,
+        col: parseInt(el.attr('col')),
+        dragging_left: e.pageX <= left_margin
+      };
+    },
+
+    stopSizing: function() {
+      this.sizing = undefined;
     },
 
     _init_params: function()
@@ -82,13 +142,12 @@
           this.params[key] = val;
       }
       var sort = this.options.sort;
-      if (typeof sort != 'string') return;
       var fields = this.options.fields;
       for (var i in fields) {
         var field = fields[i];
+        if (field.id == 'style') this.style_index = i;
         if (field.id != sort) continue;
         this.params['sort'] = field.number;
-        return;
       }
     },
 
@@ -105,30 +164,36 @@
       this.element.trigger('refresh', [args]);
     },
 
+
     head: function()
     {
-      return this.element.children('thead').eq(0);
+      return this.element.children('.head').eq(0);
+    },
+
+    titles: function()
+    {
+      return this.element.children('.titles').eq(0);
     },
 
     body: function()
     {
-      return this.element.children('tbody').eq(0);
+      return this.element.children('.body').eq(0);
     },
 
     load: function(args)
     {
-      args = args || {};
+      args = this.args = $.extend(this.args, args);
       var start = new Date().getTime();
       var me = this;
       var opts = me.options;
-      me.head().find('.paging [action]').attr('disabled','');
+      me.head().children('.paging').eq(0).children('[action]').attr('disabled','');
       var action = opts.data_from == 'post'? 'action': 'values';
       var data = $.extend(opts.request, me.params, args, {action: action});
       var selector = opts.selector;
       if (selector !== undefined) {
         $.extend(data, $(selector).values());
       }
-
+      me.stopSizing();
       var el = me.element;
       me.loading = true;
       $.json('/', {data: mkn.plainValues(data)}, function(data) {
@@ -141,7 +206,9 @@
         // el.trigger('refreshing', [data]);
         var end = new Date().getTime();
         console.log("Load: ", end - start);
-        me.populate(data, args.insert_at);
+        var start_row = args.insert_at;
+        if (!start_row) start_row = me.params.offset || 0;
+        me.populate(data, start_row);
         me.loading = false;
         console.log("Populate: ", new Date().getTime() - end);
         delete data.data;
@@ -164,18 +231,22 @@
       if (data.data.length == 0 && this.body().children().length == 0 && this.no_records)
         this.element.append(this.no_records.show());
 
-      this.prev_row = null;
+      insert_at = insert_at || 0;
+      var body = this.body();
+      var had_children = body.children().length > 0;
       for(var i in data.data) {
         var row = data.data[i];
         if ($.isArray(row)) {
-          this.addRow(row, insert_at);
+          this.addRow(row, insert_at++);
           this.prev_row = row;
         }
       }
-      this.adjustWidths();
       render.root = this.element;
       if (!opts.js_functions) opts.js_functions = opts.render.root_field.js_functions
       render.initModel(render.root, opts);
+      if (!had_children && this.body().hasScrollBar()) {
+        this.titles().css("width", "calc(100% - "+$.scrollbarWidth() + 'px)');
+      }
     },
 
 
@@ -193,21 +264,15 @@
     showHeader: function()
     {
       var head = this.head();
-      head.html('');
-      var tr = $('<tr class=header></tr>').appendTo(head);
-      var th = $('<th></th>').appendTo(tr);
-      if (this.options.name !== undefined && this.hasFlag('show_header'))
-        $('<div class=heading></div>').html(this.options.name).appendTo(th);
-
-      var self = this;
+      var me = this;
       if (this.hasFlag('filter')) {
-        this.createAction('filter').appendTo(th);
-        this.element.on('filter', function(e) {
-          self.showFilter();
-          e.stopImmediatePropagation();
+        head.children('.filter').on('filter', function(e) {
+          me.showFilter();
         });
       }
+      var opts = this.options;
       if (this.options.page_size !== undefined && !this.hasFlag('hide_paging')) this.createPaging(th);
+      head.children(".header").toggle(this.hasFlag('show_header') || opts.header.show);
     },
 
     createPaging: function(th)
@@ -316,84 +381,38 @@
 
     showTitles: function()
     {
-      var head = this.head();
-      var opts = this.options;
-      var tr = head.find('.titles').empty();
-      if (!tr.exists()) tr = $('<tr class=titles>').appendTo(head);
-      if (!this.hasFlag('show_titles')) tr.hide();
-      var self = this;
+      var me = this;
+      var tr = me.titles().empty();
+      if (!me.hasFlag('show_titles')) return;
+      var opts = me.options;
       var fields = opts.fields;
-      var classes = opts.title.class.join(' ');
+      var col = 0;
       for (var i in fields) {
-        var field = fields[i];
+        var field = mkn.copy(fields[i]);
+        delete field.width;
         var id = field.id;
-        if (field.id=='style' || field.data) continue;
-        var th = $('<th></th>').addClass(classes).appendTo(tr);
+        if (id=='style' || field.data) continue;
+        var title = mkn.merge(me.title, field);
+        title = mkn.merge(title, field.title);
+        var th = opts.render.create(title).appendTo(tr);
         th.toggle(mkn.visible(field));
         th.data('field', field);
-        if (field.class) th.addClass(field.class.join(' '));
         if (id === 'actions') {
           field.filter = false;
           continue;
         }
         if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
         th.html(field.name || toTitleCase(id));
-        if (self.hasFlag('sortable')) {
-          if (id === self.params.sort)
-            th.attr('sort', self.params.sort_order);
+        if (me.hasFlag('sortable')) {
+          if (id === me.params.sort)
+            th.attr('sort', me.params.sort_order);
           else
             th.attr('sort','');
         }
-        if (field.width !== undefined) {
-          th.css('width', field.width);
-        }
-        if (self.hasFlag('sortable'))
-          self.bindSort(th, field);
+        if (me.hasFlag('sortable'))
+          me.bindSort(th, field);
+        ++col;
       };
-      this.spanColumns(head.find('.header th'));
-      this.updateWidths(head.find('.titles').children());
-    },
-
-    createRowBlueprint: function()
-    {
-      var me = this;
-      var tr = $('<tr>').addClass(me.row_classes);
-      var cls = me.cell.class;
-      me.defaults = {}
-      var options = me.options;
-      var fields = options.fields;
-      for (var i in fields) {
-        var field = fields[i];
-        me.defaults[field.id] = field.new;
-        delete field.new;
-        if (field.id == 'style' || field.data) continue;
-        var td = $('<td>').appendTo(tr);
-        td.attr('field', field.id);
-        td.toggle(mkn.visible(field));
-        td.addClass(cls);
-        if (field.style)
-          td.addStyle(field.style, options.cell.styles)
-        if (field.class) td.addClass(field.class.join(' '));
-        if (field.html === undefined) continue;
-        field = mkn.copy(field);
-        delete field.width;
-        td.append(me.options.render.create(field));
-      }
-      me.row_blueprint = tr;
-    },
-
-    spanColumns: function(td)
-    {
-      var tr = this.head().find('.titles');
-      if (!tr.exists()) tr = this.body().children('tr').eq(0);
-      td.attr('colspan', tr.children().length);
-    },
-
-    spanData: function(field, row, col)
-    {
-      if (field.span <= 1) return row[col];
-      var span = row.slice(col, col+field.span);
-      return span.join(' ');
     },
 
     showData: function(args)
@@ -403,14 +422,15 @@
       var opts = me.options;
       var max_height  = parseInt(body.css('max-height'));
       if (opts.page_size == 0 || max_height > 0) {
-        var row_height = parseInt($('<tr><td>Loading...</td></tr>').appendTo(body).height());
+        var row_height = parseInt($('<div>Loading...</div>').appendTo(body).height());
         if (row_height < 1) row_height = opts.min_row_height;
         me.params.size = Math.ceil((max_height - me.head().height())/row_height)+3;
       }
       body.addClass(opts.body.class.join(' '));
+
+      me.showTitles();
       body.empty();
       me.load(args);
-      me.spanColumns(me.head().find('.header>th'));
     },
 
     updateData: function(args) {
@@ -441,7 +461,7 @@
         var col = args.start_col
         var rows = me.body().children();
         for (var i in result.data) {
-          me.updateRow(rows.eq(row++), result.data[i], col)
+          me.updateRow(rows.eq(row++), result.data[i], i,  col)
         }
         me.loading = false;
         el.triggerHandler('updated', [data]);
@@ -449,56 +469,63 @@
       });
     },
 
+    getRowStyles: function(data) {
+      return $.isPlainObject(data)? mkn.firstKey(data): data;
+    },
+
     setRowStyles: function(row, styles) {
-      var row_styles = this.options.row_styles;
-      if (!row_styles)
-        row_styles = this.options.row.styles;
-      row.attr('class','');
-      row.addClass(this.row_classes);
-      if ($.isPlainObject(styles)) styles = mkn.firstKey(styles);
-      row.addStyle(styles, row_styles)
+      var cols = row.attr('row') == this.last_row? row.nextAll(): row.nextUntil(row.attr('next'));
+      cols.addStyle(this.getRowStyles(styles), this.options.row_styles);
+      // if (!$.isNumeric(row))
+      //   row = row.attr('row');
+      // this.body().children('.cell.row-'+row).addStyle(row_styles, styles)
     },
 
     addRow: function(row, insert_at) {
-      var tr = this.row_blueprint.clone(true);
+      if (insert_at > this.last_row) this.last_row = insert_at;
+      var tr = $('<div>').hide()
+        .addClass('row')
+        .attr('field', 'row')
+        .attr('row', insert_at)
+        .attr('next', '.row-'+(insert_at+1))
       // row = $.extend({}, this.options.defaults, row);
-      this.updateRow(tr, row);
-      var body = this.body();
-      if (insert_at === undefined)
-        tr.appendTo(body);
-      else if ($.isNumeric(insert_at))
-        tr.insertBefore(body.children().eq(insert_at));
-      else
-        tr.insertBefore(body.find(insert_at));
+      this.updateRow(tr, row, insert_at);
+
+      // if (insert_at === undefined)
+      //   tr.appendTo(td.hasClass('title')? this.head(): body);
+      // else if ($.isNumeric(insert_at))
+      //   tr.insertBefore(body.children().eq(insert_at));
+      // else
+      //   tr.insertBefore(body.find(insert_at));
     },
 
-    updateRow: function(tr, data, offset)
+    updateRow: function(tr, data, row_index, offset)
     {
       var me = this;
       var key;
       var expandable = false;
       offset = offset || 0;
-      var col = offset;
       var fields = this.options.fields;
-      var tds = tr.children();
+      var prev = tr;
       var count = fields.length-offset;
-      var col_span = 0;
+      var row_spanned = false;
+      var row_styles = me.options.row_styles;
+      var style;
+      if (me.style_index !== undefined) {
+        style = me.getRowStyles(data[me.style_index]);
+      }
+      var col_span = 1;
+      var col = -1;
+      var added_row = false;
       for (var i=0; i<count; ++i) {
         var field = fields[offset++];
         var cell = data[i];
-        if (field.id == 'style' && cell !== undefined) {
-          me.setRowStyles(tr, cell);
-          continue;
-        }
+        if (field.id == 'style' && cell !== undefined) continue;
         if (field.data) {
           tr.data(field.id, cell);
           if (field.attr) tr.attr(field.id, cell);
           continue;
         }
-        if (col_span && --col_span)
-          continue;
-
-        var td = tds.eq(col++);
         if (cell === undefined || cell === null)
           cell = { name: ""}
         else if (!$.isPlainObject(cell)) {
@@ -514,27 +541,38 @@
             cell = { name: cell}
           }
         }
+        if (field.id === 'key') {
+          tr.attr('key', cell.name);
+          key = cell.name;
+        }
+        if (!mkn.visible(field)) continue;
 
         if (cell.id === undefined) {
           cell.id = field.id;
           if (key) cell.id +=  "_" + key;
         }
+        if (field.cell) cell = mkn.merge(field.cell, cell);
+        if (field.class) cell.class = field.class.concat(cell.class);
 
         data[i] = cell;
-        if (this.prev_row && this.prev_row[i] && this.prev_row[i].row_span > 1) {
+        td = $('<div>');
+        if ((row_spanned = this.prev_row && this.prev_row[i] && this.prev_row[i].row_span > 1)) {
           cell.row_span = parseInt(this.prev_row[i].row_span) - 1;
           data[i] = cell;
-          td.addClass('hide');
         }
         else if (cell.row_span) {
-          td.attr("rowspan", cell.row_span);
+          td.css("grid-row", "auto / span " + cell.row_span);
         }
 
+        col += col_span;
         if (cell.col_span) {
           col_span = parseInt(cell.col_span);
-          td.attr("colspan", col_span);
-          for (var j = 1; j < col_span; ++j )
-            tds.eq(col++).remove();
+          td.css("grid-column", "auto / span " + cell.col_span);
+          i += col_span;
+          offset += col_span;
+        }
+        else {
+          col_span = 1;
         }
 
         if (cell === null || cell === undefined)
@@ -542,44 +580,36 @@
         else if (field.escapeHtml)
           cell = mkn.escapeHtml(cell);
 
-        if (key === undefined && (field.id === 'key' || field.key)) {
-          tr.attr('key', cell.name);
-          key = cell.name;
-        }
-
+        if (row_spanned) continue;
+        td.attr('field', field.id).attr('row', row_index).attr('col', col);
         me.setCellValue(td, cell);
+        if (style) td.addStyle(style, row_styles);
+        if (!added_row) {
+          tr.appendTo(td.hasClass('titles')? this.titles(): this.body());
+          added_row = true;
+        }
+        td.insertAfter(prev);
+        prev = td;
       }
-      me.adjustColWidths(tr);
       this.prev_row = data;
-    },
-
-    adjustColWidths: function(tr)
-    {
-      var widths = this.widths;
-      tr.children().each(function(i) {
-        var width = $(this).width();
-        if (i==widths.length)
-          widths.push(width);
-        else if (widths[i] < width)
-          widths[i] = width;
-      });
     },
 
     setCellValue: function(td, cell)
     {
       if (!cell.name) cell.name = "";
       if (!cell.value) cell.value = cell.name;
+      if (cell.class || this.options.cell.class)
+        td.setClass(this.options.cell.class.concat(cell.class));
+
+      if (cell.style)
+        td.addStyle(cell.style, this.options.cell.styles)
+
       if (td.attr('field') == 'actions')
         return this.createRowActions(td, cell.value);
 
       if (td.hasClass('expandable'))
         return td.find('.text').eq(0).text(cell.name);
 
-      if (cell.class || this.options.cell.class)
-        td.setClass(this.options.cell.class.concat(cell.class));
-
-      if (cell.style)
-        td.addStyle(cell.style, this.options.cell.styles)
 
       if (cell.key)
         td.attr("key", cell.key)
@@ -679,7 +709,7 @@
     createExpandActions: function(td)
     {
       var tr = td.parent();
-      tr.children().each(function() {
+      tr.each(function() {
         if ($(this).css('display') != 'none') {
           td = $(this);
           return false;
@@ -724,18 +754,20 @@
         }
       }
       if (slide_actions.length == 1)
-        normal_actions.splice(slide_pos,1);
+        normal_actions.splice(slide_pos-1,1);
       if (normal_actions.length)
         opts.render.createItems(td, {}, undefined, normal_actions);
       if (slide_actions.length < 2) return;
-      var slider = $('<div class="slide">').toggle(false).appendTo(td);
+      td.removeClass('truncate-word').addClass('nowrap');
+      var slider = $('<div class="slide">').toggle(false).appendTo(td).addClass(this.slider.class.join(' '));
+      var parent_class = this.slider.parent && this.slider.parent.class;
+      if (parent_class)
+        td.addClass(parent_class.join(' '));
       slider.data('actions', slide_actions);
     },
 
-    slide: function(tr)
+    slide: function(slider)
     {
-      var height = this.getActionsHeight(tr);
-      var slider = tr.find('.slide');
       if (slider.children().length == 0) {
         this.options.render.createItems(slider, {}, undefined, slider.data('actions'));
         slider.find('[action]').click(function() {
@@ -744,7 +776,6 @@
         slider.data('width', slider.width());
         slider.width(0);
       }
-      slider.find('[action]').height(height);
       slider.show().animate({width: slider.data('width')}, this.options.slideSpeed);
     },
 
@@ -778,9 +809,10 @@
       var me = this;
       var options = me.options;
       var el = this.element;
-      el.on('slide', 'tr', function(e) {
-        $(e.target).toggle();
-        me.slide($(this));
+      el.on('slide', function(e) {
+        var btn = $(e.target).toggle();
+        var slider = btn.siblings('.slide').eq(0);
+        me.slide(slider);
         e.stopPropagation();
       })
       .on('expand', 'tr', function(e) {
@@ -801,13 +833,11 @@
         if (next.hasClass('expanded')) next.remove();
         e.stopPropagation();
       })
-      .on('action', 'tr', function(e, btn) {
-        if (!btn.parent('.slide').exists()) return;
-        me.slide($(this));
-        $(this).find('[action=slide]').toggle();
-        var slider = $(this).find('.slide');
+      .on('action', '.slide', function(e, btn) {
+        var slider = $(this);
+        console.log("sliding on ",  e);
+        slider.siblings('[action=slide]').toggle();
         slider.animate({width: 0}, options.slideSpeed*2, function() { slider.hide()});
-        e.stopPropagation();
       })
       .on('delete', 'tr', function(e) {
         $(this).remove();
@@ -837,14 +867,12 @@
       .on('addRow', function(e, data) {
         if (!$(e.target).is(el)) return;
         me.addRow(data);
-        me.adjustWidths();
       })
       .on('addNewRow', function(e, data) {
         if (!$(e.target).is(el)) return;
         var tr = me.row_blueprint.clone(true);
         me.body().prepend(tr);
         me.setRowData(tr, data);
-        me.adjustWidths();
       })
       .on('removeRow', function(e, key) {
         me.getRowByKey(key).remove();
@@ -867,12 +895,12 @@
 
     getCellById: function(tr, id)
     {
-      return tr.children('[field="'+id+'"]').eq(0);
+      return tr.filter('[field="'+id+'"]').eq(0);
     },
 
     getRowByKey: function(key)
     {
-      return this.body().children('[key="'+key+'"]').eq(0);
+      return this.body().filter('[key="'+key+'"]');
     },
 
     getActionsHeight: function(tr)
@@ -880,83 +908,33 @@
       return (tr.innerHeight()*0.99).toString()+'px';
     },
 
-    initWidths: function(ths,tds)
+    initColumns: function()
     {
       var fields = this.options.fields;
-      var widths = this.widths;
-      var col = -1;
+      var widths = [];
+      var total = this.element.width();
       for (var i in fields) {
         var field = fields[i];
-        if (field.id == 'style' || field.type == 'type') continue;
-        ++col;
-        var th = ths.eq(col);
-        var td = tds.eq(col);
-        if (field.width !== undefined) {
-          th.css('width', field.width);
-          td.css('width', th.get(0).style.width);
-        }
-        else if (field.width !== 'auto') {
-          th.css('width', 'auto');
-          td.css('width', 'auto')
-        }
-      };
-    },
-
-    updateWidths: function(cells)
-    {
-      var widths = this.widths;
-      cells.each(function(i) {
-        var width = $(this).width();
-        if (i === widths.length)
-          widths.push(width);
-        else if (width > widths[i])
-          widths[i] = width;
-      })
-    },
-
-    adjustWidths: function()
-    {
-      if (this.options.adjust_widths !== undefined && !this.options.adjust_widths) return;
-      var ths = this.head().find('.titles').children();
-      var tr1 = this.body().find('tr:first-child');
-      var tds = tr1.children();
-      this.initWidths(ths,tds);
-      this.updateWidths(tds);
-      var widths = this.widths;
-      if (!widths.length) widths = [];
-      var sum = widths.reduce(function(a,b) { return a + b}, 0);
-      var fields = this.options.fields;
-      var col = 0;
-      for (var i in fields) {
-        var field = fields[i];
-        if (field.id == 'style' || field.data) continue;
-        if (field.width !== undefined) continue;;
-        var th = ths.eq(col);
-        var width = ((widths[col]/sum)*100) + '%';
-        if (th.exists()) {
-          th.css('width', width);
-          width = th.get(0).style.width
-        }
-        tds.eq(col).css('width', width);
-        ++col;
+        if (field.id == 'style' || field.data || !mkn.visible(field)) continue;
+        field = $.extend(this.options[field.id], field);
+        var width = field.width;
+        if (width.indexOf('%') > 0)
+          width = total * parseFloat(width) / 100;
+        widths.push(width);
       }
-
+      this.widths = widths;
+      this.updateWidths();
     },
 
-
-    createEditor: function(template, cls)
+    createEditor: function(cls)
     {
-      var editor = template.clone(true);
       var td;
-      editor.addClass('datatable-editor').addClass(cls).removeClass("title");
-      editor.children().each(function(i) {
-        var th = $(this);
-        var field = th.data('field');
-        if (field && field.id == 'actions') return;
-        th.text('');
-        th.append($('<input type=text></input>').addClass("tallest widest"));
+      var editor = $('<div>').addClass('datagrid-editor').addClass(cls).hide();
+      var last = editor;
+      this.widths.forEach(function(width, i) {
+        var cell = $('<div>').addClass('cell cell-editor').insertAfter(last);
+        var input = $('<input type=text>').attr('index', i).addClass('largest').appendTo(cell);
       });
-      editor.insertAfter(template);
       return editor;
     },
 
@@ -967,20 +945,15 @@
       if (filter.exists()) return filter;
 
       var me = this;
-      var titles = me.head().find('.titles');
-      filter = me.createEditor(titles,'filter').hide();
-      var tds = filter.children();
-      filter.find('input').bind('keyup cut paste', mkn.debounce(function(e) {
+      var head = me.head();
+      filter = me.createEditor('filter').appendTo(head);
+      head.children('.cell-editor>input').bind('keyup cut paste', mkn.debounce(function(e) {
         var input = $(this);
         me.params.offset = 0;
-        var td = input.parent();
-        var index = tds.index(td);
+        var index = input.attr('index')
         me.params['f'+index] = input.value();
         me.refresh();
-      }, me.options.search_delay))
-      .on('click', function(e) {
-        e.stopImmediatePropagation();
-      })
+      }, me.options.search_delay));
       return filter;
     },
 
@@ -988,8 +961,6 @@
     {
       var filter = this.createFilter();
       filter.toggle();
-      if (filter.is(':visible'))
-        this.adjustWidths(filter);
     },
 
     showFooterActions: function()

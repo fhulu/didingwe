@@ -4,9 +4,20 @@ $.widget("ui.plotter", {
     fixed_xaxis: true
   },
 
+
+
   _create: function()
   {
     var self= this;
+
+    var options = this.options;
+    if (options.axesDefaults)
+      options.axesDefaults.tickRenderer = $.jqplot[options.axesDefaults.tickRenderer];
+    if (options.axes.xaxis)
+      options.axes.xaxis.renderer = $.jqplot[options.axes.xaxis.renderer];
+    if (options.axes.yaxis)
+      options.axes.yaxis.renderer = $.jqplot[options.axes.yaxis.renderer];
+    options.seriesDefaults.renderer = $.jqplot[options.seriesDefaults.renderer];
     if (this.options.values) {
       var data = { action: 'values', path: this.options.path , key: this.options.key };
       console.log("about to json", data);
@@ -51,20 +62,24 @@ $.widget("ui.plotter", {
     return data;
   },
 
+  parseData: function(data) {
+    for (var row in data) {
+      for (var col in data[row]) {
+        data[row][col] = parseFloat(data[row][col]);
+      }
+    }
+  },
+
   plot: function(data)
   {
-    if (this.options.fixed_xaxis) data = this.fix_xaxis(data);
+    this.parseData(data);
     var options = $.extend({}, this.options);
     options.title = { text: options.name, color: options.titleColor }
-    this.to_jqplot(options.axesDefaults, "tickRenderer");
+    //this.to_jqplot(options.axesDefaults, "tickRenderer");
     // if (options.axes) {
       // this.to_jqplot(options.axes.yaxis, "renderer");
       // this.to_jqplot(options.axes.xaxis, "renderer");
     // }
-    options.axesDefaults.tickRenderer = $.jqplot.CanvasAxisTickRenderer;
-    options.axes.xaxis.renderer = $.jqplot.DateAxisRenderer;
-    options.axes.xaxis.renderer = $.jqplot.CategoryAxisRenderer;
-    options.seriesDefaults.renderer = $.jqplot.BarRenderer;
 
     this.plot = $.jqplot(this.options.id, data, options );
   }

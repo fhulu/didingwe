@@ -1,3 +1,4 @@
+window._seq = 0;
 $.fn.exists = function()
 {
   return this.get(0) != undefined;
@@ -16,7 +17,18 @@ $.fn.filterText = function(text) {
 
 $.fn.setValue = function(val)
 {
-  if ($.isPlainObject(val) || $.isArray(val)) return this;
+  if ($.isArray(val)) return this;
+  if ($.isPlainObject(val)) {
+    var me = this;
+    $.each(val, function(k, v) {
+      switch(k) {
+        case 'value': me.setValue(v); break;
+        case 'class': me.setClass(v); break;
+        case 'children': $.each(v, function(selector, value) { me.find(selector).setValue(value); } ); break;
+        default: me.attr(k, v);
+      }
+    })
+  }
 
   if (this.hasAttr('template'))
     val = this.attr('template').replace(/\$value/,val);
@@ -51,7 +63,7 @@ $.fn.setValue = function(val)
 
   if (typeof val == 'string')  val = mkn.escapeHtml(val, this.attr('parseHtml'), this.attr('escapeHtml'));
   if (this.hasAttr('value'))
-    return this.val(val);
+    return this.attr('value', val).val(val);
   return this.html(val);
 }
 
@@ -120,7 +132,6 @@ $.send = function(url, options, callback)
     callback = options;
     options = undefined;
   }
-
   if (typeof request_method === 'undefined') request_method = 'post';
   options = $.extend({
     progress: 'Processing...',
@@ -128,12 +139,13 @@ $.send = function(url, options, callback)
     async: true,
     showResult: false,
     invoker: undefined,
-    eval: true,
     data: {},
+    eval: true,
     dataType: undefined,
     error: undefined,
     event: undefined
   }, options);
+  options.data._seq = window._seq++;
   //if (options.event !== undefined) options.async = false;
   var ret = this;
   if (options.invoker !== undefined)
@@ -148,11 +160,12 @@ $.send = function(url, options, callback)
     progress.timeout = setTimeout(function() {
       progress.box.find(".message").text(options.progress);
       progress.box.show();
-    }, 500);
+    }, 1000);
 
     if (options.error ===undefined) {
       options.error = function(jqHXR, status, text)
       {
+        console.log("AJAX ERROR", status, "TEXT", text)
         progress.box.html('<p class=error>Status:'+status+'<br>Text:'+text+'</p').show();
         if (options.event !== undefined) {
           options.event.stopImmediatePropagation();
@@ -170,6 +183,7 @@ $.send = function(url, options, callback)
     cache: false,
     dataType: options.dataType,
     success: function(data) {
+      console.log("AJAX SUCCESS", data);
       if (progress.timeout !== undefined) clearTimeout(progress.timeout);
       if (progress.box !== undefined) progress.box.hide();
       if (callback !== undefined) callback(data, options.event);
@@ -339,6 +353,20 @@ $.fn.scrollHeight = function() {
   return this[0].scrollHeight;
 }
 
+$.fn.hasScrollBar = function() {
+  return this[0].scrollHeight > this.height();
+}
+
+$.scrollbarWidth = function() {
+  var parent, child, width;
+
+  parent = $('<div style="width:50px;height:50px;overflow:auto"><div/></div>').appendTo('body');
+  child=parent.children();
+  width=child.innerWidth()-child.height(99).innerWidth();
+  parent.remove();
+
+ return width;
+};
 /**
 * @param scope Object :  The scope in which to execute the delegated function.
 * @param func Function : The function to execute
@@ -556,4 +584,111 @@ $.fn.bindFirst = function(name, fn)
 
 $.fn.findByAttribute = function(attr, value) {
   return this.find("["+attr+"='"+escape(value)+"']");
+}
+
+$.fn.addStyle = function(styles, reference) {
+  if (!$.isArray(styles)) styles = styles.split(/[, ]/);
+  var added = [];
+  var removed = [];
+  var css = [];
+  if (!reference) reference = this.data('didi-field').style;
+  styles.forEach(function(style) {
+    added.push(style)
+    var classes = reference[style];
+    if (!classes) return;
+    if ($.isPlainObject(classes)) {
+      css.push(classes.style);
+      classes = classes.class;
+    }
+    if (!classes) return;
+    classes.forEach(function(cls) {
+      if (cls[0] == '~')
+        me.removeStyle(reference, cls.substr(1));
+
+      else if (cls[0] == '^')
+
+        removed.push(cls.substr(1));
+      else
+        added.push(cls);
+    });
+  })
+  if (added.length) this.addClass(added.join(' '));
+  if (removed.length) this.removeClass(removed.join(' '));
+  if (!css.length) return this;
+  var me = this;
+  css.forEach(function(style) {
+    this.css(style);
+  })
+  return this;
+}
+
+$.fn.removeStyle = function(styles, reference) {
+  if (!$.isArray(styles)) styles = styles.split(' ');
+  if (!reference) reference = this.data('didi-field').style;
+
+  var me = this;
+  styles.forEach(function(style) {
+    me.removeClass(style)
+    var classes = reference[style];
+    if (!classes) return;
+    classes.forEach(function(cls) {
+      me.removeClass(cls);
+    });
+  })
+  return this;
+}
+
+$.fn.setClass = function(classes, remove) {
+  if (classes === undefined) return;
+  if (typeof classes === 'string') classes = classes.split(' ');
+  var del = [], add =[];
+  for (var i in classes) {
+    var cls = classes[i];
+    if (!cls) continue;
+    cls[0]=='^' || cls[0] == '-'? del.push(cls.substr(1)): add.push(cls);
+  }
+  if (remove) {
+    var tmp = add;
+    add = del;
+    del = tmp;
+  }
+  this.addClass(add.join(' '));
+  this.removeClass(del.join(' '));
+  return this;
+}
+
+$.fn.unsetClass = function(classes) {
+  return this.setClass(classes,true)
+}
+
+$.fn.getQuantity = function(key, init) {
+  var v = this.data(key);
+  if (v === undefined) return init || 0;
+  return parseInt(v);
+}
+
+$.fn.load = function(options) {
+  mkn.showPage(options, this).done(function(obj, result, field) {
+    setStyle(obj, field);
+    setClass(obj, field);
+    this.trigger('dying');
+    this.replaceWith(obj);
+  });
+}
+
+$.fn.getAttributes = function(list) {
+  var result = {}
+  if (list) {
+    for (var i = 0; i< list.length; ++i) {
+      var name = list[i];
+      result[name] = name=='text'? this.text(): this.attr(name);
+    }
+  }
+  else {
+    var attrs = this[0].attributes;
+    for (var i = 0; i< attrs.length; ++i) {
+      result[attrs[i].name] = attrs[i].value;
+    }
+  }
+  return result;
 }

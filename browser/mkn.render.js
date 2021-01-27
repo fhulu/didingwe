@@ -7,11 +7,15 @@ mkn.render = function(options)
   me.invoker = options.invoker;
   var types = me.types = options.types;
   me.id = options.id;
+  me.page_id = options.id;
   me.options = options;
   me.sink = undefined;
   me.parent = options.parent;
   me.known = {};
   me.root = {};
+  me.request = options.request;
+  me.model_src = options.model_src;
+  me.model_funcs = options.model_funcs;
 
   var array_defaults = [ 'type', 'types', 'template', 'action', 'attr', 'wrap', 'default'];
   var geometry = ['left','right','width','top','bottom','height', 'line-height','max-height', 'max-width'];
@@ -33,7 +37,7 @@ mkn.render = function(options)
 
   this.mergeType = function(field, type, id)
   {
-    if (field === undefined || types === undefined) return field;
+    if (field === null || field === undefined || types === undefined) return field;
     if (type === undefined) type = field.type;
     if (type === undefined && field.html === undefined) {
       if (!id) id = field.id;
@@ -300,6 +304,7 @@ mkn.render = function(options)
       if (key.indexOf('on_') == 0) delete field[key];
     }
     item.template = me.initField(mkn.merge(template, field));
+    item.template.id = "";
   };
 
   this.expandFunction = function(value, parent_id)
@@ -310,6 +315,26 @@ mkn.render = function(options)
     if (matches[1] === 'copy')
       source = '#'+source+' #'+parent_id+',[name='+source+'] #'+parent_id;
     return $(source).value();
+  }
+
+
+  var getArray = function(val) {
+    if (!val || $.isPlainObject(val)) return [];
+    if (!$.isArray(val)) val  = [val];
+    return val;
+  }
+
+  var substArray = function(field, val) {
+    return getArray(val).map(function(val) {
+      var matches = getMatches(val, /\$(\w+)/g)
+      for (var j in matches) {
+        var match = matches[j];
+        var value = field[match];
+        if (value === undefined || typeof value !== 'string') continue;
+        val = val.replace('$'+match, value);
+      }
+      return val;
+    })
   }
 
   this.expandValue = function(values,value)
@@ -337,6 +362,7 @@ mkn.render = function(options)
       for (var field in data) {
         var value = data[field];
         if ($.isNumeric(value)) continue;
+        if ($.isArray(value)) data[field] = substArray(data, value);
         if (typeof value !== 'string' || value.indexOf('$') < 0 || exclusions.indexOf(field) >=0) continue;
         var old_value = value = value.replace('$id', parent_id);
         data[field] = value = me.expandValue(data, value, parent_id);
@@ -392,6 +418,7 @@ mkn.render = function(options)
         field[key] = parent[value.substr(1)];
     }
   }
+
 
   this.initField = function(field, parent)
   {
@@ -451,9 +478,9 @@ mkn.render = function(options)
 
   this.render = function(parent, key) {
     var field = parent[key] = me.initField(parent[key], parent);
+    me.root_field = field;
     var obj = me.root = me.create(parent, key);
-    initModel(obj, field);
-    me.updateWatchers();
+    me.initModel(obj, field);
     return obj;
   }
 
@@ -476,10 +503,27 @@ mkn.render = function(options)
 
   }
 
-  this.create =  function(parent, key, init)
+  var setStyling = function(obj, field) {
+    if (!$.isPlainObject(field)) 
+      return obj.setClass(field);
+
+    setVisible(obj, field);
+    setDisabled(obj, field);
+    setResponsive(obj, field);
+    setAttr(obj, field);
+    setClass(obj, field);
+    setStyle(obj, field);
+  };
+
+  this.create =  function(parent, key, init, parent_obj)
   {
-    var field = key===undefined? parent: parent[key];
-    if (!field) field = types[key];
+    var field = parent;
+    if (typeof key == 'string' || $.isNumeric(key)) {
+      field = parent[key];
+      if (!field) field = types[key];
+    }
+    else if ($.isPlainObject(key))
+      field = key;
     if (init === undefined || init) field = this.initField(field, parent);
     if (field.parent_page === undefined) field.parent_page = me.id;
     if (field.sub_page) {
@@ -494,13 +538,11 @@ mkn.render = function(options)
     field.html = field.html.trim().replace(/\$tag(\W)/, field.tag+'$1');
     var table_tag = isTableTag(field.tag);
     var obj = table_tag? $('<'+field.tag+'>'): $(field.html);
+
     if (field.is_body)
       obj = $('body').append(obj.html());
     if (this.sink === undefined) this.sink = obj;
     var reserved = ['id', 'create', 'css', 'script', 'name', 'desc', 'data'];
-    setAttr(obj, field);
-    setClass(obj, field);
-    setStyle(obj, field);
     setModelFunctions(obj,field);
     if (field.key === undefined) field.key = options.key;
     var values = $.extend({}, this.types, field);
@@ -541,24 +583,26 @@ mkn.render = function(options)
     }
     if (obj.attr('id') === '') obj.removeAttr('id');
 
-    setVisible(obj, field);
-    setDisabled(obj, field);
-    setResponsive(obj, field);
-    runJquery(obj, field);
     obj.data('didi-field', field);
+    setStyling(obj, field);
+    if (field.parent && parent_obj) {
+      setStyling(parent_obj, field.parent);
+    }
+
+    runJquery(obj, field);
     if ('didi-functions' in field) obj.addClass('didi-watcher');
     field['mkn-object'] = obj;
 
     if ($.isPlainObject(field.position))
       obj.position(field.position);
 
-    initLinks(obj, field).then(function() {
+     initLinks(obj, field).then(function() {
       if (subitem_count) me.setValues(obj, field);
       initEvents(obj, field);
-      obj.trigger('created', [field]);
+      obj.triggerHandler('created', [field]);
     });
 
-    if (key !== undefined) parent[key] = field;
+    if (typeof key === 'string' || $.isNumeric(key)) parent[key] = field;
     return obj;
   }
 
@@ -572,10 +616,11 @@ mkn.render = function(options)
     return mkn.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
       setStyle(obj, field);
       setClass(obj, field);
+      setResponsive(obj, field);
       target.trigger('dying');
       target.replaceWith(obj);
       if (!selector) return;
-      var classes = selector.regexCapture(/(\.\w[\w\.]*)$/g);
+      var classes = selector.regexCapture(/(\.[\w-][\w-\.]*)$/g);
       if (classes.length) obj.addClass(classes[0].replace('.', ' '));
     });
   }
@@ -609,6 +654,8 @@ mkn.render = function(options)
           templated.append(obj);
         else
           this.replace(templated, obj, id, 'field');
+        if (item.parent) 
+          setStyling(templated, item.parent);
       }
       else {
         templated = obj;
@@ -711,11 +758,22 @@ mkn.render = function(options)
     });
   }
 
+  var initListeners = function(obj, field) {
+    if (!field.listen) return;
+    var events = $.isArray(field.listen)? field.listen: [field.listen];
+    $.each(events, function(i, event) {
+      obj.on(event, function() {
+        obj.trigger(event + '_' + field.id);
+      });
+    })
+  }
+
   var initOnEvents = function(obj, field) {
     var events = {};
     if (field.action)
       events['click'] = [field];
     var id = field.id;
+    initListeners(obj, field);
     $.each(field, function(key, value) {
       if (key.indexOf('on_') != 0) return;
       var event = key.substr(3);
@@ -732,15 +790,15 @@ mkn.render = function(options)
       $.each(values, function(i, value) {
         if ($.isPlainObject(value) && !value.path) value.path = field.path + '/on_' + key;
         var sink = obj;
-        if (obj.is('body') && key == 'scroll') sink = $(window);
-        sink.on(key, function(e) {
-          // trap trapped events
-          if ($.isArray(field.trap) && field.trap.indexOf(key) >=0 )
-            e.stopImmediatePropagation();
-
+        if (obj.is('body') && ['scroll','resize'].indexOf(key) >= 0) sink = $(window);
+        var handler_name = 'on_'+key.replace(/\W/g, '_');
+        var event_pair = key.split('@');
+        var event_name = event_pair[0];
+        var selector = event_pair.length>1? event_pair[1]: null;
+        sink.on(event_name, selector, function(e) {
           if (obj.hasClass('disabled')) return;
           // ignore default action of an anchor
-          if (key == 'click' && obj.prop("tagName").toLowerCase() == 'a') {
+          if (event_name == 'click' && obj.prop("tagName").toLowerCase() == 'a') {
             e.preventDefault();
             if (field.url === undefined) field.url = obj.attr('href');
           }
@@ -750,8 +808,8 @@ mkn.render = function(options)
             mkn.replaceVars(value, value.params);
             accept(e, obj, value);
           }
-          else if ('didi-model' in field && 'on_'+key in field['didi-model']) {
-            var handler = me.model["on_"+key+"_"+ id];
+          else if ('didi-model' in field && handler_name in field['didi-model']) {
+            var handler = me.model[handler_name+"_"+ id];
             if (handler)
               handler.apply(obj, arguments);
             me.updateWatchers();
@@ -761,8 +819,59 @@ mkn.render = function(options)
     });
   }
 
+
+  var initEventTraps = function(obj, field) {
+    var traps = getArray(field.trap);
+    $.each(traps, function(i, trap) {
+      obj.on(trap, function(e) {
+        e.stopPropagation();
+      })
+    })
+  }
+
+  var initEventTriggers = function(obj, field) {
+    var triggers = getArray(field.triggers);
+    if (!triggers.length) return;
+    obj.on('click', function(e) {
+      if (obj.is($(e.target))) $.each(triggers, function(i, action) {
+        obj.trigger(action);
+      });
+    })
+  }
+
+  var initClassToggle = function(obj, field) {
+    var args = getArray(field.toggles);
+    var class1, class2, event = 'click';
+    switch(args.length) {
+      case 0: return;
+      case 1: class1 = args[0]; break;
+      case 2: class1 = args[0]; class2 = args[1]; break;
+      default: class1 = args[0]; class2 = args[1]; event = args[3];
+    }
+    obj.on(event, function() {
+      if (class1==class2)
+        obj.toggleClass(class1);
+      else if (obj.hasClass(class1))
+        obj.removeClass(class1).addClass(class2);
+      else
+        obj.removeClass(class2).addClass(class1);
+    })
+  }
+
+  var initEventClasses = function(obj, field) {
+    var events = field.events;
+    if (!events) return;
+    obj.on(Object.keys(events).join(' '), function(e) {
+      obj.setClass(events[e.type]);
+    });
+  }
+
   var initEvents = function(obj, field) {
+    initClassToggle(obj, field);
+    initEventClasses(obj, field);
     if ('attr' in field && field.attr.for == field.id) return;
+    initEventTriggers(obj, field)
+    initEventTraps(obj, field);
     initTimeEvents(obj, field);
     initOnEvents(obj, field);
     if (typeof field.enter == 'string') {
@@ -772,7 +881,8 @@ mkn.render = function(options)
       })
     }
     field.page_id = me.page_id;
-    obj.on('reload', function() {
+    obj.on('reload', function(e, data) {
+      field.params = data;
       loadValues(obj, field);
     })
     .on('server_response', function(event, result) {
@@ -781,25 +891,20 @@ mkn.render = function(options)
     })
     initTooltip(obj);
 
+    obj.on('post', function(event, args) {
+      field = $.extend({}, field, { action: 'post', params: [args] });
+      accept(event, $(this), field);
+    });
+
+    // handle input change model
     var tag = obj.prop("tagName");
     if (!tag || ['input','select','textarea'].indexOf(tag.toLowerCase()) < 0) return;
 
     var id = getModelId(field)
     obj.on('keyup input cut paste change', function() {
-      if (me.model["set_"+id]($(this).value()))
+      var func = me.model["set_"+id];
+      if (!func || func($(this).value()))
       	me.updateWatchers();
-    });
-
-    if (!field.action) return;
-    obj.click(function(event) {
-      if (field.tag == 'a') {
-        event.preventDefault();
-        if (field.url === undefined) field.url = obj.attr('href');
-      }
-      accept(event, $(this), field);
-      if ($.isArray(field.trap) && field.trap.indexOf('click') >=0 ) {
-        event.stopImmediatePropagation();
-      }
     });
   };
 
@@ -837,22 +942,8 @@ mkn.render = function(options)
     if (obj.attr('id') === '') obj.removeAttr('id');
   }
 
-  var setClass = function(obj, field)
-  {
-    var cls = field.class;
-    if (cls === undefined) return;
-    if (typeof cls === 'string') cls = [cls];
-    cls = cls.map(function(val) {
-      var matches = getMatches(val, /\$(\w+)/g)
-      for (var j in matches) {
-        var match = matches[j];
-        var value = field[match];
-        if (value === undefined || typeof value !== 'string') continue;
-        val = val.replace('$'+match, value);
-      }
-      return val;
-    })
-    mkn.setClass(obj, cls);
+  var setClass = function(obj, field) {
+    obj.setClass(substArray(field, field.class));
   }
 
 
@@ -1011,6 +1102,12 @@ mkn.render = function(options)
   var accept = function(event, obj, field, action)
   {
     field.page_id = field.page_id || obj.closest(".page").attr('id');
+
+    var trigger_post_result = function(result) {
+      var type = result && $.isPlainObject(result._responses) && 'errors' in result._responses ? 'error': 'success';
+      obj.trigger('post_'+type, [result]);
+    }
+
     var dispatch_one = function(action) {
       var params = [];
       if ($.isArray(action)) {
@@ -1018,11 +1115,13 @@ mkn.render = function(options)
         action = action[0];
       }
       switch(action) {
+        case 'page': mkn.showPage(field); return;
         case 'dialog': mkn.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
         case 'close_dialog': mkn.closeDialog(obj); break;
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
+          if (!field.params) field.params = [];
           params = serverParams('action', url, $.extend({key: field.key}, params[0], field.params[0]));
           if ($.isArray(field.params)) params = $.extend({}, params, field.params[0]);
           var selector = field.selector;
@@ -1030,14 +1129,20 @@ mkn.render = function(options)
             selector = selector.replace(/(^|[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
             params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
             me.sink.find(".error").remove();
+            me.sink.find(".in-error").unsetClass('in-error').trigger('clear-error');
+            obj.trigger('posting', [params]);
             $(selector).json('/', params, function(result) {
-              obj.trigger('processed-'+field.id, [result]);
+              trigger_post_result(result);
               me.respond(result, obj, event);
             });
             break;
           }
+          me.sink.find(".error").remove();
+          me.sink.find(".in-error").removeClass('in-error').trigger('clear-error');
+          obj.trigger('posting', [params]);
+          obj.trigger('posting');
           $.json('/', params, function(result) {
-            obj.trigger('straight processed', [result]);
+            trigger_post_result(result);
             me.respond(result, obj);
           });
           break;
@@ -1076,8 +1181,18 @@ mkn.render = function(options)
       return;
     }
     var subject = me.sink.find('#'+field+",[name='"+field+"']");
-    var parents = subject.parents("[for='"+field+"'],.error-sink");
-    var parent = parents.exists()? parents.eq(0): subject;
+    var parent;
+    if (subject.hasClass('error-sink')) {
+      parent = subject;
+    }
+    else {
+      var parents = subject.parents(".error-sink");
+      if (!parents.exists()) parents = subject.parents("[for='"+field+"']");
+      parent = parents.exists()? parents.eq(0): subject;
+    }
+    subject.trigger('errors', [error]);
+    parent.addClass('in-error').attr('error-message', error);
+    if (parent.hasClass('no-error-box') || subject.hasClass('no-error-box')) return;
 
     var box = $("<div class=error>"+error+"</div>");
     parent.after(box);
@@ -1107,6 +1222,7 @@ mkn.render = function(options)
       if (!parent.exists()) parent = me.sink;
     }
     else invoker = parent;
+
 
     var handle = function(action, val)
     {
@@ -1151,13 +1267,19 @@ mkn.render = function(options)
       }
       if (id === "query") query_values = true;
     }
-    if (query_values)
-      loadValues(parent, data);
+    if (query_values) {
+      parent.on('load_values', function(event, data) {
+        loadValues(parent, data);
+      });
+      if (parent.auto_load === undefined || parent.auto_load)
+        parent.trigger('load_values', [data]);
+    }
   }
 
   var loadValues =  function(parent, data)
   {
-    $.json('/', serverParams('values', data.path, {key: data.key}), function(result) {
+    var params = $.extend({key: data.key}, data.params);
+    $.json('/', serverParams('values', data.path, params), function(result) {
       if (!result) return;
       parent.trigger('loaded_values', [result]);
       if ($.isPlainObject(result))
@@ -1223,11 +1345,12 @@ mkn.render = function(options)
     function setInlineExpr(parent, key, value) {
       value = value.trim();
       var exprs;
-      if (value[0] == '~')
+      if (/^~|\s*function\s*\([^)]*\)/gm.test(value))
         exprs = [value];
       else
         exprs = value.regexCapture(/(`[^`]+`)/g);
       var replaced = false;
+      key = key.replace(/\W/g, '_');
       exprs.forEach(function(expr, i) {
         if (!expr) return;
         var src;
@@ -1235,7 +1358,7 @@ mkn.render = function(options)
         var ret = /\breturn\s/gm.test(expr)?"": "\t\treturn ";
         if (key.indexOf('on_') != 0)
           src = "\tget_"+id+"_"+  index+": function(obj) {\n"+ret;
-        else if (!/^[~`]\s*function\s*\(/gm.test(expr))
+        else if (!/^[~`]?\s*function\s*\(/gm.test(expr))
           src = "\t"+key+"_"+id+": function(event) {\n";
         else {
           src = "\t"+key+"_"+id+": ";
@@ -1256,7 +1379,7 @@ mkn.render = function(options)
       for (var i in scripts) {
         var src = scripts[i]['script'];
         if (!src) return;
-        if (/^[~`]\s*function\s*\(/gm.test(src))  src =  "function(event) { " + src + " }";
+        if (/^[~`]?\s*function\s*\(/gm.test(src))  src =  "function(event) { " + src + " }";
         var sink = obj;
         if (obj.is('body') && event == 'scroll') sink = $(window);
         sink.on(event, $.proxy(Function(src), obj));
@@ -1288,14 +1411,15 @@ mkn.render = function(options)
       field['didi-functions'] = funcs;
   }
 
-  var initModel = function(parent, field) {
+  this.initModel = function(parent, field) {
     var vars = [];
     var parent_id = field.id;
 
     // add initial vars
-    if (field.dd_init) $.each(field.dd_init, function(key) {
+    if (field.dd_init) $.each(field.dd_init, function(key, value) {
       vars.push(key);
     });
+
 
     // add input vars
     parent.find('input,select,textarea').addBack('input,select,textarea').each(function() {
@@ -1307,8 +1431,8 @@ mkn.render = function(options)
 
     // create set functions
     var funcs = vars.map(function(v) {
-      return "\tchanged_"+v+": function(x) { return x!=="+v+";},"
-        + "\n\tset_"+v+": function(x) {\n\t\tvar changed = this.changed_"+v+"(x);\n\t\t_old_"+v+"="+v+";\n\t\t"+v+"=x\n\t\treturn changed;\n\t}"
+        return "\tset_"+v+": function(x) {\n\t\tvar changed = ("+v+" !== x);\n\t\t_old_"+v+"="+v+";\n\t\t"+v+"=x\n\t\treturn changed;\n\t},"
+        + "\n\tchanged_"+v+": function(x) {\n\t\treturn x!=="+v+";\n\t}"
     });
 
     // append watchers functions
@@ -1317,30 +1441,56 @@ mkn.render = function(options)
       if (!field || field.parent_page != parent_id) return;
       funcs = funcs.concat(field['didi-functions']);
     });
+
+    if (me.model_funcs)
+      funcs = me.model_funcs.concat(funcs);
+    me.model_funcs = funcs;
+
     if (!funcs.length) return;
 
     // convert funcs to js source
-    var src = "\nreturn {\n" + funcs.join(",\n") + "}";
+    funcs = "\nreturn {\n" + funcs.join(",\n") + "}";
 
+    var src = "";
     // convert vars and funcs to js source
-    if (vars.length) src = "var " + vars.map(function(v) {
+    if (vars.length) vars = "var " + vars.map(function(v) {
       return v+",_old_"+v;
-    }).join(",") + src;
+    }).join(",");
+
+    if (field.js) {
+      $.each(field.js, function(name, value) {
+        if (/^\s*function\(/.test(value))
+          src += "\n" + value.replace(/^s*function\s*(\([^)]*\))/m, 'function '+name+'$1')+ "\n";
+        else
+          src += "var " + name + " = " + value + ";\n";
+      })
+    }
+
+    src += "\n" + vars;
+    if (field.js_functions) src += "\n\n" + field.js_functions + "\n\n";
+    if (me.model_src)
+      src = me.model_src + src;
+    me.model_src  = src;
+
+    src += funcs;
 
     // create model
     me.model = new Function(src)();
-
     // set inital vars
     if (field.dd_init) $.each(field.dd_init, function(key, value) {
       me.model["set_"+key](value);
     });
+
+    me.updateWatchers(parent);
   }
 
 
-  me.updateWatchers = function() {
+  me.updateWatchers = function(root) {
+    if (!root) root = me.root;
 
     function update(obj, field, id) {
-      if (!field || !field['didi-model']) return;
+      if (!field || !field['didi-model']) return false;
+      var changed = false;
       $.each(field['didi-model'], function(key, value) {
         if (key.indexOf('on_') == 0) return;
         var vars = value.regexCapture(/\$\{(\d+)\}/g);
@@ -1350,33 +1500,37 @@ mkn.render = function(options)
           if (func === undefined) return;
           var result = func(obj);
           var regex = "\\$\\{"+index+"\\}";
+          var old_value = value;
           if (new RegExp('^'+regex+'$','g').test(value))
             value = result;
           else
             value =  value.replace(new RegExp(regex,'g'), result);
+          if (value !== old_value) changed = true;
           field[key] = value;
           if (key == 'text') obj.text(value);
           if (key == 'value') obj.val(value)
         });
       })
+      return changed;
     }
-    var root_field = me.root.data('didi-field');
+    var root_field = root.data('didi-field');
     if (!root_field) return;
     var root_id = root_field.id;
 
-    me.root.find('.didi-watcher').addBack('.didi-watcher').each(function() {
+    root.find('.didi-watcher').addBack('.didi-watcher').each(function() {
       var obj = $(this);
       var field = obj.data('didi-field');
       if (!field || field.parent_page != root_id) return;
-      var id = field.id;
-      update(obj, field, id);
-      update(obj, field.style, id);
-      update(obj, field.class, id);
-      setAttr(obj, field);
-      setClass(obj, field);
-      setStyle(obj, field);
-      setVisible(obj, field);
-      setDisabled(obj, field);
+      if (!field) return;
+      var id = field.id || obj.attr("for");
+      var changed = update(obj, field, id);
+      var style_changed = update(obj, field.style, id);
+      var class_changed = update(obj, field.class, id);
+      if (changed) setAttr(obj, field);
+      if (changed || class_changed) setClass(obj, field);
+      if (changed || style_changed) setStyle(obj, field);
+      if (changed) setVisible(obj, field);
+      if (changed) setDisabled(obj, field);
     })
   }
 }

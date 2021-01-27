@@ -136,12 +136,14 @@ var mkn = new function() {
 
   this.showPage = function(options, parent)
   {
-    if (parent == undefined) parent = $('body');
+    if (parent == undefined) {
+      parent = options.parent? $(parent): $('body');
+    }
     var defer = $.Deferred();
     this.loadPage(options, parent).done(function(result, options) {
       var object = mkn.createPage(options, result, parent);
       if ($.isPlainObject(result.fields.parent))
-        mkn.setClass(parent, result.fields.parent.class);
+        parent.setClass(result.fields.parent.class);
       defer.resolve(object,result,options);
     });
     return defer.promise();
@@ -177,6 +179,7 @@ var mkn = new function() {
   {
     if (message) alert(message);
     var parent = dialog.closest('.modal');
+    parent.trigger("closing");
     if (parent.exists()) parent.remove();
   }
 
@@ -315,6 +318,15 @@ var mkn = new function() {
     return str;
   }
 
+  this.replaceValues = function(str, data)
+  {
+    for (var key in data) {
+      if (!data.hasOwnProperty(key)) continue;
+      str = str.replace('$'+key, data[key]);
+    }
+    return str;
+  }
+
   this.visible = function(f) {
     return !(f.hide || f.show === false);
   }
@@ -444,6 +456,23 @@ var mkn = new function() {
     replace(object);
   }
 
+
+  this.debounce = function (func, wait, immediate) {
+     var timeout;
+     return function() {
+       var context = this, args = arguments;
+       var later = function() {
+         timeout = null;
+         if (!immediate) func.apply(context, args);
+       };
+       var callNow = immediate && !timeout;
+       clearTimeout(timeout);
+       timeout = setTimeout(later, wait);
+       if (callNow) func.apply(context, args);
+     };
+   };
+
+
 }
 
 
@@ -537,4 +566,7 @@ if (!Array.prototype.forEach) {
     }
     // 8. return undefined
   };
+
+
+
 }

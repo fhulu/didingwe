@@ -12,7 +12,7 @@ $.widget( "custom.isearch", {
     var me = this;
     var el = me.element;
     var opts = me.options;
-    me.params = { action: 'data', path: opts.path, key: opts.key, offset: 0, size: opts.drop.autoload  };
+    me.params = { action: 'values', path: opts.path, key: opts.key, offset: 0, size: opts.drop.autoload  };
     me.searcher = el.find('.isearch-searcher').on('keyup input cut paste', function() {
       el.val("")
       me.params.offset = 0;
@@ -24,15 +24,22 @@ $.widget( "custom.isearch", {
       el.find('.isearch-adder').show().click(function(){ me.drop.hide() })
 
     var dropper = el.find('.isearch-dropper').click(function() {
+      if ($(this).hasClass('disabled')) return;
+      if (me.drop.is(":visible")) {
+        me.drop.hide();
+        return;
+      }
       me.params.offset = 0;
       el.val("");
       me.searcher.val("");
       me._load();
+      var offset = el.offset();
+      me.drop.css({left: offset.left, top: (offset.top + parseInt(el.css('height').match(/\d+/)))} );
     });
 
     me.drop = el.find('.isearch-drop').on('click', '.isearch-option', function() {
       el.data('source', $(this).data('source'));
-      el.trigger('selected', [$(this).attr('value'), $(this).attr('chosen')]);
+      $(this).trigger('selected', [$(this).attr('value'), $(this).attr('chosen')]);
     })
     .scroll($.proxy(me._scroll,me))
     .click(function() {  me.drop.hide() })
