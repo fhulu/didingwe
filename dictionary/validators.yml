@@ -28,8 +28,8 @@ before_period:
   error: $name must be before $1 $2
 
 between:
-  valid: range($1,$2,$3)
-  error: $1 ($v1) must be between $v2 and $v3
+  valid: range($value,$1,$2)
+  error: $name ($value) must be between $1 and $2
 
 blank:
   error: $name must be blank
@@ -83,6 +83,10 @@ either:
 email:
   valid: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i
 
+empty:
+  valid: /^$/
+  error: $name must be empty
+  
 equals:
   valid: /^\s*$1\s*$/
   error: $name must equal $1
@@ -112,6 +116,7 @@ greater_equal:
   error: $name must not be less than $1
 
 in:
+  valid: sql(select 1 from $1 where $2='$v2')
   error: No such $name ($value)
 
 in_collection:
@@ -123,6 +128,9 @@ int_tel:
     - at_least(10,digits)
   error: Please use international number format without space/s in betweeen for $name, e.g. +27823456789
 
+ip_address:
+  valid: /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+
 is: must_be($1)
 
 less:
@@ -131,6 +139,9 @@ less:
 less_equal:
   error: $name must not be greater than $1 ($v1)
 
+mac_address:
+  valid: /[0-9a-f]{2}(:[0-9a-f]{2}){5})/
+  
 match:
   valid: equal($1)
   error: $name must be the same as $1
@@ -147,7 +158,7 @@ must_be:
 name:
   valid:
     - at_least(2,characters)
-    - /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u
+    - /^[0-9a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u
     - /^((?!'').)*$/
 
 national_tel:
@@ -203,9 +214,9 @@ quantity:
 
 range:
   valid:
-    - greater_equal($v2)
-    - less_equal($v3)
-  error: $1 ($v1) must be in range $v2 to $v3
+    - greater_equal($2)
+    - less_equal($3)
+  error: $1 ($v1) must be in range $2 to $3
 
 regex:
   error: Invalid $name
@@ -224,9 +235,29 @@ same_year:
 sql:
   error: Invalid $name
 
+sql_exists: # table[,column]
+  2: $name
+  valid: sql(select 1 from $1 where $2='$value')
+  error: $name must exist
+
+sql_exists_foreign: # table, column, foreign[, foreign_column]
+  4: $3
+  valid: sql(select 1 from $1 where $2='$value' and $3='$v4')
+  error: $name must exist
+
+sql_unique: # table[,column]
+  2: $name
+  valid: not(sql_exists($1,$2))
+  error: $name ($value) already exists
+
+sql_unique_foreign: # table, column, foreign[, foreign_column]
+  4: $3
+  valid: not(sql_exists_foreign($1,$2,$3,$4))
+  error: $name ($value) already exists
+
 telephone:
   valid: /^[+0]\d+$/
-  error: $name must be digits,eg 0158745896
+  error: $name must be digits, e.g. 0158745896
 
 time:
   valid:

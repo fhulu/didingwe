@@ -1,31 +1,40 @@
-datatable:
+datagrid:
   head: ""
   tooltip: false
-  type: table
+  type: container
+  create: datagrid
+  script: [/didi/datagrid.js]
+  contents: [$head, $titles, $body, $footer]
   auto_load: true
-  text: $head $body $no_records
-  class: [data,didi-listener,datatable]
-  create: datatable
-  head: { class: [didi] }
-  title: { class: [didi] }
-  body: { class: [didi,table-body] }
+  class: [didi-listener,datagrid, scroll-x nowrap]
+  head:
+    classes: container
+    derive: [header,paging]
+    contents: [$header, $paging]
+  header:
+    classes: container
+    show: false
+  titles:
+    classes: container
+    class: [widest modern-grid]
+  title:
+    tag: div
+    class: [title]
+  body:
+    classes: container
+    class: [modern-grid widest scroll-y]
+  sizing_width: 2
   min_row_height: 20
   search_delay: 250
   defaults: {}
-  row_actions: []
-  row_styles:
+  row_styles: {}
   row:
     actions: []
-    class: []
-  cell:
-    class: [didi]
+    class: [widest]
     styles: {}
-    controls:
-      type: container
-      contents: []
-  script: [/didi/datatable.js]
-  row_creator: { type: table_row }
-  css: [/didi/datatable.css]
+  cell:
+    class: [didi relative cell]
+    styles: {}
   flags: []
   position: top
   filter:
@@ -61,17 +70,21 @@ datatable:
   # row actions
   row_actions:
     - default: { validate: none}
-    - type: actioner
+    - type: $row_action
     - action: trigger
-    - slide: {style: {margin-right: 4px}}
+    - slide
     - slideoff
     - action: post
+
+  row_action:
+    type: actioner
+    class: [tallest inline-block]
 
   footer_actions:
     - type: actioner
 
   no_records:
-    type: datatable_no_records
+    type: datagrid_no_records
     show: no
 
   collapse:
@@ -86,12 +99,24 @@ datatable:
   slide:
     event: slide
     name: "<"
+    class: [absolute float-right tallest pad-x pad-tiny blue]
     desc: More options...
+
+  slider:
+    parent:
+      class: [nopad]
+    class: [absolute top-right float-right tallest]
+    on_slideoff: |
+      function() {
+        console.log("sliding off", $(this));
+      }
+
 
   slideoff:
     event: slideoff
     name: ">"
     desc: Hide options
+    class: [pad-x pad-tiny]
 
   slideSpeed: 150
   searchDelay: 250
@@ -103,7 +128,7 @@ export:
   action: redirect
   validate: none
   post:
-    call: datatable::export(root,$key)
+    call: datagrid::export(root,$key)
   query: " "
   target: _blank
 
@@ -113,7 +138,7 @@ print:
  action: redirect
  validate: none
  post:
-   - call: datatable::pdf(root,$key)
+   - call: datagrid::pdf(root,$key)
  query: " "
  target: _blank
 
@@ -124,7 +149,7 @@ image_row_action:
   class: [fa, no-backcolor, pad-x pad-tiny, float-right, cursor-pointer]
 
 
-datatable_no_records:
+datagrid_no_records:
   type: p
   name: No records found.
-  class: [datatable-no-records]
+  class: [datagrid-no-records]

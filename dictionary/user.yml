@@ -15,7 +15,7 @@ activate:
 
 activate_email:
   from: $support_email
-  to: $first_name $last_name <$email>
+  to: [$email, $first_name $last_name]
   subject: Your account has been activated
   message: >
     Dear <b>$first_name $last_name</b> <br><br>
@@ -46,12 +46,12 @@ activate_password:
   desc: Please enter your desired password and type it again to confirm it.
   inputs:
     - type: password_input
-    - password
+    - password: { type: password_input }
     - confirm_password
   post:
     - read_session: token
     - collection.values: [token, $token, user]
-    - collection.update: [user, $user, password: /password('$password'), attempts: 0, active: 1]
+    - collection.update: [user, $user, password: /password2('$password'), attempts: 0, active: 1]
     - collection.update: [token, $token, active: 0]
     - clear_values
     - alert: Your account has been activated successfully
@@ -83,8 +83,10 @@ check_otp:
   pre_validation:
     - read_session: [server_otp,time_of_otp]
   values:
-    - sql_values: select lpad(floor(rand()*9999),4,'0') server_otp, now() time_of_otp
-    - write_session: [server_otp,time_of_otp]
+    - read_session: [server_otp,time_of_otp]
+    - if !"$server_otp":
+        - sql_values: select lpad(floor(rand()*9999),4,'0') server_otp, now() time_of_otp
+        - write_session: [server_otp,time_of_otp]
     - read_session: email,first_name,last_name,cellphone
     - read_config: sms_otp,email_otp
     - if $sms_otp:
@@ -99,7 +101,7 @@ otp_sms:
 otp_email:
   subject: One Time Password
   from: $support_email
-  to: $first_name $last_name <$email>
+  to: [$email, $first_name $last_name]
   message: >
     Good day<br><br>
     You are currently trying to register on $program_name or change your email address.
@@ -176,7 +178,7 @@ confirm_registration:
         - foreach:
             - collection.data: [user, [partner: $registrar, role: $registrar_role],first_name, last_name, email]
             - if $email_new_registration:
-                emailer.send: { type: new_registration_email, to: $first_name $last_name<$email> }
+                emailer.send: { type: new_registration_email, to: [$email, $first_name $last_name ]}
             - clear_values: [first_name, last_name, email]
     - keep_values: [new_user_id, partner]
     - clear_session: title,first_name,last_name,cellphone,password
@@ -226,12 +228,12 @@ create:
     - close_dialog
 
 resend_activation_token:
-  class: [green]
+  class: [blue]
   name: Resend Token
   confirmation: yes
   post:
-    - collection.values: [session,$sid,partner,user,company_name: partner.name, creator_first_name: user.first_name, creator_last_name: user.last_name]
-    - collection.values: [user,$key,first_name,last_name,email]
+    - collection.values: [session,$sid,partner,user,company_name: partner.name, creator_first_name: user.first_name, creator_last_name: user.last_name, creator_email: user.email]
+    - collection.values: [user,$key,first_name,last_name,user_email: email]
     - read_config: [self_activation_validity,program_name]
     - let: { url: /user/activate_self, method: show_dialog }
     - collection.insert: [token, id: /md5(last_insert_id()), user: $key, url, method, active: 1, valid_until: /sysdate() + interval $self_activation_validity]
@@ -241,12 +243,12 @@ resend_activation_token:
 
 
 create_user_email:
-  from: $support_email
-  to: $first_name $last_name <$email>
+  address: [$user_email, $first_name $last_name]
+  replyTo: [$creator_email, $creator_first_name $creator_last_name]
   subject: New User Account
-  message: >
+  body: >
       Dear <b>$first_name $last_name </b> <br><br>
-      You have have been registered on $program_name by $creator_first_name $creator_last_name at $company_name. <br>
+      You have have been registered on $program_name by $creator_first_name $creator_last_name. <br>
       Kindly click on this <a href="$user_activation_link">link</a> below to activate your registration.
 
       Kind regards, <br><br>
@@ -272,7 +274,7 @@ deactivate:
 
 deactivate_email:
   from: $support_email
-  to: $first_name $last_name <$email>
+  to: [$email, $first_name $last_name]
   subject: Your account has been deactivated
   message: >
             Dear <b>$first_name $last_name</b> <br><br>
@@ -318,8 +320,8 @@ enter_email:
     - write_session: [email, first_name, last_name, cellphone]
 
 
-forgot_password_wizard:
-  url: /user/forgot_password_wizard
+forgot_password:
+  url: /user/forgot_password
   desc: Reset your password if you have forgotten it
   position: { my: 'top', at: 'top+50' }
   type: wizard
@@ -410,7 +412,7 @@ list:
         - role: role.name
         - status: /if(active,'active','inactive')
         - style: /if(active,'active','inactive')
-        - actions: /if(active,'expand,slide,edit,deactivate',if(password='', 'slide,edit,resend_activation_token','expand,slide,edit,activate'))
+        - actions: /if(active,'expand,slide,edit,deactivate','expand,slide,edit,activate,resend_activation_token')
 
 list_all:
   name: System Users
@@ -435,13 +437,14 @@ list_all:
         - role: role.name
         - status: /if(active,'active','inactive')
         - style: /if(active,'active','inactive')
-        - actions: /if(active,'slide,edit,deactivate','slide,edit,activate')
+        - actions: /if(active,'expand,slide,edit,deactivate','expand,slide,edit,activate,resend_activation_token')
 
 
 
-login_page:
+login:
   access: public
   type: input_page
+  class: [pad-right pad-xlarge]
   position: { my: 'top', at: 'top+150' }
   desc: Fill in your credentials below and click Login to logon
   enter: "#login,[action=login]"
@@ -449,9 +452,10 @@ login_page:
     - email: { valid: login_email }
     - password: { valid: login_password }
   actions:
-    - login
-    - forgot_password: { action: dialog }
+    - login: {class: [^pad-xlarge]}
+    - forgot_password: { action: dialog, type: link, class: [underlined pointer-cursor] }
   post:
+    - let: { start_page: "/" }
     - read_server: [HTTP_USER_AGENT,REMOTE_ADDR,REMOTE_HOST]
     - collection.values: [user, [email], user: id, partner, new_session_id: "/sha1(concat(email,sysdate(4)))", start_page, role, attempts, partner.type ]
     - if "$start_page" == '':
@@ -479,7 +483,7 @@ login_email:
 login_password:
   valid:
     - depends(email, validated)
-    - collection.exists(user,email,$email,password,/=password('$value'))
+    - collection.exists(user,email,$email,password,/=password2('$value'))
   error:
     - collection.values: [user, email: $email, user: id]
     - collection.update: [user, $user, attempts: /attempts+1]
@@ -578,7 +582,7 @@ profile_update:
     - collection.update: [user, $user, delta]
     - close_dialog: Successfully updated
 
-register_wizard:
+register:
   access: public
   position: { my: 'top', at: 'top+50' }
   type: wizard
@@ -597,9 +601,9 @@ update_password:
   inputs:
     - type: password_input
     - password
-    - confirm_password
+    - confirm_password: {type: password_input}
   navigate:
-    - update_password
+    - update_password: {class: [float-right]}
   post:
     - read_session: email
     - collection.values: [user,email: $email, found: id]

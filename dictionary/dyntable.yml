@@ -1,31 +1,53 @@
-datatable:
-  head: ""
+dyntable:
   tooltip: false
-  type: table
+  classes: container
+  class: [resizable]
+  trap: [resize]
   auto_load: true
-  text: $head $body $no_records
-  class: [data,didi-listener,datatable]
-  create: datatable
-  head: { class: [didi] }
-  title: { class: [didi] }
-  body: { class: [didi,table-body] }
+  contents: [$head, $body, $footer]
+  create: dyntable
+  head:
+    type: container
+    class: [head, widest]
+    derive: [header, titles]
+    contents: [$header, $titles]
+  header:
+    tag: div
+    class: [header, widest]
+  titles:
+    type: container
+    class: [titles row, widest]
+  title:
+    tag: [div]
+    class: [title, inline-block]
+  body:
+    type: container
+    class: [body, widest]
   min_row_height: 20
   search_delay: 250
   defaults: {}
   row_actions: []
-  row_styles:
+  row_styles: {}
   row:
+    type: container
+    id: ""
+    class: [row, widest]
     actions: []
-    class: []
+    styles:
+      end-span: [clear-after]
   cell:
-    class: [didi]
+    tag: div
+    id: ""
+    class: [inline-block cell]
     styles: {}
     controls:
       type: container
-      contents: []
-  script: [/didi/datatable.js]
+      contents: [cell]
+  footer:
+    classes: container
+  script: [/didi/dyntable.js]
   row_creator: { type: table_row }
-  css: [/didi/datatable.css]
+  css: [/didi/dyntable.css]
   flags: []
   position: top
   filter:
@@ -71,7 +93,7 @@ datatable:
     - type: actioner
 
   no_records:
-    type: datatable_no_records
+    type: dyntable_no_records
     show: no
 
   collapse:
@@ -81,7 +103,7 @@ datatable:
     name: +
     desc: More details ...
     pages: []
-    class: []
+    class: [expanded]
 
   slide:
     event: slide
@@ -103,7 +125,7 @@ export:
   action: redirect
   validate: none
   post:
-    call: datatable::export(root,$key)
+    call: dyntable::export(root,$key)
   query: " "
   target: _blank
 
@@ -113,7 +135,7 @@ print:
  action: redirect
  validate: none
  post:
-   - call: datatable::pdf(root,$key)
+   - call: dyntable::pdf(root,$key)
  query: " "
  target: _blank
 
@@ -124,7 +146,7 @@ image_row_action:
   class: [fa, no-backcolor, pad-x pad-tiny, float-right, cursor-pointer]
 
 
-datatable_no_records:
+dyntable_no_records:
   type: p
   name: No records found.
-  class: [datatable-no-records]
+  class: [dyntable-no-records]

@@ -1,0 +1,82 @@
+include: [dyntable]
+dyntest:
+  type: dyntable
+  access: auth
+  name: My Audit Trail
+  class: [scroll-table,widest, font-small]
+  body: { max-height: 500 }
+  sort: when
+  sort_order: desc
+  # flags: [show_titles,filter]
+  report_title: User Audit Trail
+  # titles:
+  #   class: [blue pad-y pad-medium]
+  actions:
+    - print
+    - export
+  fields:
+    - key: { show: no }
+    - style
+    - facility: { width: 20% }
+    - check_in: { width: 10% }
+    - nights: { width: 5%}
+    - room: { width: 10%}
+    - adults: { width: 8%}
+    - pensioners: {width: 8%}
+    - disabled: { width: 8%}
+    - children: { width: 8%}
+    - cost: { class: [15%], style: [subtotal] }
+    - tick_space: { width: 3%}
+    - default: { data: true }
+    - pax
+    - max_pax
+    - pax_fee
+    - extra_fee
+    - discounted_fee
+    - discounted_extra_fee
+    - is_venue
+  values:
+    - datarow: ["", heading, { name: Accomodation, colspan: 8, style: section-title},"","","","","","","",{style: section-cost}, { type: tick_box, style: [section-tick]} ]
+    - datarow: ["", title, Facility, Check In, Nights, Room, Adults, Pensioners ,Disabled, Children, {name: Cost, style: subtotal, col_span: 2} ]
+    - sql_values: |
+        select booking, min(check_in_date) start_date, max(check_out_date) end_date, r.name resort
+        from booking_facility bf join facility f on bf.facility = f.id and booking = '1303'
+        join resort r on f.resort = r.id
+    - sql: |
+        select id, "facility",
+          json_object("name", name, "row_span", rooms) facility,
+          json_object("type", "date_input", "value", check_in_date, "row_span", rooms) check_in,
+          json_object("type", "nights_input", "value", nights, "row_span", rooms) nights,
+          if (is_venue,
+            json_object("col_span", 5, "style", "disabled"),
+            json_object("type", "room_dropdown", "options", room_options, "value", room)) room,
+          if(is_venue, "",
+            json_object("type", "people_input", "value", adults, "max", if(max_pax>0, max_pax,999))) adults,
+          json_object("type", "people_input", "value", pensioners, "max", if(max_pax>0, max_pax,999)) pensioners,
+          json_object("type", "people_input", "value", disabled, "max", if(max_pax>0, max_pax,999)) disabled,
+          json_object("type", "people_input", "value", children, "max", if(max_pax>0, max_pax,999)) children,
+          "" cost, json_object("type", "delete_room", "key", id),
+          pax, max_pax, pax_fee, extra_fee, discounted_fee, discounted_extra_fee, is_venue
+        from (
+          select rl.id, f.name, f.is_venue, pax,pax_fee, max_pax, extra_fee, discounted_fee, discounted_extra_fee,
+            (select json_arrayagg(name) from room
+              where facility = f.id and (id = rb.id or room.active and id not in
+                (select room from room_booking where active and (check_in_date between bf.check_in_date and (bf.check_out_date - interval 1 day)
+                  or (check_out_date - interval 1 day) between bf.check_in_date and bf.check_out_date))) order by name
+            ) room_options,
+            bf.quantity rooms, bf.check_in_date, datediff(bf.check_out_date, bf.check_in_date) nights,
+            ifnull(rb.adults, 0) adults, ifnull(rb.children, 0) children, ifnull(rb.pensioners, 0) pensioners, ifnull(rb.disabled, 0) disabled, ifnull(rb.name,'') room
+          from facility f
+            join booking_facility bf on bf.facility = f.id and bf.booking = $booking and bf.active
+            join facility_rate fr on fr.id = bf.rate
+            join (
+                select number, concat(bf.id, '_', number) id, bf.id booking_facilty_id from booking_facility bf
+                  join numbers on number < bf.quantity and bf.booking = $booking
+                order by bf.id, number
+            ) rl on booking_facilty_id = bf.id
+            left join (
+              select r.id, rb.number, r.name, r.facility, rb.adults, rb.children, rb.disabled, rb.pensioners from room_booking rb
+                join room r on rb.room = r.id and rb.booking = $booking and rb.active
+            ) rb on rb.facility = bf.facility and rl.number = rb.number
+          ) tmp
+          order by 4,3,1

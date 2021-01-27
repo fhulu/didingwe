@@ -2,8 +2,8 @@ file_uploader:
   tag: div
   class: [file-uploader error-sink]
   create: file_uploader
-  script: [/common/file_uploader.js,/common/jquery.form.js]
-  css: [/common/file_uploader.css]
+  script: [/didi/file_uploader.js,/didi/jquery.form.js]
+  css: [/didi/file_uploader.css]
   uploader: /?action=action
   max_size: 100
   parent_id: $id

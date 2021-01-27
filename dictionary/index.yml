@@ -1,8 +1,10 @@
 index:
+  is_body: true
   parent:
     class: [didi]
   type: container
   read:
-    - this.post: trigger/fire
+    - if $use_triggers:
+      - this.post: trigger/fire
   contents:
     - program: { type: page_title}

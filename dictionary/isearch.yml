@@ -2,24 +2,27 @@ isearch:
   type: container
   create: isearch
   placeholder: Search $name
-  script: [/common/isearch.js]
-  css: [/common/isearch.css]
   class: [ isearch,relative]
   contents: [ $searcher, $buttons, $drop]
+  attr: { value: ""}
+  on_disabled: |
+    ~ function(e, disable) {
+        $(this).find('.isearch-actioner').prop('disabled', disable).toggleClass('disabled', disable)
+      }
   searcher:
     type: input
     derive: [placeholder]
     attr: { placeholder: $placeholder }
-    class: [isearch-searcher, widest, pad pad-small]
+    class: [isearch-searcher isearch-actioner, widest, pad pad-small]
   buttons:
-    class: [absolute top-right, pad pad-tiny,tallest]
+    class: [isearch-buttons absolute top-right, pad pad-tiny,tallest]
     type: container
     derive: [name,adder,dropper]
     contents: [$adder,$dropper]
   adder:
     tag: label
     text: +
-    class: [isearch-adder,pad-x pad-tiny,inline-block, pointer-cursor]
+    class: [isearch-adder isearch-actioner,pad-x pad-tiny,inline-block, pointer-cursor]
     derive: [name]
     desc: Add a new $name
     action: dialog
@@ -27,7 +30,7 @@ isearch:
   dropper:
     type: [font_awesome,fanthom]
     icon: caret-down
-    class: [isearch-dropper, pad-x pad-tiny, inline-block, pointer-cursor]
+    class: [isearch-dropper isearch-actioner, pad-x pad-tiny, inline-block, pointer-cursor middle-y]
     desc: Show all items
   drop:
     type: container

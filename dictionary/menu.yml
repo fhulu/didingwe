@@ -25,8 +25,7 @@ mobile_menu_items:
   class: [hide-medium,hide-large,dropdown]
   derive: [items]
   show: no
-  contents:
-    - merge: items
+  contents: [merge: items]
   on_click:
     - script: this.hide()
 
@@ -34,8 +33,7 @@ desktop_menu_items:
   type: container
   class: [hide-small]
   derive: [items]
-  contents:
-    - merge: items
+  contents: [merge: items]
 
 menu_item:
   tag: li
@@ -43,8 +41,7 @@ menu_item:
   mutable: [url]
   type: container
   contents: [menu_link]
-  attr: { tabindex: $number, title: $desc}
-  class: [col s12]
+  attr: { tabindex: $number, title: $desc, item: $id}
 
 menu_link:
   tag: a

@@ -3,11 +3,12 @@ user_list:
   type: datatable
   access: auth
   name: My Audit Trail
-  class: [widest,scroll-table]
+  class: [^scroll-table,widest]
   body: { max-height: 500 }
   sort: when
   sort_order: desc
   flags: [show_titles,filter]
+  title: { class: [widest] }
   report_title: User Audit Trail
   actions:
     - print
@@ -25,10 +26,10 @@ partner_list:
   type: user_list
   access: admin
   fields:
-    - when: { width: 18%, push: merge }
-    - email: { width: 18%, push: what, class: [truncate-word]}
-    - what: { width: 15%, push: merge, class: [truncate-word]}
-    - detail: { width: 30%, push: merge, class: [truncate-word] }
+    - when: { width: 18%, push: merge, class: [nowrap] }
+    - email: { width: 20%, push: what, class: [nowrap]}
+    - what: { width: 25%, push: merge, class: [truncate-word]}
+    - detail: { width: 35%, push: merge, class: [truncate-word] }
   values:
     - _reset
     - collection.sort_on: sort

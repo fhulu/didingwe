@@ -1,7 +1,7 @@
 gcse_search:
   type: container
   class: [gcse-search]
-  script: [/common/gcse.js]
+  script: [/didi/gcse.js]
   contents:
     - gcse_search_box
     - gcse_search_results

@@ -1,0 +1,9 @@
+message_box:
+  type: plain_text
+  tag: div
+  class: [message-box, col s11 m7 l5, border-top border-width-medium shadow, pad pad-small]
+
+
+info_message_box:
+  type: message_box
+  class: [info-message-box, pale-green, border-green text-green]

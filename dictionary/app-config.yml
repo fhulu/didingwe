@@ -5,35 +5,46 @@ cache_age: 8460000
 resource_dir: ./browser
 program_name: Didi SPA
 brand_name: $program_name
-brand_path: .
-didi_path: ../didi/
-search_paths: [$didi_path,.,$brand_path]
-image_path: /images
+brand_path: $brand_name
+didi_path: ./didi
+image_path: $brand_link/images
+theme: $didi_path/themes/didi
+theme_path: $theme
+root_path: .
+image_url: /images
+search_paths: 
+  - didi
+  - $theme_path
+  - .
+  - $brand_path
 spa:
   default:
-    page: /index
+  page: /index
     template: /spa.html
-    path: /home
-    content: $path
+  content: $path
+authenticated:
+  page: /index
+  path: /home
+  content: $path
   public: {}
   auth: {}
 logging:
   path: ../log/$brand_name.log
   level: trace
   max_response: 127
-upload_dir: ../uploads
+upload_dir: uploads
 start_page: /home
 css:
-  - /didi.css
-script:
-  - /jquery-3.2.1.min.js
-  - /jquery-ui-1.12.1.min.js
-  - /enquire.min.js
-  - /mukoni.jquery.js
-  - /mkn.js
-  - /mkn.render.js
-  - /page.js
-
+  - /didi/font-awesome/css/font-awesome.min.css
+  - /didi/didi.css
+scripts:
+  - /didi/jquery/jquery-3.2.1.min.js
+  - /didi/jquery/jquery-ui-1.12.1/jquery-ui.min.js
+  - /didi/enquire.min.js
+  - /didi/mukoni.jquery.js
+  - /didi/mkn.js
+  - /didi/mkn.render.js
+  - /didi/page.js
 modules:
   auth:
   collection:
@@ -59,8 +70,8 @@ collections:
   billing: [rate,payment,credit,transaction,country_rate]
   document: [document]
   trigger: [trigger,hook,promo_entry]
-
 use_triggers: no
+
 
 registrar: Mukoni Software
 registrar_role: admin
@@ -87,10 +98,12 @@ sms.send:
   cellphone: $cellphone
   path: web2sms/submit?uid=$user&pw=$password&sms=$message&da=$msisdn
 emailer.send:
-  smtp:
-    host: smtp.example.com
-    user: me@example.com
-    password: mypassword
+#  SMTPDebug: 2
+  isSMTP: true
+  SMTPSecure: false
+  SMTPAuth: true
+  port: 25
+  isHTML: true
 
 paygate_id: 10011072130
 paygate_secret: secret

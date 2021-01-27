@@ -115,6 +115,7 @@ categorized:
     tag: legend
     derive: [title]
     text: $title
+    style: { position: static } # iOS fieldset bug workaround
 
 char_spaced:
   char_spacing: 8px
@@ -169,8 +170,6 @@ date_future:
 datetime:
   type: input
   create: datetimepicker
-  script: [/didi/jquery.datetimepicker.js]
-  css: [/didi/jquery.datetimepicker.css]
   format: Y-m-d H:i
   validateOnBlur: false
   allowBlanks: false
@@ -208,12 +207,21 @@ dropdown:
 
 dropdown_collection:
   type: dropdown
-  options: [collection.data]
+  options:
+    - collection.data: []
   valid: collection.exists($name,$value)
+
+dropdown_table:
+  type: dropdown
+  options:
+    - sql: select id, name from $parent_id where active
+  valid: sql_exists($name,id)
 
 element:
   text: ""
   html: <$tag>$text</$tag>
+
+
 
 email_input:
   type: input
@@ -223,8 +231,27 @@ empty:
   tag: div
   text: ""
 
+encloser:
+  templates: div
+  subject: { class: [widest error-sink]}
+  text: $field
+
 fanthom:
   attr: { name: "", id: "", value: ""}
+
+fa_checkbox:
+  type: label_right
+  subject:
+    class: [transparent zerosize]
+  label:
+    class: [fa fa-square-o]
+    toggles: [fa-square-o, fa-check-square]
+    text: "&nbsp;$name"
+    on_click: |
+      function() {
+        var input = this.parent().find("input[type=checkbox]");
+        input.prop('checked', this.hasClass('fa-check-square'));
+      }
 
 font_awesome:
   tag: i
@@ -237,8 +264,7 @@ font_awesome_text:
   text: $name
 
 fieldset:
-  templates: fieldset
-  style: { display: table-column}
+  tag: fieldset
   text: $legend $field
   title: $name
   legend:
@@ -261,7 +287,7 @@ form:
 flag_icon:
   tag: span
   class: [flag-icon flag-icon-$country]
-  css: [/didi/flag-icon-css/flag-icon.min.css]
+  css: [/flag-icon-css/css/flag-icon.min.css]
   country: $id
   text: " "
 
@@ -277,6 +303,7 @@ filled_text:
   classes: label
   value: ""
   text: $value
+  valid: ignore
 
 google_icon:
   tag: i
@@ -405,7 +432,7 @@ input_page:
   layout: { type: label_left }
   synopsis:
     derive: [desc]
-    type: p
+    type: plain_text
     class: [center-text]
     name: $desc
   inputs:
@@ -425,10 +452,14 @@ label: { tag: label }
 
 labelled:
   templates: div
-  sow: [name]
+  templated: $id
+  prompt: $name
+  sow: [prompt, name, templated]
   label:
     classes: label
-    class: [inline-block,vertical-top]
+    attr: {for: $parent_id}
+    class: [inline-block]
+    attr: { for: $templated}
   subject:
     attr: { title: $desc }
 
@@ -464,7 +495,6 @@ label_bottom:
 
 label_left:
   type: labelled
-  class: [clear-after]
   label:
     tag: div
     suffix: ":"
@@ -492,6 +522,16 @@ label_right:
     class: [left-text]
   subject:
     attr: { title: $desc }
+  text: $field $label
+
+label_tick:
+  type: labelled
+  subject:
+    class: [float-right]
+    attr: { title: $desc }
+  label:
+    class: [float-right]
+    text: $name
   text: $field $label
 
 label_top:
@@ -629,6 +669,10 @@ plain_text:
   name: $id
   attr: { id: ""}
 
+plain_text_line:
+  type: plain_text
+  class: [block]
+
 plot:
   tag: div
   fixed_xaxis: yes
@@ -646,6 +690,12 @@ plot:
 processing:
   classes: span
   style: { display: none, z-index: 1000 }
+
+quantity_input:
+  type: number_input
+  max: 999999
+  min: 0
+  attr: { min: $min, max: $max }
 
 question_input:
   type: label_top
@@ -851,6 +901,14 @@ tri_input:
   split: 32.5%
   spacing: 0.5%
 
+trigger_action:
+  tag: div
+  class: [trigger $id]
+  triggers: [ $id ]
+
+trigger_button:
+  type: [trigger_action, button]
+
 
 twin_input:
   type: multi_input
@@ -863,7 +921,7 @@ vspace:
   space: 20
   template: none
   attr: { id: "" }
-  class: [clear widest block]
+  class: [clear widest block, transparent-color]
   style: {padding-bottom: $space}
 
 vspaced:
@@ -879,5 +937,6 @@ watermark:
 window:
   type: container
   is_body: true
+
 
 ...
