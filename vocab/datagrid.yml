@@ -3,7 +3,7 @@ datagrid:
   tooltip: false
   type: container
   create: datagrid
-  script: [/didi/datagrid.js]
+  script: [/didi/js/datagrid.js]
   contents: [$head, $titles, $body, $footer]
   auto_load: true
   class: [didi-listener,datagrid, scroll-x nowrap]
