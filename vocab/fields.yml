@@ -270,6 +270,8 @@ my_audit_trail:
   access: auth
   url: /audit_trail/user_list
 
+name:
+  valid: [provided]
 
 "no": { value: 0 }
 
