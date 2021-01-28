@@ -23,9 +23,9 @@ datatable:
     controls:
       type: container
       contents: []
-  script: [/didi/datatable.js]
+  script: [/didi/js/datatable.js]
   row_creator: { type: table_row }
-  css: [/didi/datatable.css]
+  css: [/didi/css/datatable.css]
   flags: []
   position: top
   filter:

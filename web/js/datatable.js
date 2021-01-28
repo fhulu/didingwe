@@ -744,7 +744,7 @@
         slider.data('width', slider.width());
         slider.width(0);
       }
-      slider.find('[action]').height(height);
+      // slider.find('[action]').height(height);
       slider.show().animate({width: slider.data('width')}, this.options.slideSpeed);
     },
 
@@ -804,9 +804,12 @@
       .on('action', 'tr', function(e, btn) {
         if (!btn.parent('.slide').exists()) return;
         me.slide($(this));
-        $(this).find('[action=slide]').toggle();
+        var slideon = $(this).find('[action=slide]');
         var slider = $(this).find('.slide');
-        slider.animate({width: 0}, options.slideSpeed*2, function() { slider.hide()});
+        slider.animate({width: 0}, options.slideSpeed*2, function() {
+          slider.hide();
+          slideon.show();
+        });
         e.stopPropagation();
       })
       .on('delete', 'tr', function(e) {

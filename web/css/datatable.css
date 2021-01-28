@@ -105,14 +105,16 @@ table.data>tbody>tr>td.actions>[action=slide],
 table.data>tbody>tr>td.actions>.slide
 {
   position: absolute;
-  float: right;
+  top: 0px;
   right: 0px;
+  height: 100%;
   white-space: nowrap;
   overflow: hidden;
 }
 table.data .slide>[action]
 {
   display: inline-block;;
+  height: 100%;
 }
 
 table.data thead div
