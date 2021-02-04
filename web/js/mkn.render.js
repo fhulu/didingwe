@@ -167,7 +167,16 @@ mkn.render = function(options)
   var objectify = function(items) {
     for (var i in items) {
       var item = items[i];
-      if (typeof item==='string') item = mkn.toObject(item);
+      if ($.isArray(item) && item.length == 1) item = item[0];
+      if (typeof item=='string') {
+        try {
+          var parsed = JSON.parse(item);
+          item = parsed;
+        }
+        catch (e) {
+          item = mkn.toObject(item);
+        }
+      }
       if (!$.isPlainObject(item)) continue;
       var id = item.id;
       if (id === undefined) {
@@ -504,7 +513,7 @@ mkn.render = function(options)
   }
 
   var setStyling = function(obj, field) {
-    if (!$.isPlainObject(field)) 
+    if (!$.isPlainObject(field))
       return obj.setClass(field);
 
     setVisible(obj, field);
@@ -654,7 +663,7 @@ mkn.render = function(options)
           templated.append(obj);
         else
           this.replace(templated, obj, id, 'field');
-        if (item.parent) 
+        if (item.parent)
           setStyling(templated, item.parent);
       }
       else {
