@@ -428,7 +428,7 @@ input:
 
 input_page:
   type: page
-  text: $synopsis $inputs
+  text: $synopsis $inputs $actions_pane
   layout: { type: label_left }
   synopsis:
     derive: [desc]
@@ -437,11 +437,9 @@ input_page:
     name: $desc
   inputs:
     - template: $layout
-    - $actions_pane: { push: last }
     - type: input
   actions_pane:
     type: container
-    label: ""
     derive: [actions]
     class: [actions]
     contents: $actions
