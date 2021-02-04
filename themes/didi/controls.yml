@@ -8,9 +8,6 @@ big_text:
 button:
   class: [pad pad-small rounded border border-width-thin]
 
-control:
-  class: [text-dark-grey]
-
 datatable:
   class: [border-collapse]
   title: { class: [bold left-text, brand-color, pad pad-tiny,font-small]}
