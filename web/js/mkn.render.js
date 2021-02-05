@@ -14,6 +14,7 @@ mkn.render = function(options)
   me.known = {};
   me.root = {};
   me.request = options.request;
+  me.model = {};
   me.model_src = options.model_src;
   me.model_funcs = options.model_funcs;
 
