@@ -235,9 +235,11 @@ same_year:
 sql:
   error: Invalid $name
 
-sql_exists: # table[,column]
+sql_exists: # table[,column[,other,other_value]]
   2: $name
-  valid: sql(select 1 from $1 where $2='$value')
+  3: $2
+  4: $3
+  valid: sql(select 1 from $1 where $2='$value' and $3 = '$4')
   error: $name must exist
 
 sql_exists_foreign: # table, column, foreign[, foreign_column]
@@ -245,9 +247,11 @@ sql_exists_foreign: # table, column, foreign[, foreign_column]
   valid: sql(select 1 from $1 where $2='$value' and $3='$v4')
   error: $name must exist
 
-sql_unique: # table[,column]
+sql_unique: # table[,column[,other,other_value]]
   2: $name
-  valid: not(sql_exists($1,$2))
+  3: $2
+  4: $3
+  valid: not(sql_exists($1,$2,$3,$4))
   error: $name ($value) already exists
 
 sql_unique_foreign: # table, column, foreign[, foreign_column]
