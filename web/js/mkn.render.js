@@ -1464,7 +1464,7 @@ mkn.render = function(options)
     var src = "";
     // convert vars and funcs to js source
     if (vars.length) vars = "var " + vars.map(function(v) {
-      return v+",_old_"+v;
+      return v+"='',_old_"+v+"=''";
     }).join(",");
 
     if (field.js) {
