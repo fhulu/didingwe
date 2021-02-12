@@ -274,6 +274,9 @@ unique:
 
 url: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
 
+variable:
+  valid: /^\W+$/
+
 visitable:
   error: $name $value is not accessible from this site
 
