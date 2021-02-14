@@ -371,6 +371,8 @@ mkn.render = function(options)
       expanded = false;
       for (var field in data) {
         var value = data[field];
+        if ($.isPlainObject(value)) 
+          deriveParent(data, value);
         if ($.isNumeric(value)) continue;
         if ($.isArray(value)) data[field] = substArray(data, value);
         if (typeof value !== 'string' || value.indexOf('$') < 0 || exclusions.indexOf(field) >=0) continue;
@@ -427,6 +429,7 @@ mkn.render = function(options)
       else if (value[0] == '$')
         field[key] = parent[value.substr(1)];
     }
+    delete field.derive;
   }
 
 
@@ -723,7 +726,7 @@ mkn.render = function(options)
         me.parent.trigger('loaded', [field,result]);
     });
     if (field.autoload || field.autoload === undefined) {
-      $.json('/', serverParams('data', field.path+'/'+name, field.params), function(result) {
+      $.json('/', serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
         me.respond(result, object);
         object.trigger('loaded', [field, result.data]);
       });
