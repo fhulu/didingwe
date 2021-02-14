@@ -236,6 +236,17 @@ encloser:
   subject: { class: [widest error-sink]}
   text: $field
 
+entity_dropdown:
+  type: dropdown
+  params: { derive: [entity, attribute]}
+  options:
+    - sql: |
+        select v.entity, v.value from string_value v
+        join attribute a on v.attribute = a.id and a.variable_name = if('$attribute'='','name','$attribute')
+        join entity_attribute ea on ea.attribute = a.id
+        join metadata met on ea.entity_type = met.id
+        and met.name = '$entity' 
+
 fanthom:
   attr: { name: "", id: "", value: ""}
 
