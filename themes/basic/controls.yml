@@ -1,0 +1,68 @@
+actioner:
+  class: [pad pad-tiny]
+
+big_text:
+  type: plain_text
+  class: [bold font-xxlarge block]
+
+button:
+  class: [pad pad-small rounded border border-width-thin]
+
+datatable:
+  class: [border-collapse]
+  title: { class: [bold left-text, pad pad-tiny,font-small]}
+  body: { class: [widest,font-small] }
+  slide: { class: [border-width-thin border-bottom, top-right ] }
+  cell:
+    class: [ border-width-thin border-top, pad pad-small]
+
+input:
+  class: [pad pad-tiny]
+
+input_page:
+  class: [pad pad-medium]
+  inputs:
+    - template: label_fieldset
+  actions_pane:
+    template: none
+    class: [grid space fit pad-y pad-small]
+
+labelled:
+  class: [relative border border-width-thin vspaced]
+
+label_fieldset:
+  type: fieldset
+  class: [ border border-width-thin font-medium rounded pad pad-tiny hide-legend vspace]
+  legend:
+    class: [ margin-left pad-x pad-tiny left-text]
+    style: { position: static }
+  events:
+    focusin: [ show-legend]
+    errors: [ border-red, border-width-small, show-legend]
+    clear-error: [ ^border-red, ^border-width-small]
+  subject:
+    label: $name
+    attr: { placeholder: $label, title: $desc}
+    class: [widest]
+    events:
+      focusin: [ hide-placeholder]
+      focustout: [ ^hide-placeholder ]
+      errors: [ hide-placeholder]
+link:
+  class: [undecorated]
+
+
+modal:
+  title_bar: { class: [pad pad-small]}
+  close_button:
+    class: [round, center-text pad pad-tiny, border border-width-thin]
+    top: -8
+    right: -8
+
+
+small_text:
+  type: plain_text
+  class: [block font-small]
+
+submit:
+  class: [pad pad-small border rounded]

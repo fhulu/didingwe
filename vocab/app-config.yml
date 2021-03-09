@@ -7,7 +7,8 @@ didi_root: $root_path/didi
 didi_path: $didi_root/vocab
 didi_web: $didi_root/web
 image_path: $web_path/images
-themes: [$didi_root/themes/didi]
+didi_themes: $didi_root/themes
+themes: [$didi_themes/basic]
 program_path: $root_path/vocab
 site_config: $program_path/.site-config.yml
 image_url: /images

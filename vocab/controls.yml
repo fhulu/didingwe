@@ -181,6 +181,10 @@ datetime_future:
 date_time:
   type: date_time
 
+db_options:
+  options:
+    - sql: $sql
+
 disabled_input:
   type: input
   attr: { disabled: disabled }
@@ -239,13 +243,21 @@ encloser:
 entity_dropdown:
   type: dropdown
   params: { derive: [entity, attribute]}
+  test: $entity
   options:
     - sql: |
-        select v.entity, v.value from string_value v
+        select v.entity, v.value 
+        from string_value v
         join attribute a on v.attribute = a.id and a.variable_name = if('$attribute'='','name','$attribute')
         join entity_attribute ea on ea.attribute = a.id
-        join metadata met on ea.entity_type = met.id
-        and met.name = '$entity' 
+        join entity e on ea.entity_type = e.entity_type and v.entity = e.id
+        join metadata met on ea.entity_type = met.id and met.name = if('$entity'='','$parent_id','$entity')
+
+        
+single_choice:
+  type: entity_dropdown
+
+    
 
 fanthom:
   attr: { name: "", id: "", value: ""}
@@ -269,6 +281,9 @@ font_awesome:
   icon: $id
   class: [fa,fa-$icon]
   text: ""
+
+font_awesome_actioner:
+  type: [actioner, font_awesome]
 
 font_awesome_text:
   type: font_awesome
