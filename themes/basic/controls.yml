@@ -55,7 +55,7 @@ link:
 modal:
   title_bar: { class: [pad pad-small]}
   close_button:
-    class: [round, center-text pad pad-tiny, border border-width-thin]
+    class: [round, center-text pad pad-tiny]
     top: -8
     right: -8
 

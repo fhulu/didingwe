@@ -33,7 +33,7 @@ link:
 
 
 modal:
-  dialog: {class: [black, text-white]}
+  dialog: {class: [black]}
   close_button:
-    class: [ text-white, hover-text-whitesmoke, grey, border-white]
+    class: [ hover-text-red] 
 

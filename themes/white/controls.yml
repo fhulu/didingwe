@@ -35,5 +35,5 @@ link:
 modal:
   dialog: {class: [white, text-dark-grey]}
   close_button:
-    class: [text-white, hover-text-dark-grey, grey, border-white]
+    class: [hover-text-red]
 
