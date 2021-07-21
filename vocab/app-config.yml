@@ -21,7 +21,8 @@ spa:
   default:
   page: /index
   template: /spa.html
-  path: /home
+  default_path: /home
+  path: $path??$default_path
   content: $path
   public: {}
   auth: {}
