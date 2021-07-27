@@ -274,6 +274,9 @@ unique:
 
 url: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
 
+validator:
+  error: $value is not a valid validator
+
 variable:
   valid: /^\W+$/
 
