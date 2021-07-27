@@ -124,7 +124,7 @@ in_collection:
 
 int_tel:
   valid:
-    - /^\+\d+[-\d]*$/
+    - /^\+\d+( ?\(0\) ?)?[- \d]*$/
     - at_least(10,digits)
   error: Please use international number format without space/s in betweeen for $name, e.g. +27823456789
 
