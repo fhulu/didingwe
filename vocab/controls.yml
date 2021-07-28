@@ -478,7 +478,6 @@ labelled:
   templates: div
   templated: $id
   prompt: $name
-  sow: [prompt, name, templated]
   label:
     classes: label
     attr: {for: $parent_id}
