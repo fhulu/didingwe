@@ -52,6 +52,9 @@ modules:
   - sms
   - document
 
+aliases:
+  sql_values: db.values
+
 didi-mysql:
   host: localhost
   port: 3306
@@ -104,6 +107,6 @@ emailer.send:
   port: 25
   isHTML: true
 
-paygate_id: 10011072130
+paygate_id: 1231231
 paygate_secret: secret
 paygate_url: https://secure.paygate.co.za/payweb3/initiate.trans
