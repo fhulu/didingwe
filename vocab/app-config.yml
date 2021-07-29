@@ -45,12 +45,12 @@ scripts:
   - /didi/js/mkn.render.js
   - /didi/js/page.js
 modules:
+  - db
   - auth
   - collection
   - emailer
   - sms
   - document
-  #- db: didi-mysql
 
 didi-mysql:
   host: localhost
