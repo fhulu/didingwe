@@ -53,7 +53,9 @@ modules:
   - document
 
 aliases:
-  sql_values: db.values
+  /^sql_(.+)$/: db.$1
+  sql: db.sql
+  sql_list: db.read_column
 
 didi-mysql:
   host: localhost
