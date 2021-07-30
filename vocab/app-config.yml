@@ -48,6 +48,8 @@ modules:
   - db: mysql
   - db2: mysql
   - auth
+  - validator
+  - curl
   - collection
   - emailer
   - sms
