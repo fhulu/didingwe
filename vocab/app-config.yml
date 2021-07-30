@@ -45,7 +45,8 @@ scripts:
   - /didi/js/mkn.render.js
   - /didi/js/page.js
 modules:
-  - db
+  - db: mysql
+  - db2: mysql
   - auth
   - collection
   - emailer
@@ -57,7 +58,8 @@ aliases:
   sql: db.sql
   sql_list: db.read_column
 
-didi-mysql:
+mysql:
+  path: mysql/db.php
   host: localhost
   port: 3306
   database: didi
