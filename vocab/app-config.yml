@@ -22,7 +22,7 @@ spa:
   page: /index
   template: /spa.html
   default_path: /home
-  path: $path??$default_path
+  path: $default_path
   content: $path
   public: {}
   auth: {}
