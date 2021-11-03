@@ -134,18 +134,23 @@ var mkn = new function() {
     return object;
   }
 
-  this.showPage = function(options, parent)
+  this.showPage = function(options, parent, data)
   {
     if (parent == undefined) {
       parent = options.parent? $(parent): $('body');
     }
     var defer = $.Deferred();
-    this.loadPage(options, parent).done(function(result, options) {
+    var createPage = function(result, options) {
       var object = mkn.createPage(options, result, parent);
       if ($.isPlainObject(result.fields.parent))
-        parent.setClass(result.fields.parent.class);
+        parent.setClass(result.fields.parent.class);      
       defer.resolve(object,result,options);
-    });
+    };
+
+    if (data)
+      createPage(data, options);
+    else
+      this.loadPage(options, parent).done(createPage);    
     return defer.promise();
   },
 
