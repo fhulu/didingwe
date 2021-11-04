@@ -38,8 +38,8 @@ upload_dir: $root_path/uploads
 start_page: /home
 head_tag: 
   meta: { name: $name, content: $value}
-  link: { href: $value, media: screen, rel: stylesheet, type: text/css, list: css }
-  script: { src: $value, list: scripts, text: "" }
+  link: { href: $value, media: screen, rel: stylesheet, type: text/css, alias: css }
+  script: { src: $value, alias: scripts, text: "" }
 
 meta:
   - { http-equiv: Content-Type, content: "text/html; charset=$charset" }
@@ -52,7 +52,7 @@ meta:
 css:
   - /didi/css/font-awesome/css/font-awesome.min.css
   - /didi/css/didi.css
-scripts:
+script:
   - /didi/js/jquery-3.2.1.min.js
   - /didi/js/jquery-ui-1.12.1.min.js
   - /didi/js/enquire.min.js

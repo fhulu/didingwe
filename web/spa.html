@@ -9,7 +9,6 @@ $head_tag...
     var start_timer = ()=> {
       if (timer) clearTimeout(timer);
       timer = setTimeout(()=> {
-        console.log("timeout at", new Date().getTime())
         window.location.reload();
       }, $session_timeout*1000);
     };
