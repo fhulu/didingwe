@@ -1,19 +1,24 @@
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name=viewport content="width=device-width, initial-scale=1" />
-$script_links
-$css_links
+<!DOCTYPE html>
+<html>
+<head>
+$head_tag...
 <script>
-var request_method = "$request_method";
-$(function() {
-  $("body").page($options);
-});
+  $(function() {
+    mkn.showPage($options);
+    var timer;
+    var start_timer = ()=> {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(()=> {
+        console.log("timeout at", new Date().getTime())
+        window.location.reload();
+      }, $session_timeout*1000);
+    };
+    start_timer();
+    $(document).bind("mousemove keypress click", start_timer);
+  });
 </script>
+</head>
 <body>
-<div class="didi processing modal font-large center-text" style="display: none;z-index: 1000">
-  <div class="didi light-grey center-text rounded-large shadow pad pad-small col s12 m6 l4 no-float centered">
-    <i class="didi fa fa-spin fa-spinner font-large"></i>
-    <p class="didi message"></p>
-  </div>
-</div>
+  $body_tag...
 </body>
+</html>

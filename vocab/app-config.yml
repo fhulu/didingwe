@@ -25,7 +25,7 @@ search_paths:
 
 spa:
   page: /index
-  template: /didi/spa.html
+  template: $didi_web/spa.html
   content: /home
   public: {}
   auth: {}
@@ -36,7 +36,7 @@ log:
   max_response: 127
 upload_dir: $root_path/uploads
 start_page: /home
-head_tags: 
+head_tag: 
   meta: { name: $name, content: $value}
   link: { href: $value, media: screen, rel: stylesheet, type: text/css, list: css }
   script: { src: $value, list: scripts, text: "" }
@@ -59,7 +59,8 @@ scripts:
   - /didi/js/mukoni.jquery.js
   - /didi/js/mkn.js
   - /didi/js/mkn.render.js
-  - /didi/js/page.js
+   
+  
 modules:
   - db: mysql
   - db2: mysql
