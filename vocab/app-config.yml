@@ -3,6 +3,11 @@ server_port: 3434
 cache_age: 8460000
 session_timeout: 300
 program_name: Didi SPA
+author: Mukoni Software
+description: Didi Framework Single Page Application
+keywords: didi,mukoni,Mukoni Software,spa
+viewport: width=device-width, initial-scale=1
+charset: iso-8859-1
 root_path: ..
 didi_root: $root_path/didi
 didi_path: $didi_root/vocab
@@ -20,8 +25,8 @@ search_paths:
 
 spa:
   page: /index
-  template: /spa.html
-  default_content: /home
+  template: /didi/spa.html
+  content: /home
   public: {}
   auth: {}
 log:
@@ -31,6 +36,19 @@ log:
   max_response: 127
 upload_dir: $root_path/uploads
 start_page: /home
+head_tags: 
+  meta: { name: $name, content: $value}
+  link: { href: $value, media: screen, rel: stylesheet, type: text/css, list: css }
+  script: { src: $value, list: scripts, text: "" }
+
+meta:
+  - { http-equiv: Content-Type, content: "text/html; charset=$charset" }
+  - { http-equiv: X-UA-Compatible, content: IE=edge }
+  - keywords: $keywords
+  - author: $author
+  - description: $description
+  - viewport: $viewport
+  - application-name: $program_name
 css:
   - /didi/css/font-awesome/css/font-awesome.min.css
   - /didi/css/didi.css
