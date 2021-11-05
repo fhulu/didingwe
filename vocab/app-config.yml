@@ -20,7 +20,7 @@ site_config: $program_path/.site-config.yml
 image_url: /images
 favicon: 
   type: image/png
-  src: /didi/images/mukoni-favicon.png
+  href: /didi/images/mukoni-favicon.png
 
 search_paths:
   - $didi_path
@@ -42,8 +42,8 @@ upload_dir: $root_path/uploads
 start_page: /home
 head_tag: 
   meta: { name: $name, content: $value}
-  favicon: { tag: link, rel: icon, href: $src }
-  css: { tag: link, href: $value, media: screen, rel: stylesheet, type: text/css }
+  favicon: { tag: link, rel: icon }
+  css: { tag: link, rel: stylesheet, type: text/css, media: screen, href: $value}
   script: { src: $value, alias: scripts, text: "" }
 
 meta:
