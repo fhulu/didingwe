@@ -18,6 +18,10 @@ themes: $didi_themes/basic
 program_path: $root_path/vocab
 site_config: $program_path/.site-config.yml
 image_url: /images
+favicon: 
+  type: image/png
+  src: /didi/images/mukoni-favicon.png
+
 search_paths:
   - $didi_path
   - $themes
@@ -38,7 +42,8 @@ upload_dir: $root_path/uploads
 start_page: /home
 head_tag: 
   meta: { name: $name, content: $value}
-  link: { href: $value, media: screen, rel: stylesheet, type: text/css, alias: css }
+  favicon: { tag: link, rel: icon, href: $src }
+  css: { tag: link, href: $value, media: screen, rel: stylesheet, type: text/css }
   script: { src: $value, alias: scripts, text: "" }
 
 meta:
@@ -52,6 +57,7 @@ meta:
 css:
   - /didi/css/font-awesome/css/font-awesome.min.css
   - /didi/css/didi.css
+
 script:
   - /didi/js/jquery-3.2.1.min.js
   - /didi/js/jquery-ui-1.12.1.min.js
