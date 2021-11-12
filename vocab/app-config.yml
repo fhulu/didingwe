@@ -62,7 +62,7 @@ script:
   - /didi/js/jquery-3.2.1.min.js
   - /didi/js/jquery-ui-1.12.1.min.js
   - /didi/js/enquire.min.js
-  - /didi/js/mukoni.jquery.js
+  - /didi/js/didi.jquery.js
   - /didi/js/mkn.js
   - /didi/js/mkn.render.js
    
