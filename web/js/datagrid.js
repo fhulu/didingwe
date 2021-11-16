@@ -13,7 +13,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 (function( $ ) {
-  $.widget( "ui.datagrid", {
+  $.widget( "didi.datagrid", {
     options: {
       name: 'Untitled',
       flags: [],
@@ -196,7 +196,7 @@
       me.stopSizing();
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: mkn.plainValues(data)}, function(data) {
+      $.json('/', {data: $.plainValues(data)}, function(data) {
         if (!data) {
           el.triggerHandler('refreshed', [data]);
           return;
@@ -225,7 +225,7 @@
       }
       if (this.cell_render) delete this.cell_render;
       var opts = this.options;
-      var render = this.cell_render = new mkn.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
+      var render = this.cell_render = new $.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
       if (this.options.page_size !== undefined) this.showPaging(parseInt(data.total));
       this.no_records.hide();
       if (data.data.length == 0 && this.body().children().length == 0 && this.no_records)
@@ -388,14 +388,14 @@
       var fields = opts.fields;
       var col = 0;
       for (var i in fields) {
-        var field = mkn.copy(fields[i]);
+        var field = $.copy(fields[i]);
         delete field.width;
         var id = field.id;
         if (id=='style' || field.data) continue;
-        var title = mkn.merge(me.title, field);
-        title = mkn.merge(title, field.title);
+        var title = $.fuse(me.title, field);
+        title = $.fuse(title, field.title);
         var th = opts.render.create(title).appendTo(tr);
-        th.toggle(mkn.visible(field));
+        th.toggle($.visible(field));
         th.data('field', field);
         if (id === 'actions') {
           field.filter = false;
@@ -447,7 +447,7 @@
 
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: mkn.plainValues(data)}, function(result) {
+      $.json('/', {data: $.plainValues(data)}, function(result) {
         if (!result) {
           el.triggerHandler('updated', [result]);
           return;
@@ -470,7 +470,7 @@
     },
 
     getRowStyles: function(data) {
-      return $.isPlainObject(data)? mkn.firstKey(data): data;
+      return $.isPlainObject(data)? $.firstKey(data): data;
     },
 
     setRowStyles: function(row, styles) {
@@ -545,13 +545,13 @@
           tr.attr('key', cell.name);
           key = cell.name;
         }
-        if (!mkn.visible(field)) continue;
+        if (!$.visible(field)) continue;
 
         if (cell.id === undefined) {
           cell.id = field.id;
           if (key) cell.id +=  "_" + key;
         }
-        if (field.cell) cell = mkn.merge(field.cell, cell);
+        if (field.cell) cell = $.fuse(field.cell, cell);
         if (field.class) cell.class = field.class.concat(cell.class);
 
         data[i] = cell;
@@ -578,7 +578,7 @@
         if (cell === null || cell === undefined)
           cell = this.options.defaults[field.id];
         else if (field.escapeHtml)
-          cell = mkn.escapeHtml(cell);
+          cell = $.escapeHtml(cell);
 
         if (row_spanned) continue;
         td.attr('field', field.id).attr('row', row_index).attr('col', col);
@@ -742,11 +742,11 @@
       var actions = normal_actions;
       var slide_pos = -1;
       for (var i in all_actions) {
-        var action = mkn.copy(all_actions[i]);
+        var action = $.copy(all_actions[i]);
         var id = action.id;
         if (row_actions.indexOf(id) < 0) continue;
         action.key = key;
-        action = mkn.merge(action, opts[id]);
+        action = $.fuse(action, opts[id]);
         actions.push(action);
         if (id == 'slide') {
           actions = slide_actions;
@@ -795,7 +795,7 @@
       var index = 0;
       var load = function() {
         var path = pages[index];
-        mkn.showPage({path: path, key: key }, td).done(function() {
+        $.showPage({path: path, key: key }, td).done(function() {
           if (++index < pages.length)
             load();
         })
@@ -915,7 +915,7 @@
       var total = this.element.width();
       for (var i in fields) {
         var field = fields[i];
-        if (field.id == 'style' || field.data || !mkn.visible(field)) continue;
+        if (field.id == 'style' || field.data || !$.visible(field)) continue;
         field = $.extend(this.options[field.id], field);
         var width = field.width;
         if (width.indexOf('%') > 0)
@@ -947,7 +947,7 @@
       var me = this;
       var head = me.head();
       filter = me.createEditor('filter').appendTo(head);
-      head.children('.cell-editor>input').bind('keyup cut paste', mkn.debounce(function(e) {
+      head.children('.cell-editor>input').bind('keyup cut paste', $.debounce(function(e) {
         var input = $(this);
         me.params.offset = 0;
         var index = input.attr('index')

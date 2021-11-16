@@ -1,4 +1,4 @@
-$.widget( "custom.wizard", {
+$.widget( "didi.wizard", {
   _create: function() {
     this.stack = new Array();
     this.first_step = 0;
@@ -93,7 +93,7 @@ $.widget( "custom.wizard", {
 
     if (info.next != false && index != last_step) {
       opts.next.path = info.path;
-      var next = mkn.copy(opts.next);
+      var next = $.copy(opts.next);
       next.post_prefix = info.post_prefix;
       info.navigate.push({next: next});
     }
@@ -122,7 +122,7 @@ $.widget( "custom.wizard", {
     if (typeof props == 'string')
       props = { id: props };
     else if (!props.id)
-      props.id = mkn.firstKey(props);
+      props.id = $.firstKey(props);
     var path = options.path;
     if (props.id.indexOf('/') >= 0)
       path = props.id;
@@ -133,11 +133,11 @@ $.widget( "custom.wizard", {
     else
       path = path.substr(0, path.lastIndexOf('/')+1) + props.id;
     page.empty();
-    mkn.loadPage({path: path, key: options.key}, page).then(function(info, options) {
-      info.fields = mkn.merge(me.options.step, info.fields);
-      info.fields = mkn.merge(info.fields, props);
+    $.loadPage({path: path, key: options.key}, page).then(function(info, options) {
+      info.fields = $.merge(me.options.step, info.fields);
+      info.fields = $.merge(info.fields, props);
       info.fields.path = info.path;
-      var object = mkn.createPage(options, info, page);
+      var object = $.createPage(options, info, page);
       me.updateNavigation(index, info.fields, page);
       page.show();
     });

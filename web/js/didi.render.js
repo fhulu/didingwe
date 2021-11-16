@@ -1,8 +1,4 @@
-mkn.links = {};
-mkn.model = {};
-
-mkn.render = function(options)
-{
+$.render = function(options) {
   var me = this
   me.invoker = options.invoker;
   var types = me.types = options.types;
@@ -31,7 +27,7 @@ mkn.render = function(options)
     for (var i in array) {
       var type = array[i];
       var merged = me.mergeType(types[type], undefined, type);
-      result = mkn.merge(result, merged);
+      result = $.fuse(result, merged);
     }
     return result;
   }
@@ -49,12 +45,12 @@ mkn.render = function(options)
         if (types[field.classes])
           type = field.classes;
         else field.tag = field.classes;
-        if (cls) field.class = mkn.appendArray(field.class, cls);
+        if (cls) field.class = $.appendArray(field.class, cls);
       }
       else if (field.templates) {
         type = 'template';
         field.tag = field.templates;
-        if (cls) field.class = mkn.appendArray(field.class, cls);
+        if (cls) field.class = $.appendArray(field.class, cls);
       }
       else if (field.tag)
         type = 'control';
@@ -67,7 +63,7 @@ mkn.render = function(options)
     else
       type = me.mergeType(type);
 
-    var result = mkn.merge(type, field);
+    var result = $.fuse(type, field);
     delete result.type;
     return result;
   };
@@ -98,24 +94,24 @@ mkn.render = function(options)
   }
 
   var mergeDefaultType = function(base, item, type) {
-    type = mkn.copy(type);
+    type = $.copy(type);
     mergeImmutables(item, base, type);
-    base = mkn.copy(base);
-    mkn.deleteKeys(base, ['type', 'styles', 'style'])
-    mkn.deleteKeys(base, geometry)
-    return mkn.merge(mkn.merge(type,base), item);
+    base = $.copy(base);
+    $.deleteKeys(base, ['type', 'styles', 'style'])
+    $.deleteKeys(base, geometry)
+    return $.fuse($.fuse(type,base), item);
   }
 
   var mergeDefaults = function(item, defaults, base) {
     if (!item.action && defaults.action) item.action = defaults.action;
-    if (defaults.attr) item.attr = mkn.merge(item.attr,defaults.attr);
+    if (defaults.attr) item.attr = $.fuse(item.attr,defaults.attr);
     if (!item.template) item.template = defaults.template;
-    if (defaults.default) item = mkn.merge(defaults.default, item);
+    if (defaults.default) item = $.fuse(defaults.default, item);
     if (defaults.types)
       return mergeDefaultType(base, item, defaults.types.shift());
     else if (!item.type && defaults.type)
       return mergeDefaultType(base, item, defaults.type);
-    return mkn.merge(base, item);
+    return $.fuse(base, item);
   }
 
 
@@ -134,18 +130,18 @@ mkn.render = function(options)
       var push = item.push;
       delete item.push;
       var pos = items.indexOf(item);
-      item = mkn.copy(item);
+      item = $.copy(item);
       items.splice(pos, 1);
       if (push === 'first')
         items.unshift(item);
       else if (push === 'last')
         items.push(item);
       else if (push == 'merge') {
-       pos = mkn.firstIndexOfKey(items, 'id', item.id);
-       items[pos] = mkn.merge(items[pos], item);
+       pos = $.firstIndexOfKey(items, 'id', item.id);
+       items[pos] = $.fuse(items[pos], item);
       }
       else
-        items.splice(mkn.firstIndexOfKey(items, 'id', push), 0, item);
+        items.splice($.firstIndexOfKey(items, 'id', push), 0, item);
     }
   }
 
@@ -175,13 +171,13 @@ mkn.render = function(options)
           item = parsed;
         }
         catch (e) {
-          item = mkn.toObject(item);
+          item = $.toObject(item);
         }
       }
       if (!$.isPlainObject(item)) continue;
       var id = item.id;
       if (id === undefined) {
-        var a = mkn.firstElement(item);
+        var a = $.firstElement(item);
         id = a[0];
         if (array_defaults.indexOf(id) >=0 ) continue;
         item = a[1];
@@ -229,19 +225,19 @@ mkn.render = function(options)
         if (setDefaults(defaults, item, parent_field)) continue;
         id = item.id;
         if (id == 'query') {
-          item.defaults = mkn.copy(defaults);
+          item.defaults = $.copy(defaults);
         }
 
         if (id[0] == '$') {
           id = id.substr(1);
-          item = mkn.merge(parent_field[id], item);
+          item = $.fuse(parent_field[id], item);
         }
         id = me.expandValue(parent_field, id);
         if (sow && sow.indexOf(id) >=0)
-          item = mkn.merge(parent_field[id], item);
+          item = $.fuse(parent_field[id], item);
         promoteAttr(item);
-        var base = mkn.copy(me.types[id]);
-        var merged = mkn.merge(base, item);
+        var base = $.copy(me.types[id]);
+        var merged = $.fuse(base, item);
         item.id = id;
         if (mutable(merged))
           item = mergeDefaults(item, defaults, base);
@@ -251,7 +247,7 @@ mkn.render = function(options)
       else if ($.isArray(item)) {
         array = item;
         id = item[0];
-        item = mkn.copy(defaults);
+        item = $.copy(defaults);
         item.array = array;
       }
       else {
@@ -298,22 +294,22 @@ mkn.render = function(options)
   var initTemplate = function(item)
   {
     template = item.template;
-    var field = mkn.copy(me.mergeType(item));
+    var field = $.copy(me.mergeType(item));
     if (typeof template === 'string') {
       template = {html: template};
     }
     else {
-      template = me.mergeType(mkn.copy(template));
-      mkn.deleteKeys(field, ['type', 'attr', 'action', 'class', 'tag', 'html',
+      template = me.mergeType($.copy(template));
+      $.deleteKeys(field, ['type', 'attr', 'action', 'class', 'tag', 'html',
        'style', 'styles', 'create','classes','template', 'templates', 'text', 'templated', 'didi-functions']);
-       mkn.deleteKeys(field, geometry);
+       $.deleteKeys(field, geometry);
        if (!('attr' in template)) template.attr = {};
        template.attr['for'] = item.id;
     }
     for (var key in field) {
       if (key.indexOf('on_') == 0) delete field[key];
     }
-    item.template = me.initField(mkn.merge(template, field));
+    item.template = me.initField($.fuse(template, field));
     item.template.id = "";
   };
 
@@ -409,7 +405,7 @@ mkn.render = function(options)
       var key = parent.sow[i];
       var sowed = {};
       sowed[key] = parent[key];
-      field = mkn.merge(sowed, field);
+      field = $.fuse(sowed, field);
     }
     return field;
   }
@@ -425,7 +421,7 @@ mkn.render = function(options)
       if (value === undefined)
         field[key] = parent[key];
       else if ($.isPlainObject(value) || $.isArray(value))
-        field[key] = mkn.merge(parent[key], value);
+        field[key] = $.fuse(parent[key], value);
       else if (value[0] == '$')
         field[key] = parent[value.substr(1)];
     }
@@ -437,7 +433,7 @@ mkn.render = function(options)
   {
     field.page_id = this.page_id;
     if (field.template && field.template.subject) {
-      field = mkn.merge(field.template.subject, field);
+      field = $.fuse(field.template.subject, field);
       if (!field.template.tag) delete field.template;
     }
     deriveParent(parent, field);
@@ -470,14 +466,14 @@ mkn.render = function(options)
 
   var runJquery = function (obj, item) {
     if (!item.jquery) return;
-    mkn.replaceVars(item,item.params);
+    $.replaceVars(item,item.params);
     obj.call(item.jquery, item.params);
   }
 
   var setVisible = function(obj, field) {
     if (field.template) return;
-    mkn.toIntValue(field, 'show');
-    mkn.toIntValue(field, 'hide');
+    $.toIntValue(field, 'show');
+    $.toIntValue(field, 'hide');
     if (field.hide || field.show === false || field.show === 0)
       obj.hide();
     else if (field.show)
@@ -485,7 +481,7 @@ mkn.render = function(options)
   }
 
   var setDisabled = function(obj, field) {
-    if (mkn.toIntValue(field, 'disabled') && field);
+    if ($.toIntValue(field, 'disabled') && field);
       obj.prop('disabled', field.disabled);
   }
 
@@ -626,7 +622,7 @@ mkn.render = function(options)
     delete field.sub_page;
     delete field.appendChild;
     field.path = field.url? field.url: field.id;
-    return mkn.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
+    return $.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
       setStyle(obj, field);
       setClass(obj, field);
       setResponsive(obj, field);
@@ -756,7 +752,7 @@ mkn.render = function(options)
     var functions = {every: 'Interval', after: 'Timeout' };
     for (var key in functions ) {
       if (!(key in field)) continue;
-      mkn.replaceVars(field, field[key], {recurse: true, sourceFirst: true});
+      $.replaceVars(field, field[key], {recurse: true, sourceFirst: true});
       var args = [field[key].slice(1)];
       var timer = window['set'+functions[key]](function() {
         accept(undefined, obj, field, args);
@@ -817,8 +813,8 @@ mkn.render = function(options)
           }
           if ($.isPlainObject(value)) {
             var params = Array.prototype.slice.call(arguments, 1);
-            value.params = mkn.merge(value.params, params);
-            mkn.replaceVars(value, value.params);
+            value.params = $.fuse(value.params, params);
+            $.replaceVars(value, value.params);
             accept(e, obj, value);
           }
           else if ('didi-model' in field && handler_name in field['didi-model']) {
@@ -931,7 +927,7 @@ mkn.render = function(options)
 
   var setAttr = function(obj, field)
   {
-    mkn.replaceVars(field, field.attr, { sourceFirst: true, recurse: true})
+    $.replaceVars(field, field.attr, { sourceFirst: true, recurse: true})
     var attr = field.attr;
     if (obj.attr('id') === '') obj.removeAttr('id');
     if (!attr) return;
@@ -968,7 +964,7 @@ mkn.render = function(options)
         styles = me.mergeType({}, styles.split(/[\s,]+/));
       for (var i in styles) {
         var type = me.mergeType({}, styles[i]);
-        mkn.deleteKeys(type, immutable);
+        $.deleteKeys(type, immutable);
         $.extend(style, type);
       }
     }
@@ -987,8 +983,8 @@ mkn.render = function(options)
     if (!style) style = {};
     styles = field.styles;
     if (styles) mergeStyles();
-    mkn.replaceVars(field, style, { sourceFirst: true, recurse: true})
-    mkn.replaceVars(style, style, { sourceFirst: true, recurse: true})
+    $.replaceVars(field, style, { sourceFirst: true, recurse: true})
+    $.replaceVars(style, style, { sourceFirst: true, recurse: true})
     setGeometry();
     obj.css(style);
   }
@@ -1000,7 +996,7 @@ mkn.render = function(options)
       if (typeof value !== 'string') return;
       if (value.match(/^\$\d+$/)) removed.push(key);
     })
-    mkn.deleteKeys(item, removed);
+    $.deleteKeys(item, removed);
     return item;
   }
 
@@ -1016,7 +1012,7 @@ mkn.render = function(options)
   {
     var prev = defaults[name];
     if ($.isPlainObject(prev))
-      value = mkn.merge(prev, value);
+      value = $.fuse(prev, value);
     else if (typeof value == 'string')
       value.type = prev;
     return value;
@@ -1024,7 +1020,7 @@ mkn.render = function(options)
 
   var setDefaults = function(defaults, item, parent)
   {
-    if (mkn.size(item) != 1) return false;
+    if ($.size(item) != 1) return false;
     var sow = parent.sow;
     var set = false;
     for (var i in array_defaults) {
@@ -1035,7 +1031,7 @@ mkn.render = function(options)
         value = parent[value.substring(1)];
       if (value === undefined) continue;
       if (sow && sow.indexOf(value) >=0 )
-        value = mkn.merge(parent[value], defaults[name]);
+        value = $.fuse(parent[value], defaults[name]);
       if (name === 'template' && value === 'none')
         value = '$field';
       else if (name === 'wrap' && $.isPlainObject(value))
@@ -1053,7 +1049,7 @@ mkn.render = function(options)
       }
       if (name == 'template' && $.isPlainObject(item[name]) && item[name].type === undefined) {
         value = mergePrevious(defaults, name, me.initField(value));
-        mkn.replaceVars(value, value.subject, { recurse: true});
+        $.replaceVars(value, value.subject, { recurse: true});
       }
 
       defaults[name] = value;
@@ -1071,7 +1067,7 @@ mkn.render = function(options)
       links = links.split(',');
     if (links === undefined || links === null || links.length==0) return $.when();
     return $.when.apply($, $.map(links, function(link) {
-      return mkn.loadLink(link, type);
+      return $.loadLink(link, type);
     }));
   }
 
@@ -1088,7 +1084,7 @@ mkn.render = function(options)
   var redirect = function(field)
   {
     if (!$.isPlainObject(field)) field = { url: field };
-    mkn.replaceVars(field,field);
+    $.replaceVars(field,field);
     var url = field.url;
     if ((!url || field.query) && field.target === '_blank') {
       url = '/?action=action';
@@ -1104,7 +1100,7 @@ mkn.render = function(options)
     if (field.target === '_blank')
       window.open(url, field.target);
     else if (field.target) {
-      mkn.closeDialog(me.sink);
+      $.closeDialog(me.sink);
       me.createSubPage({url: url, key: field.key}, $(field.target), field.target);
     }
     else
@@ -1128,9 +1124,9 @@ mkn.render = function(options)
         action = action[0];
       }
       switch(action) {
-        case 'page': mkn.showPage(field); return;
-        case 'dialog': mkn.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
-        case 'close_dialog': mkn.closeDialog(obj); break;
+        case 'page': $.showPage(field); return;
+        case 'dialog': $.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
+        case 'close_dialog': $.closeDialog(obj); break;
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
@@ -1177,11 +1173,11 @@ mkn.render = function(options)
     }
     if (!field.confirmation || action)
       dispatch();
-    else mkn.showDialog('/confirm_dialog').done(function(dialog) {
+    else $.showDialog('/confirm_dialog').done(function(dialog) {
       if (typeof field.confirmation == 'string')
         dialog.find('#message').text(field.confirmation);
       dialog.find('.action').click(function() {
-        mkn.closeDialog(dialog);
+        $.closeDialog(dialog);
         if ($(this).attr('action') === 'yes') dispatch();
       })
     });
@@ -1225,7 +1221,7 @@ mkn.render = function(options)
   this.respond = function(result, invoker, event)
   {
     if (!result) return;
-    mkn.removeXSS(result);
+    $.removeXSS(result);
     var responses = result._responses;
     delete result._responses;
     if (!$.isPlainObject(responses)) return this;
@@ -1241,8 +1237,8 @@ mkn.render = function(options)
     {
       switch(action) {
         case 'alert': alert(val); break;
-        case 'show_dialog': mkn.showDialog(val, responses.options); break;
-        case 'close_dialog': mkn.closeDialog(parent, val); break;
+        case 'show_dialog': $.showDialog(val, responses.options); break;
+        case 'close_dialog': $.closeDialog(parent, val); break;
         case 'redirect': redirect(val); break;
         case 'update': parent.setChildren(val, true); break;
         case 'trigger': trigger(val, parent); break;
@@ -1269,11 +1265,11 @@ mkn.render = function(options)
       if (array && !$.isPlainObject(item)) continue;
        var id = i, value= item;
       if (array) {
-        var el = mkn.firstElement(item);
+        var el = $.firstElement(item);
         id = el[0];
         item = el[1];
       }
-      var obj = parent.find(mkn.selector.idName(id));
+      var obj = parent.find($.selector.idName(id));
       if (obj.exists()) {
         obj.value(value);
         continue;
