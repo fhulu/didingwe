@@ -336,7 +336,7 @@ mkn.render = function(options)
 
   var substArray = function(field, val) {
     return getArray(val).map(function(val) {
-      var matches = getMatches(val, /\$(\w+)/g)
+      var matches = $.getMatches(val, /\$(\w+)/g)
       for (var j in matches) {
         var match = matches[j];
         var value = field[match];
@@ -392,7 +392,7 @@ mkn.render = function(options)
       return;
     }
     $.each(item, function(key, value) {
-      var matches = getMatches(value, /\$(\d+)/g);
+      var matches = $.getMatches(value, /\$(\d+)/g);
       for (var i in matches) {
         var index = parseInt(matches[i]);
         value = value.replace(new RegExp("\\$"+index+"([^\d]|\b|$)", 'g'), item.array[index-1]+'$1');
@@ -447,7 +447,7 @@ mkn.render = function(options)
     var id = field.id;
     if (field.array && field.array.length>1 && field.name === undefined) field.name = field.array[1];
     if (id && field.name === undefined)
-      field.name = toTitleCase(id.replace(/[_\/]/g, ' '));
+      field.name = $.toTitleCase(id.replace(/[_\/]/g, ' '));
     if (field.array)
       this.expandArray(field);
     else
@@ -559,7 +559,7 @@ mkn.render = function(options)
     setModelFunctions(obj,field);
     if (field.key === undefined) field.key = options.key;
     var values = $.extend({}, this.types, field);
-    var matches = getMatches(field.html, /\$(\w+)/g);
+    var matches = $.getMatches(field.html, /\$(\w+)/g);
     var subitem_count = 0;
     for (var i = 0; i< matches.length; ++i) {
       var code = matches[i];
@@ -940,10 +940,10 @@ mkn.render = function(options)
     }
     else $.each(attr, function(key, val) {
       if (field.array) {
-        var numeric = getMatches(val, /\$(\d+)/g);
+        var numeric = $.getMatches(val, /\$(\d+)/g);
         if (numeric.length) val = field.array[numeric[0]-1];
       }
-      var matches = getMatches(val, /\$(\w+)/g)
+      var matches = $.getMatches(val, /\$(\w+)/g)
       for (var j in matches) {
         var match = matches[j];
         var value = field[match];

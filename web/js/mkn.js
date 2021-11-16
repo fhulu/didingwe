@@ -121,7 +121,7 @@ var mkn = new function() {
     data.fields.local_id = data.path.split('/').pop();
     var values = data.fields.values || data.values;
     if (data.fields.name === undefined)
-      data.fields.name = toTitleCase(data.path.split('/').pop().replace('_',' '));
+      data.fields.name = $.toTitleCase(data.path.split('/').pop().replace('_',' '));
     data.fields.path = data.path;
     data.fields.sub_page = false;
     data.fields.values = values;
@@ -246,7 +246,7 @@ var mkn = new function() {
     var me = this;
     var replaceOne = function(val) {
       if (!me.isAtomicValue(val)) return val;
-      var matches = getMatches(val, /\$(\w+)/g);
+      var matches = $.getMatches(val, /\$(\w+)/g);
       if (!matches) return val;
       matches.forEach(function(match) {
         var index = flags.sourceFirst? 0: 1;

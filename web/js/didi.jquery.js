@@ -1,11 +1,11 @@
-window._seq = 0;
-$.fn.exists = function()
-{
+(function( $ ) {
+  
+"use strict";
+$.fn.exists = function() {
   return this.get(0) != undefined;
 }
 
-$.fn.hasAttr = function(name)
-{
+$.fn.hasAttr = function(name) {
   return this.attr(name) !== undefined;
 }
 
@@ -15,8 +15,7 @@ $.fn.filterText = function(text) {
   });
 }
 
-$.fn.setValue = function(val)
-{
+$.fn.setValue = function(val) {
   if ($.isArray(val)) return this;
   if ($.isPlainObject(val)) {
     var me = this;
@@ -67,8 +66,7 @@ $.fn.setValue = function(val)
   return this.html(val);
 }
 
-$.fn.getValue = function()
-{
+$.fn.getValue = function() {
   var type = this.attr('type');
   if (type === 'checkbox') {
     var val = this.is(':checked')?1:0;
@@ -81,15 +79,13 @@ $.fn.getValue = function()
   return this.is('[value]')? this.attr('value'): this.text();
 }
 
-$.fn.value = function(val)
-{
+$.fn.value = function(val) {
   if (val === undefined) return this.getValue();
   return this.setValue(val);
 }
 
 
-$.fn.updateCheckGroupValue = function()
-{
+$.fn.updateCheckGroupValue = function() {
   var data = [];
   this.find('input[type=checkbox]').each(function() {
     if ($(this).is(':checked'))
@@ -98,8 +94,7 @@ $.fn.updateCheckGroupValue = function()
   return this.attr('chosen', data.join());
 }
 
-$.fn.values = function()
-{
+$.fn.values = function() {
   this.find('.checkgroup').updateCheckGroupValue();
   var data = {};
   var delta = [];
@@ -126,8 +121,7 @@ $.fn.values = function()
   return data;
 }
 
-$.send = function(url, options, callback)
-{
+$.send = function(url, options, callback) {
   if (options instanceof Function) {
     callback = options;
     options = undefined;
@@ -193,8 +187,7 @@ $.send = function(url, options, callback)
 }
 
 
-$.fn.send = function(url, options, callback)
-{
+$.fn.send = function(url, options, callback) {
   if (options instanceof Function) {
     callback = options;
     options = undefined;
@@ -207,8 +200,7 @@ $.fn.send = function(url, options, callback)
   return $.send(url, options, callback);
 }
 
-$.fn.json = function(url, options, callback)
-{
+$.fn.json = function(url, options, callback) {
   if (options instanceof Function) {
     callback = options;
     options = undefined;
@@ -237,8 +229,7 @@ $.fn.json = function(url, options, callback)
 }
 
 
-$.json = function(url, options, callback)
-{
+$.json = function(url, options, callback) {
   if (options instanceof Function) {
     callback = options;
     options = {dataType: 'json'};
@@ -247,8 +238,7 @@ $.json = function(url, options, callback)
   return $.send(url, options, callback);
 }
 
-$.fn.setChildren = function(result, server)
-{
+$.fn.setChildren = function(result, server) {
   var self = this;
   if (result === null) return;
   $.each(result, function(key, val) {
@@ -259,8 +249,7 @@ $.fn.setChildren = function(result, server)
   return this;
 }
 
-$.fn.loadChildren = function(url, data, callback)
-{
+$.fn.loadChildren = function(url, data, callback) {
   var self = this;
   var result;
   $.json(url, data, function(data) {
@@ -289,13 +278,12 @@ $(function(){
     });
 });
 
-$.urlParam = function(name){
+$.urlParam = function(name) {
     var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
     return results[1] || 0;
 }
 
-$.fn.insertAtCursor = function(myValue)
-{
+$.fn.insertAtCursor = function(myValue) {
   var pos = this.getCursorPosition();
   var val = this.val();
   this.val(val.substr(0, pos) + myValue + val.substr(pos));
@@ -329,16 +317,14 @@ $.fn.bookmarkOnClick = function() {
   });
 }
 
-$.fn.customCreate = function(options)
-{
+$.fn.customCreate = function(options) {
   var create = options.create;
   if (create === undefined) return;
   this.attr('customCreate',create);
   this.run(create, options);
 }
 
-$.fn.run = function()
-{
+$.fn.run = function() {
   var args = Array.prototype.slice.call(arguments);;
   var f = args.shift();
   this[f].apply(this, args);
@@ -372,7 +358,7 @@ $.scrollbarWidth = function() {
 * @param data Object or Array : The data to pass to the function. If the function is also passed arguments, the data is appended to the arguments list. If the data is an Array, each item is appended as a new argument.
 * @param isTimeout Boolean : Indicates if the delegate is being executed as part of timeout/interval method or not. This is required for Mozilla/Gecko based browsers when you are passing in extra arguments. This is not needed if you are not passing extra data in.
 */
-function delegate(scope, func, data, isTimeout)
+$.delegate = function(scope, func, data, isTimeout)
 {
     return function()
     {
@@ -389,7 +375,7 @@ function delegate(scope, func, data, isTimeout)
 
 
 
-function sleep(milliseconds) {
+$.sleep = function(milliseconds) {
   var start = new Date().getTime();
   for (var i = 0; i < 1e7; i++) {
     if ((new Date().getTime() - start) > milliseconds){
@@ -399,7 +385,7 @@ function sleep(milliseconds) {
 }
 
 
-function getQueryParams(qs) {
+$.getQueryParams = function(qs) {
     qs = qs.split("+").join(" ");
 
     var params = {}, tokens,
@@ -413,28 +399,23 @@ function getQueryParams(qs) {
     return params;
 }
 
-$.jsonSize = function(object)
-{
+$.jsonSize = function(object) {
   var i=0;
   $.each(object, function() {++i});
   return i;
 }
 
-$.valid = function(object)
-{
+$.valid = function(object) {
   return object !== null && object !== undefined;
 }
 
 
-
-
-function isNumber(n) {
+$.isNumber = function(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
 
-function toTitleCase(str)
-{
+$.toTitleCase = function(str) {
   str = str.replace(/[_\/]/g, ' ');
   return str.replace(/\w\S*/g,  function (txt) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
@@ -443,11 +424,11 @@ function toTitleCase(str)
 
 
 // from stackoverflow: Mathias Bynens
-function getMatches(string, regex, index) {
+$.getMatches = function(string, expr, index) {
     index || (index = 1); // default to the first capturing group
     var matches = [];
     var match;
-    while (match = regex.exec(string)) {
+    while (match = expr.exec(string)) {
         matches.push(match[index]);
     }
     return matches;
@@ -455,7 +436,7 @@ function getMatches(string, regex, index) {
 
 // Gary Haran => gary@talkerapp.com
 // This code is released under MIT licence
-(function($) {
+$.fn.replace = function(finder, replacement, blackList) {
   var replacer = function(finder, replacement, element, blackList) {
     if (!finder || typeof replacement === 'undefined') {
       return
@@ -487,14 +468,13 @@ function getMatches(string, regex, index) {
       parent.removeChild(node);
     }
   }
-  $.fn.replace = function(finder, replacement, blackList) {
-    return this.each(function() {
-      replacer(finder, replacement, $(this).get(0), blackList);
-    });
-  }
-})(jQuery);
 
-function assert(condition, message) {
+  return this.each(function() {
+    replacer(finder, replacement, $(this).get(0), blackList);
+  });
+}
+
+$.assert = function(condition, message) {
   if (!condition) {
     message = message || "Assertion failed";
     console.log(message);
@@ -505,7 +485,7 @@ function assert(condition, message) {
   }
 }
 
-function rgbToHex(color) {
+$.rgbToHex = function(color) {
     if (color.substr(0, 1) === "#") {
         return color;
     }
@@ -521,7 +501,7 @@ function rgbToHex(color) {
     );
 }
 
-function darken( hexColor, factor ) {
+$.darken = function( hexColor, factor ) {
    if ( factor < 0 ) factor = 0;
 
    var c = hexColor;
@@ -559,13 +539,11 @@ function darken( hexColor, factor ) {
  }
 
 
-$.fn.valueFromCurrency = function()
-{
+$.fn.valueFromCurrency = function() {
   return this.value().replace(/[^\d.]/g,'');
 }
 // from stackoverflow: Anurag
-$.fn.bindFirst = function(name, fn)
-{
+$.fn.bindFirst = function(name, fn) {
   // bind as you normally would
   // don't want to miss out on any jQuery magic
   this.on(name, fn);
@@ -691,3 +669,5 @@ $.fn.getAttributes = function(list) {
   }
   return result;
 }
+
+} (jQuery) );

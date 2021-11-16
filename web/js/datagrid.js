@@ -402,7 +402,7 @@
           continue;
         }
         if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
-        th.html(field.name || toTitleCase(id));
+        th.html(field.name || $.toTitleCase(id));
         if (me.hasFlag('sortable')) {
           if (id === me.params.sort)
             th.attr('sort', me.params.sort_order);
@@ -697,7 +697,7 @@
       if (!props || $.isEmptyObject(props))
         return $('');
       var div = $('<span>');
-      if (props.name === undefined) props.name = toTitleCase(action);
+      if (props.name === undefined) props.name = $.toTitleCase(action);
       div.html(props.name);
       div.attr('title', props.desc);
       div.attr('action', action);

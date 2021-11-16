@@ -337,7 +337,7 @@
           continue;
         }
         if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
-        th.html(field.name || toTitleCase(id));
+        th.html(field.name || $.toTitleCase(id));
         if (self.hasFlag('sortable')) {
           if (id === self.params.sort)
             th.attr('sort', self.params.sort_order);
@@ -667,7 +667,7 @@
       if (!props || $.isEmptyObject(props))
         return $('');
       var div = $('<span>');
-      if (props.name === undefined) props.name = toTitleCase(action);
+      if (props.name === undefined) props.name = $.toTitleCase(action);
       div.html(props.name);
       div.attr('title', props.desc);
       div.attr('action', action);

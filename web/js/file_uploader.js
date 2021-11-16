@@ -1,5 +1,5 @@
 (function($) {
-  $.widget("ui.file_uploader", {
+  $.widget("didi.file_uploader", {
     options: {
       uploader: ''
     },
