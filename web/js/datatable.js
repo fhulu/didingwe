@@ -13,7 +13,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 (function( $ ) {
-  $.widget( "didid.datatable", {
+  $.widget( "didi.datatable", {
     options: {
       name: 'Untitled',
       flags: [],
@@ -96,7 +96,7 @@
     {
       $.each(fields, function(i, val) {
         if (!$.isPlainObject(val))
-          fields[i] = $.toObject(val);
+          fields[i] = dd.toObject(val);
       });
     },
 
@@ -131,7 +131,7 @@
 
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: $.plainValues(data)}, function(data) {
+      dd.json('/', {data: dd.plainValues(data)}, function(data) {
         if (!data) {
           el.triggerHandler('refreshed', [data]);
           return;
@@ -158,7 +158,7 @@
       }
       if (this.cell_render) delete this.cell_render;
       var opts = this.options;
-      var render = this.cell_render = new $.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
+      var render = this.cell_render = new dd.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
       if (this.options.page_size !== undefined) this.showPaging(parseInt(data.total));
       this.no_records.hide();
       if (data.data.length == 0 && this.body().children().length == 0 && this.no_records)
@@ -329,7 +329,7 @@
         var id = field.id;
         if (field.id=='style' || field.data) continue;
         var th = $('<th></th>').addClass(classes).appendTo(tr);
-        th.toggle($.visible(field));
+        th.toggle(dd.visible(field));
         th.data('field', field);
         if (field.class) th.addClass(field.class.join(' '));
         if (id === 'actions') {
@@ -337,7 +337,7 @@
           continue;
         }
         if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
-        th.html(field.name || $.toTitleCase(id));
+        th.html(field.name || dd.toTitleCase(id));
         if (self.hasFlag('sortable')) {
           if (id === self.params.sort)
             th.attr('sort', self.params.sort_order);
@@ -369,13 +369,13 @@
         if (field.id == 'style' || field.data) continue;
         var td = $('<td>').appendTo(tr);
         td.attr('field', field.id);
-        td.toggle($.visible(field));
+        td.toggle(dd.visible(field));
         td.addClass(cls);
         if (field.style)
           td.addStyle(field.style, options.cell.styles)
         if (field.class) td.addClass(field.class.join(' '));
         if (field.html === undefined) continue;
-        field = $.copy(field);
+        field = dd.copy(field);
         delete field.width;
         td.append(me.options.render.create(field));
       }
@@ -427,7 +427,7 @@
 
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: $.plainValues(data)}, function(result) {
+      dd.json('/', {data: dd.plainValues(data)}, function(result) {
         if (!result) {
           el.triggerHandler('updated', [result]);
           return;
@@ -455,7 +455,7 @@
         row_styles = this.options.row.styles;
       row.attr('class','');
       row.addClass(this.row_classes);
-      if ($.isPlainObject(styles)) styles = $.firstKey(styles);
+      if ($.isPlainObject(styles)) styles = dd.firstKey(styles);
       row.addStyle(styles, row_styles)
     },
 
@@ -540,7 +540,7 @@
         if (cell === null || cell === undefined)
           cell = this.options.defaults[field.id];
         else if (field.escapeHtml)
-          cell = $.escapeHtml(cell);
+          cell = dd.escapeHtml(cell);
 
         if (key === undefined && (field.id === 'key' || field.key)) {
           tr.attr('key', cell.name);
@@ -667,7 +667,7 @@
       if (!props || $.isEmptyObject(props))
         return $('');
       var div = $('<span>');
-      if (props.name === undefined) props.name = $.toTitleCase(action);
+      if (props.name === undefined) props.name = dd.toTitleCase(action);
       div.html(props.name);
       div.attr('title', props.desc);
       div.attr('action', action);
@@ -712,11 +712,11 @@
       var actions = normal_actions;
       var slide_pos = -1;
       for (var i in all_actions) {
-        var action = $.copy(all_actions[i]);
+        var action = dd.copy(all_actions[i]);
         var id = action.id;
         if (row_actions.indexOf(id) < 0) continue;
         action.key = key;
-        action = $.fuse(action, opts[id]);
+        action = dd.merge(action, opts[id]);
         actions.push(action);
         if (id == 'slide') {
           actions = slide_actions;
@@ -764,7 +764,7 @@
       var index = 0;
       var load = function() {
         var path = pages[index];
-        $.showPage({path: path, key: key }, td).done(function() {
+        dd.showPage({path: path, key: key }, td).done(function() {
           if (++index < pages.length)
             load();
         })
@@ -973,7 +973,7 @@
       var titles = me.head().find('.titles');
       filter = me.createEditor(titles,'filter').hide();
       var tds = filter.children();
-      filter.find('input').bind('keyup cut paste', $.debounce(function(e) {
+      filter.find('input').bind('keyup cut paste', dd.debounce(function(e) {
         var input = $(this);
         me.params.offset = 0;
         var td = input.parent();

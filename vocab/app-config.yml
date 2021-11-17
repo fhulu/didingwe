@@ -63,6 +63,7 @@ script:
   - /didi/js/jquery-ui-1.12.1.min.js
   - /didi/js/enquire.min.js
   - /didi/js/didi.prototype-ext.js
+  - /didi/js/didi.util.js
   - /didi/js/didi.jquery.js
   - /didi/js/didi.render.js
    

@@ -196,7 +196,7 @@
       me.stopSizing();
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: $.plainValues(data)}, function(data) {
+      dd.json('/', {data: $.plainValues(data)}, function(data) {
         if (!data) {
           el.triggerHandler('refreshed', [data]);
           return;
@@ -225,7 +225,7 @@
       }
       if (this.cell_render) delete this.cell_render;
       var opts = this.options;
-      var render = this.cell_render = new $.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
+      var render = this.cell_render = new dd.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
       if (this.options.page_size !== undefined) this.showPaging(parseInt(data.total));
       this.no_records.hide();
       if (data.data.length == 0 && this.body().children().length == 0 && this.no_records)
@@ -245,7 +245,7 @@
       if (!opts.js_functions) opts.js_functions = opts.render.root_field.js_functions
       render.initModel(render.root, opts);
       if (!had_children && this.body().hasScrollBar()) {
-        this.titles().css("width", "calc(100% - "+$.scrollbarWidth() + 'px)');
+        this.titles().css("width", "calc(100% - "+dd.scrollbarWidth() + 'px)');
       }
     },
 
@@ -388,21 +388,21 @@
       var fields = opts.fields;
       var col = 0;
       for (var i in fields) {
-        var field = $.copy(fields[i]);
+        var field = dd.copy(fields[i]);
         delete field.width;
         var id = field.id;
         if (id=='style' || field.data) continue;
-        var title = $.fuse(me.title, field);
-        title = $.fuse(title, field.title);
+        var title = dd.merge(me.title, field);
+        title = dd.merge(title, field.title);
         var th = opts.render.create(title).appendTo(tr);
-        th.toggle($.visible(field));
+        th.toggle(dd.visible(field));
         th.data('field', field);
         if (id === 'actions') {
           field.filter = false;
           continue;
         }
         if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
-        th.html(field.name || $.toTitleCase(id));
+        th.html(field.name || dd.toTitleCase(id));
         if (me.hasFlag('sortable')) {
           if (id === me.params.sort)
             th.attr('sort', me.params.sort_order);
@@ -447,7 +447,7 @@
 
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: $.plainValues(data)}, function(result) {
+      dd.json('/', {data: dd.plainValues(data)}, function(result) {
         if (!result) {
           el.triggerHandler('updated', [result]);
           return;
@@ -470,7 +470,7 @@
     },
 
     getRowStyles: function(data) {
-      return $.isPlainObject(data)? $.firstKey(data): data;
+      return $.isPlainObject(data)? dd.firstKey(data): data;
     },
 
     setRowStyles: function(row, styles) {
@@ -545,7 +545,7 @@
           tr.attr('key', cell.name);
           key = cell.name;
         }
-        if (!$.visible(field)) continue;
+        if (!dd.visible(field)) continue;
 
         if (cell.id === undefined) {
           cell.id = field.id;
@@ -578,7 +578,7 @@
         if (cell === null || cell === undefined)
           cell = this.options.defaults[field.id];
         else if (field.escapeHtml)
-          cell = $.escapeHtml(cell);
+          cell = dd.escapeHtml(cell);
 
         if (row_spanned) continue;
         td.attr('field', field.id).attr('row', row_index).attr('col', col);
@@ -697,7 +697,7 @@
       if (!props || $.isEmptyObject(props))
         return $('');
       var div = $('<span>');
-      if (props.name === undefined) props.name = $.toTitleCase(action);
+      if (props.name === undefined) props.name = dd.toTitleCase(action);
       div.html(props.name);
       div.attr('title', props.desc);
       div.attr('action', action);
@@ -742,11 +742,11 @@
       var actions = normal_actions;
       var slide_pos = -1;
       for (var i in all_actions) {
-        var action = $.copy(all_actions[i]);
+        var action = dd.copy(all_actions[i]);
         var id = action.id;
         if (row_actions.indexOf(id) < 0) continue;
         action.key = key;
-        action = $.fuse(action, opts[id]);
+        action = dd.merge(action, opts[id]);
         actions.push(action);
         if (id == 'slide') {
           actions = slide_actions;
@@ -795,7 +795,7 @@
       var index = 0;
       var load = function() {
         var path = pages[index];
-        $.showPage({path: path, key: key }, td).done(function() {
+        dd.showPage({path: path, key: key }, td).done(function() {
           if (++index < pages.length)
             load();
         })
@@ -916,7 +916,7 @@
       for (var i in fields) {
         var field = fields[i];
         if (field.id == 'style' || field.data || !$.visible(field)) continue;
-        field = $.extend(this.options[field.id], field);
+        field = dd.extend(this.options[field.id], field);
         var width = field.width;
         if (width.indexOf('%') > 0)
           width = total * parseFloat(width) / 100;
@@ -947,7 +947,7 @@
       var me = this;
       var head = me.head();
       filter = me.createEditor('filter').appendTo(head);
-      head.children('.cell-editor>input').bind('keyup cut paste', $.debounce(function(e) {
+      head.children('.cell-editor>input').bind('keyup cut paste', dd.debounce(function(e) {
         var input = $(this);
         me.params.offset = 0;
         var index = input.attr('index')

@@ -1,4 +1,7 @@
-$.render = function(options) {
+(function(dd) {
+
+"use strict";
+dd.render = function(options) {
   var me = this
   me.invoker = options.invoker;
   var types = me.types = options.types;
@@ -27,7 +30,7 @@ $.render = function(options) {
     for (var i in array) {
       var type = array[i];
       var merged = me.mergeType(types[type], undefined, type);
-      result = $.fuse(result, merged);
+      result = dd.merge(result, merged);
     }
     return result;
   }
@@ -45,12 +48,12 @@ $.render = function(options) {
         if (types[field.classes])
           type = field.classes;
         else field.tag = field.classes;
-        if (cls) field.class = $.appendArray(field.class, cls);
+        if (cls) field.class = dd.appendArray(field.class, cls);
       }
       else if (field.templates) {
         type = 'template';
         field.tag = field.templates;
-        if (cls) field.class = $.appendArray(field.class, cls);
+        if (cls) field.class = dd.appendArray(field.class, cls);
       }
       else if (field.tag)
         type = 'control';
@@ -63,7 +66,7 @@ $.render = function(options) {
     else
       type = me.mergeType(type);
 
-    var result = $.fuse(type, field);
+    var result = dd.merge(type, field);
     delete result.type;
     return result;
   };
@@ -94,24 +97,24 @@ $.render = function(options) {
   }
 
   var mergeDefaultType = function(base, item, type) {
-    type = $.copy(type);
+    type = dd.copy(type);
     mergeImmutables(item, base, type);
-    base = $.copy(base);
-    $.deleteKeys(base, ['type', 'styles', 'style'])
-    $.deleteKeys(base, geometry)
-    return $.fuse($.fuse(type,base), item);
+    base = dd.copy(base);
+    dd.deleteKeys(base, ['type', 'styles', 'style'])
+    dd.deleteKeys(base, geometry)
+    return dd.merge(dd.merge(type,base), item);
   }
 
   var mergeDefaults = function(item, defaults, base) {
     if (!item.action && defaults.action) item.action = defaults.action;
-    if (defaults.attr) item.attr = $.fuse(item.attr,defaults.attr);
+    if (defaults.attr) item.attr = dd.merge(item.attr,defaults.attr);
     if (!item.template) item.template = defaults.template;
-    if (defaults.default) item = $.fuse(defaults.default, item);
+    if (defaults.default) item = dd.merge(defaults.default, item);
     if (defaults.types)
       return mergeDefaultType(base, item, defaults.types.shift());
     else if (!item.type && defaults.type)
       return mergeDefaultType(base, item, defaults.type);
-    return $.fuse(base, item);
+    return dd.merge(base, item);
   }
 
 
@@ -130,18 +133,18 @@ $.render = function(options) {
       var push = item.push;
       delete item.push;
       var pos = items.indexOf(item);
-      item = $.copy(item);
+      item = dd.copy(item);
       items.splice(pos, 1);
       if (push === 'first')
         items.unshift(item);
       else if (push === 'last')
         items.push(item);
       else if (push == 'merge') {
-       pos = $.firstIndexOfKey(items, 'id', item.id);
-       items[pos] = $.fuse(items[pos], item);
+       pos = dd.firstIndexOfKey(items, 'id', item.id);
+       items[pos] = dd.merge(items[pos], item);
       }
       else
-        items.splice($.firstIndexOfKey(items, 'id', push), 0, item);
+        items.splice(dd.firstIndexOfKey(items, 'id', push), 0, item);
     }
   }
 
@@ -171,13 +174,13 @@ $.render = function(options) {
           item = parsed;
         }
         catch (e) {
-          item = $.toObject(item);
+          item = dd.toObject(item);
         }
       }
       if (!$.isPlainObject(item)) continue;
       var id = item.id;
       if (id === undefined) {
-        var a = $.firstElement(item);
+        var a = dd.firstElement(item);
         id = a[0];
         if (array_defaults.indexOf(id) >=0 ) continue;
         item = a[1];
@@ -225,19 +228,19 @@ $.render = function(options) {
         if (setDefaults(defaults, item, parent_field)) continue;
         id = item.id;
         if (id == 'query') {
-          item.defaults = $.copy(defaults);
+          item.defaults = dd.copy(defaults);
         }
 
         if (id[0] == '$') {
           id = id.substr(1);
-          item = $.fuse(parent_field[id], item);
+          item = dd.merge(parent_field[id], item);
         }
         id = me.expandValue(parent_field, id);
         if (sow && sow.indexOf(id) >=0)
-          item = $.fuse(parent_field[id], item);
+          item = dd.merge(parent_field[id], item);
         promoteAttr(item);
-        var base = $.copy(me.types[id]);
-        var merged = $.fuse(base, item);
+        var base = dd.copy(me.types[id]);
+        var merged = dd.merge(base, item);
         item.id = id;
         if (mutable(merged))
           item = mergeDefaults(item, defaults, base);
@@ -247,7 +250,7 @@ $.render = function(options) {
       else if ($.isArray(item)) {
         array = item;
         id = item[0];
-        item = $.copy(defaults);
+        item = dd.copy(defaults);
         item.array = array;
       }
       else {
@@ -293,23 +296,23 @@ $.render = function(options) {
 
   var initTemplate = function(item)
   {
-    template = item.template;
-    var field = $.copy(me.mergeType(item));
+    var template = item.template;
+    var field = dd.copy(me.mergeType(item));
     if (typeof template === 'string') {
       template = {html: template};
     }
     else {
-      template = me.mergeType($.copy(template));
-      $.deleteKeys(field, ['type', 'attr', 'action', 'class', 'tag', 'html',
+      template = me.mergeType(dd.copy(template));
+      dd.deleteKeys(field, ['type', 'attr', 'action', 'class', 'tag', 'html',
        'style', 'styles', 'create','classes','template', 'templates', 'text', 'templated', 'didi-functions']);
-       $.deleteKeys(field, geometry);
+       dd.deleteKeys(field, geometry);
        if (!('attr' in template)) template.attr = {};
        template.attr['for'] = item.id;
     }
     for (var key in field) {
       if (key.indexOf('on_') == 0) delete field[key];
     }
-    item.template = me.initField($.fuse(template, field));
+    item.template = me.initField(dd.merge(template, field));
     item.template.id = "";
   };
 
@@ -332,7 +335,7 @@ $.render = function(options) {
 
   var substArray = function(field, val) {
     return getArray(val).map(function(val) {
-      var matches = $.getMatches(val, /\$(\w+)/g)
+      var matches = dd.getMatches(val, /\$(\w+)/g)
       for (var j in matches) {
         var match = matches[j];
         var value = field[match];
@@ -388,7 +391,7 @@ $.render = function(options) {
       return;
     }
     $.each(item, function(key, value) {
-      var matches = $.getMatches(value, /\$(\d+)/g);
+      var matches = dd.getMatches(value, /\$(\d+)/g);
       for (var i in matches) {
         var index = parseInt(matches[i]);
         value = value.replace(new RegExp("\\$"+index+"([^\d]|\b|$)", 'g'), item.array[index-1]+'$1');
@@ -405,7 +408,7 @@ $.render = function(options) {
       var key = parent.sow[i];
       var sowed = {};
       sowed[key] = parent[key];
-      field = $.fuse(sowed, field);
+      field = dd.merge(sowed, field);
     }
     return field;
   }
@@ -421,7 +424,7 @@ $.render = function(options) {
       if (value === undefined)
         field[key] = parent[key];
       else if ($.isPlainObject(value) || $.isArray(value))
-        field[key] = $.fuse(parent[key], value);
+        field[key] = dd.merge(parent[key], value);
       else if (value[0] == '$')
         field[key] = parent[value.substr(1)];
     }
@@ -433,7 +436,7 @@ $.render = function(options) {
   {
     field.page_id = this.page_id;
     if (field.template && field.template.subject) {
-      field = $.fuse(field.template.subject, field);
+      field = dd.merge(field.template.subject, field);
       if (!field.template.tag) delete field.template;
     }
     deriveParent(parent, field);
@@ -443,7 +446,7 @@ $.render = function(options) {
     var id = field.id;
     if (field.array && field.array.length>1 && field.name === undefined) field.name = field.array[1];
     if (id && field.name === undefined)
-      field.name = $.toTitleCase(id.replace(/[_\/]/g, ' '));
+      field.name = dd.toTitleCase(id.replace(/[_\/]/g, ' '));
     if (field.array)
       this.expandArray(field);
     else
@@ -466,14 +469,14 @@ $.render = function(options) {
 
   var runJquery = function (obj, item) {
     if (!item.jquery) return;
-    $.replaceVars(item,item.params);
+    dd.replaceVars(item,item.params);
     obj.call(item.jquery, item.params);
   }
 
   var setVisible = function(obj, field) {
     if (field.template) return;
-    $.toIntValue(field, 'show');
-    $.toIntValue(field, 'hide');
+    dd.toIntValue(field, 'show');
+    dd.toIntValue(field, 'hide');
     if (field.hide || field.show === false || field.show === 0)
       obj.hide();
     else if (field.show)
@@ -481,7 +484,7 @@ $.render = function(options) {
   }
 
   var setDisabled = function(obj, field) {
-    if ($.toIntValue(field, 'disabled') && field);
+    if (dd.toIntValue(field, 'disabled') && field);
       obj.prop('disabled', field.disabled);
   }
 
@@ -555,7 +558,7 @@ $.render = function(options) {
     setModelFunctions(obj,field);
     if (field.key === undefined) field.key = options.key;
     var values = $.extend({}, this.types, field);
-    var matches = $.getMatches(field.html, /\$(\w+)/g);
+    var matches = dd.getMatches(field.html, /\$(\w+)/g);
     var subitem_count = 0;
     for (var i = 0; i< matches.length; ++i) {
       var code = matches[i];
@@ -622,7 +625,7 @@ $.render = function(options) {
     delete field.sub_page;
     delete field.appendChild;
     field.path = field.url? field.url: field.id;
-    return $.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
+    return dd.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
       setStyle(obj, field);
       setClass(obj, field);
       setResponsive(obj, field);
@@ -722,7 +725,7 @@ $.render = function(options) {
         me.parent.trigger('loaded', [field,result]);
     });
     if (field.autoload || field.autoload === undefined) {
-      $.json('/', serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
+      dd.json('/', serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
         me.respond(result, object);
         object.trigger('loaded', [field, result.data]);
       });
@@ -752,7 +755,7 @@ $.render = function(options) {
     var functions = {every: 'Interval', after: 'Timeout' };
     for (var key in functions ) {
       if (!(key in field)) continue;
-      $.replaceVars(field, field[key], {recurse: true, sourceFirst: true});
+      dd.replaceVars(field, field[key], {recurse: true, sourceFirst: true});
       var args = [field[key].slice(1)];
       var timer = window['set'+functions[key]](function() {
         accept(undefined, obj, field, args);
@@ -813,8 +816,8 @@ $.render = function(options) {
           }
           if ($.isPlainObject(value)) {
             var params = Array.prototype.slice.call(arguments, 1);
-            value.params = $.fuse(value.params, params);
-            $.replaceVars(value, value.params);
+            value.params = dd.merge(value.params, params);
+            dd.replaceVars(value, value.params);
             accept(e, obj, value);
           }
           else if ('didi-model' in field && handler_name in field['didi-model']) {
@@ -927,7 +930,7 @@ $.render = function(options) {
 
   var setAttr = function(obj, field)
   {
-    $.replaceVars(field, field.attr, { sourceFirst: true, recurse: true})
+    dd.replaceVars(field, field.attr, { sourceFirst: true, recurse: true})
     var attr = field.attr;
     if (obj.attr('id') === '') obj.removeAttr('id');
     if (!attr) return;
@@ -936,10 +939,10 @@ $.render = function(options) {
     }
     else $.each(attr, function(key, val) {
       if (field.array) {
-        var numeric = $.getMatches(val, /\$(\d+)/g);
+        var numeric = dd.getMatches(val, /\$(\d+)/g);
         if (numeric.length) val = field.array[numeric[0]-1];
       }
-      var matches = $.getMatches(val, /\$(\w+)/g)
+      var matches = dd.getMatches(val, /\$(\w+)/g)
       for (var j in matches) {
         var match = matches[j];
         var value = field[match];
@@ -964,7 +967,7 @@ $.render = function(options) {
         styles = me.mergeType({}, styles.split(/[\s,]+/));
       for (var i in styles) {
         var type = me.mergeType({}, styles[i]);
-        $.deleteKeys(type, immutable);
+        dd.deleteKeys(type, immutable);
         $.extend(style, type);
       }
     }
@@ -981,10 +984,10 @@ $.render = function(options) {
 
     var style = field.style;
     if (!style) style = {};
-    styles = field.styles;
+    var styles = field.styles;
     if (styles) mergeStyles();
-    $.replaceVars(field, style, { sourceFirst: true, recurse: true})
-    $.replaceVars(style, style, { sourceFirst: true, recurse: true})
+    dd.replaceVars(field, style, { sourceFirst: true, recurse: true})
+    dd.replaceVars(style, style, { sourceFirst: true, recurse: true})
     setGeometry();
     obj.css(style);
   }
@@ -996,7 +999,7 @@ $.render = function(options) {
       if (typeof value !== 'string') return;
       if (value.match(/^\$\d+$/)) removed.push(key);
     })
-    $.deleteKeys(item, removed);
+    dd.deleteKeys(item, removed);
     return item;
   }
 
@@ -1012,7 +1015,7 @@ $.render = function(options) {
   {
     var prev = defaults[name];
     if ($.isPlainObject(prev))
-      value = $.fuse(prev, value);
+      value = dd.merge(prev, value);
     else if (typeof value == 'string')
       value.type = prev;
     return value;
@@ -1020,7 +1023,7 @@ $.render = function(options) {
 
   var setDefaults = function(defaults, item, parent)
   {
-    if ($.size(item) != 1) return false;
+    if (dd.size(item) != 1) return false;
     var sow = parent.sow;
     var set = false;
     for (var i in array_defaults) {
@@ -1031,7 +1034,7 @@ $.render = function(options) {
         value = parent[value.substring(1)];
       if (value === undefined) continue;
       if (sow && sow.indexOf(value) >=0 )
-        value = $.fuse(parent[value], defaults[name]);
+        value = dd.merge(parent[value], defaults[name]);
       if (name === 'template' && value === 'none')
         value = '$field';
       else if (name === 'wrap' && $.isPlainObject(value))
@@ -1049,7 +1052,7 @@ $.render = function(options) {
       }
       if (name == 'template' && $.isPlainObject(item[name]) && item[name].type === undefined) {
         value = mergePrevious(defaults, name, me.initField(value));
-        $.replaceVars(value, value.subject, { recurse: true});
+        dd.replaceVars(value, value.subject, { recurse: true});
       }
 
       defaults[name] = value;
@@ -1067,7 +1070,7 @@ $.render = function(options) {
       links = links.split(',');
     if (links === undefined || links === null || links.length==0) return $.when();
     return $.when.apply($, $.map(links, function(link) {
-      return $.loadLink(link, type);
+      return dd.loadLink(link, type);
     }));
   }
 
@@ -1084,7 +1087,7 @@ $.render = function(options) {
   var redirect = function(field)
   {
     if (!$.isPlainObject(field)) field = { url: field };
-    $.replaceVars(field,field);
+    dd.replaceVars(field,field);
     var url = field.url;
     if ((!url || field.query) && field.target === '_blank') {
       url = '/?action=action';
@@ -1100,7 +1103,7 @@ $.render = function(options) {
     if (field.target === '_blank')
       window.open(url, field.target);
     else if (field.target) {
-      $.closeDialog(me.sink);
+      dd.closeDialog(me.sink);
       me.createSubPage({url: url, key: field.key}, $(field.target), field.target);
     }
     else
@@ -1124,9 +1127,9 @@ $.render = function(options) {
         action = action[0];
       }
       switch(action) {
-        case 'page': $.showPage(field); return;
-        case 'dialog': $.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
-        case 'close_dialog': $.closeDialog(obj); break;
+        case 'page': dd.showPage(field); return;
+        case 'dialog': dd.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
+        case 'close_dialog': dd.closeDialog(obj); break;
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
@@ -1150,7 +1153,7 @@ $.render = function(options) {
           me.sink.find(".in-error").removeClass('in-error').trigger('clear-error');
           obj.trigger('posting', [params]);
           obj.trigger('posting');
-          $.json('/', params, function(result) {
+          dd.json('/', params, function(result) {
             trigger_post_result(result);
             me.respond(result, obj);
           });
@@ -1173,11 +1176,11 @@ $.render = function(options) {
     }
     if (!field.confirmation || action)
       dispatch();
-    else $.showDialog('/confirm_dialog').done(function(dialog) {
+    else dd.showDialog('/confirm_dialog').done(function(dialog) {
       if (typeof field.confirmation == 'string')
         dialog.find('#message').text(field.confirmation);
       dialog.find('.action').click(function() {
-        $.closeDialog(dialog);
+        dd.closeDialog(dialog);
         if ($(this).attr('action') === 'yes') dispatch();
       })
     });
@@ -1221,7 +1224,7 @@ $.render = function(options) {
   this.respond = function(result, invoker, event)
   {
     if (!result) return;
-    $.removeXSS(result);
+    dd.removeXSS(result);
     var responses = result._responses;
     delete result._responses;
     if (!$.isPlainObject(responses)) return this;
@@ -1237,8 +1240,8 @@ $.render = function(options) {
     {
       switch(action) {
         case 'alert': alert(val); break;
-        case 'show_dialog': $.showDialog(val, responses.options); break;
-        case 'close_dialog': $.closeDialog(parent, val); break;
+        case 'show_dialog': dd.showDialog(val, responses.options); break;
+        case 'close_dialog': dd.closeDialog(parent, val); break;
         case 'redirect': redirect(val); break;
         case 'update': parent.setChildren(val, true); break;
         case 'trigger': trigger(val, parent); break;
@@ -1265,11 +1268,11 @@ $.render = function(options) {
       if (array && !$.isPlainObject(item)) continue;
        var id = i, value= item;
       if (array) {
-        var el = $.firstElement(item);
+        var el = dd.firstElement(item);
         id = el[0];
         item = el[1];
       }
-      var obj = parent.find($.selector.idName(id));
+      var obj = parent.find(dd.selector.idName(id));
       if (obj.exists()) {
         obj.value(value);
         continue;
@@ -1288,7 +1291,7 @@ $.render = function(options) {
   var loadValues =  function(parent, data)
   {
     var params = $.extend({key: data.key}, data.params);
-    $.json('/', serverParams('values', data.path, params), function(result) {
+    dd.json('/', serverParams('values', data.path, params), function(result) {
       if (!result) return;
       parent.trigger('loaded_values', [result]);
       if ($.isPlainObject(result))
@@ -1543,3 +1546,5 @@ $.render = function(options) {
     })
   }
 }
+
+})(didi);
