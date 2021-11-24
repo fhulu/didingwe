@@ -1,6 +1,7 @@
 (function( $ ) {
   
 "use strict";
+
 $.fn.exists = function() {
   return this.get(0) != undefined;
 }
@@ -468,5 +469,201 @@ $.fn.enableOnSet = function(controls, events) {
       self.removeAttr('disabled');
   });
 }
+
+$.send = function(url, options, callback) {
+  if (options instanceof Function) {
+    callback = options;
+    options = undefined;
+  }
+  options = $.extend({
+    progress: 'Processing...',
+    method: 'post',
+    async: true,
+    showResult: false,
+    invoker: undefined,
+    data: {},
+    eval: true,
+    dataType: undefined,
+    error: undefined,
+    event: undefined
+  }, options);
+
+  var ret = this;
+  if (options.invoker !== undefined)
+    options.invoker.prop('disabled', true);
+  var progress =  {};
+  if (options.progress !== false) {
+    progress.box = $('.processing');
+    progress.box.click(function() {
+      $(this).fadeOut('slow');
+    });
+
+    progress.timeout = setTimeout(function() {
+      progress.box.find(".message").text(options.progress);
+      progress.box.show();
+    }, 1000);
+
+    if (options.error ===undefined) {
+      options.error = function(jqHXR, status, text)
+      {
+        console.log("AJAX ERROR", status, "TEXT", text)
+        progress.box.html('<p class=error>Status:'+status+'<br>Text:'+text+'</p').show();
+        if (options.event !== undefined) {
+          options.event.stopImmediatePropagation();
+          ret = false;
+        }
+      };
+    }
+  }
+
+  $.ajax({
+    type: options.method,
+    url: url,
+    data: options.data,
+    async: options.async,
+    error: options.error,
+    cache: false,
+    dataType: options.dataType,
+    success: function(data) {
+      console.log("AJAX SUCCESS", data);
+      if (progress.timeout !== undefined) clearTimeout(progress.timeout);
+      if (progress.box !== undefined) progress.box.hide();
+      if (callback !== undefined) callback(data, options.event);
+      if (options.invoker !== undefined) options.invoker.prop('disabled', false);
+    }
+  });
+  return ret;
+}
+
+$.loadPage = (options, parent) => {
+  if (parent == undefined) parent = $('body');
+  var defer = $.Deferred();
+  var path = options.path;
+  if  (path[0] === '/') path=options.path.substr(1);
+  var data = $.extend({key: options.key}, options.request, {path: path, action: 'read'});
+  $.json('/', { data: data }, function(result) {
+    parent.trigger('server_response', result);
+    if (!result.path) return;
+    result.values = $.extend({}, options.values, result.values );
+    defer.resolve(result,options);
+  });
+  return defer.promise();
+}
+
+$.createPage = (options, data, parent) => {
+  var id = data.fields.id = options.page_id = data.path.replace('/','_');
+  data.fields.local_id = data.path.split('/').pop();
+  var values = data.fields.values || data.values;
+  if (data.fields.name === undefined)
+    data.fields.name = dd.toTitleCase(data.path.split('/').pop().replace('_',' '));
+  data.fields.path = data.path;
+  data.fields.sub_page = false;
+  data.fields.values = values;
+  var r = new dd.render({invoker: parent, types: data.types, id: id, key: options.key, request: options.request} );
+  var object = r.render(data, 'fields');
+  if (data._responses)  r.respond(data);
+  object.addClass('page');
+  if (parent && !object.is('body'))
+    object.appendTo(parent);
+  return object;
+},
+
+$.showPage = (options, parent, data) => {
+  if (parent == undefined) {
+    parent = options.parent? $(parent): $('body');
+  }
+  var defer = $.Deferred();
+  var createPage = function(result, options) {
+    var object = $.createPage(options, result, parent);
+    if ($.isPlainObject(result.fields.parent))
+      parent.setClass(result.fields.parent.class);      
+    defer.resolve(object,result,options);
+  };
+
+  if (data)
+    createPage(data, options);
+  else
+    $.loadPage(options, parent).done(createPage);    
+  return defer.promise();
+}
+
+$.showDialog = (path, field) => {
+  if (path[0] === '/') path = path.substr(1);
+  var params = $.extend({ path: path }, field);
+  var defer = $.Deferred();
+
+  $.loadPage({path: '/modal', show: false}).done(function(modal, options) {
+    var tmp = $("<div>");
+    $.showPage(params, tmp).done(function(obj, page) {
+      if (page.fields.modal) modal.fields = dd.merge(modal.fields, page.fields.modal);
+      if (modal.fields.title_bar) dd.replaceVars(page.fields, modal.fields.title_bar, {recurse: true});
+      if (modal.fields.close_button) dd.replaceVars(page.fields, modal.fields.close_button, {recurse: true});
+      modal = $.createPage(options,modal);
+      modal.removeAttr('id');
+      var dialog = modal.find('.modal-dialog');
+      dialog.append(obj);
+      dialog.draggable({handle: ".modal-title-bar"});
+      modal.appendTo($('body')).show();
+      defer.resolve(dialog, page, field);
+    });
+  });
+  return defer.promise();
+},
+
+
+$.closeDialog = (dialog, message) => {
+  if (message) alert(message);
+  var parent = dialog.closest('.modal');
+  parent.trigger("closing");
+  if (parent.exists()) parent.remove();
+},
+
+
+$.json = (url, options, callback) => {
+  if (options instanceof Function) {
+    callback = options;
+    options = {dataType: 'json'};
+  }
+  else options = $.extend(options, {dataType: 'json'});
+  return $.send(url, options, callback);
+}
+
+$.scrollbarWidth = () => {
+  var parent, child, width;
+
+  parent = $('<div style="width:50px;height:50px;overflow:auto"><div/></div>').appendTo('body');
+  child=parent.children();
+  width=child.innerWidth()-child.height(99).innerWidth();
+  parent.remove();
+
+  return width;
+}
+
+$.loadLink = (link, type) => {
+  return $.Deferred(function(defer) {
+    var params = {
+      css: { tag: 'link', type: 'text/css', selector: 'href', rel: 'stylesheet' },
+      script: { tag: 'script', type: 'text/javascript', selector: 'src'}
+    }
+    var param = params[type];
+    if (link.indexOf('?') < 0) {
+      var prev = $(param.tag+'['+param.selector+'="'+link+'"]');
+      if (prev.exists()) return defer.resolve(link);
+    }
+    var element = document.createElement(param.tag);
+    delete param.tag;
+    element[param.selector] = link;
+    delete param.selector;
+    $.extend(element, param);
+    element[param.src] = link;
+    element.type = param.type;
+    if (type == 'css') element.rel = 'stylesheet';
+
+    element.onreadystatechange = element.onload = function() { defer.resolve(link); }
+    element.onerror = function() { defer.resolve(link); }
+    document.head.appendChild(element);
+  }).promise();
+}
+
 
 } (jQuery) );

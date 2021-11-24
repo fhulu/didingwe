@@ -625,7 +625,7 @@ dd.render = function(options) {
     delete field.sub_page;
     delete field.appendChild;
     field.path = field.url? field.url: field.id;
-    return dd.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
+    return $.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
       setStyle(obj, field);
       setClass(obj, field);
       setResponsive(obj, field);
@@ -1070,7 +1070,7 @@ dd.render = function(options) {
       links = links.split(',');
     if (links === undefined || links === null || links.length==0) return $.when();
     return $.when.apply($, $.map(links, function(link) {
-      return dd.loadLink(link, type);
+      return $.loadLink(link, type);
     }));
   }
 
@@ -1103,7 +1103,7 @@ dd.render = function(options) {
     if (field.target === '_blank')
       window.open(url, field.target);
     else if (field.target) {
-      dd.closeDialog(me.sink);
+      $.closeDialog(me.sink);
       me.createSubPage({url: url, key: field.key}, $(field.target), field.target);
     }
     else
@@ -1127,9 +1127,9 @@ dd.render = function(options) {
         action = action[0];
       }
       switch(action) {
-        case 'page': dd.showPage(field); return;
-        case 'dialog': dd.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
-        case 'close_dialog': dd.closeDialog(obj); break;
+        case 'page': $.showPage(field); return;
+        case 'dialog': $.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
+        case 'close_dialog': $.closeDialog(obj); break;
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
@@ -1153,7 +1153,7 @@ dd.render = function(options) {
           me.sink.find(".in-error").removeClass('in-error').trigger('clear-error');
           obj.trigger('posting', [params]);
           obj.trigger('posting');
-          dd.json('/', params, function(result) {
+          $.json('/', params, function(result) {
             trigger_post_result(result);
             me.respond(result, obj);
           });
@@ -1176,11 +1176,11 @@ dd.render = function(options) {
     }
     if (!field.confirmation || action)
       dispatch();
-    else dd.showDialog('/confirm_dialog').done(function(dialog) {
+    else $.showDialog('/confirm_dialog').done(function(dialog) {
       if (typeof field.confirmation == 'string')
         dialog.find('#message').text(field.confirmation);
       dialog.find('.action').click(function() {
-        dd.closeDialog(dialog);
+        $.closeDialog(dialog);
         if ($(this).attr('action') === 'yes') dispatch();
       })
     });
@@ -1240,8 +1240,8 @@ dd.render = function(options) {
     {
       switch(action) {
         case 'alert': alert(val); break;
-        case 'show_dialog': dd.showDialog(val, responses.options); break;
-        case 'close_dialog': dd.closeDialog(parent, val); break;
+        case 'show_dialog': $.showDialog(val, responses.options); break;
+        case 'close_dialog': $.closeDialog(parent, val); break;
         case 'redirect': redirect(val); break;
         case 'update': parent.setChildren(val, true); break;
         case 'trigger': trigger(val, parent); break;
@@ -1291,7 +1291,7 @@ dd.render = function(options) {
   var loadValues =  function(parent, data)
   {
     var params = $.extend({key: data.key}, data.params);
-    dd.json('/', serverParams('values', data.path, params), function(result) {
+    $.json('/', serverParams('values', data.path, params), function(result) {
       if (!result) return;
       parent.trigger('loaded_values', [result]);
       if ($.isPlainObject(result))

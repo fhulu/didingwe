@@ -131,7 +131,7 @@
 
       var el = me.element;
       me.loading = true;
-      dd.json('/', {data: dd.plainValues(data)}, function(data) {
+      $.json('/', {data: dd.plainValues(data)}, function(data) {
         if (!data) {
           el.triggerHandler('refreshed', [data]);
           return;
@@ -427,7 +427,7 @@
 
       var el = me.element;
       me.loading = true;
-      dd.json('/', {data: dd.plainValues(data)}, function(result) {
+      $.json('/', {data: dd.plainValues(data)}, function(result) {
         if (!result) {
           el.triggerHandler('updated', [result]);
           return;
@@ -764,7 +764,7 @@
       var index = 0;
       var load = function() {
         var path = pages[index];
-        dd.showPage({path: path, key: key }, td).done(function() {
+        $.showPage({path: path, key: key }, td).done(function() {
           if (++index < pages.length)
             load();
         })
@@ -895,8 +895,13 @@
         var th = ths.eq(col);
         var td = tds.eq(col);
         if (field.width !== undefined) {
-          th.css('width', field.width);
-          td.css('width', th.get(0).style.width);
+          if (th.exists()) {
+            th.css('width', field.width);
+            td.css('width', th.get(0).style.width);
+          }
+          else {
+            td.css('width', field.width);
+          }
         }
         else if (field.width !== 'auto') {
           th.css('width', 'auto');
