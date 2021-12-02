@@ -5,11 +5,11 @@ session_timeout: 300
 program_name: Didi SPA
 author: Mukoni Software
 description: Didi Framework Single Page Application
-keywords: didi,mukoni,Mukoni Software,spa
+keywords: didingwe,didi,mukoni,Mukoni Software,spa
 viewport: width=device-width, initial-scale=1
 charset: iso-8859-1
 root_path: ..
-didi_root: $root_path/didi
+didi_root: $root_path/didingwe
 didi_path: $didi_root/vocab
 didi_web: $didi_root/web
 image_path: $web_path/images
@@ -21,6 +21,8 @@ image_url: /images
 favicon: 
   type: image/png
   href: /didi/images/mukoni-favicon.png
+
+title: $program_name
 
 search_paths:
   - $didi_path
@@ -45,6 +47,7 @@ head_tag:
   favicon: { tag: link, rel: icon }
   css: { tag: link, rel: stylesheet, type: text/css, media: screen, href: $value}
   script: { src: $value, alias: scripts, text: "" }
+  title: { text: $value }
 
 meta:
   - { http-equiv: Content-Type, content: "text/html; charset=$charset" }
