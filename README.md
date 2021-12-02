@@ -1,20 +1,29 @@
-# didingwe Web Page Framework
+# Didingwe Web Page Framework
 
-Suppose you wanted to create a simple Sign Up page for your website. 
+An easy to use Single Page Application framework. Write less, do more.
+
+## Description
+
+Suppose you wanted to create a simple Sign Up page for your website
 
 
-The front end code would look like this.
+The front end code would look something similar to this.
 
-```
+`signup.html`
+```html
 <form action="signup.php">
   <p>Sign up</p>
   <div class=input>
-    <label>Name:</label>
-    <input type="text" name="user_name" required>
+    <label>First Name:</label>
+    <input type="text" name="first_name" required>
+  </div>
+  <div class=input>
+    <label>Last Name:</label>
+    <input type="text" name="last_name" required>
   </div>
   <div class=input>
     <label>Email:</label>
-    <input type ="email" name="email" required>
+    <input type="email" name="email" required>
   </div>
   <div class=input>
     <label>Password:</label>
@@ -24,20 +33,96 @@ The front end code would look like this.
 </form>
 ```
 
+You will also need to include some CSS to handle styling. CSS Frameworks like Bootstrap, might help style up the page nicely. You may also prefer to do some basic validation using JavaScript. Again Javascript frameworks like Bootstrap can also come in handy here.
+
+
+On the back-end, you will need to write code to insert the new records into your user database/table. Good experience with PHP, C#, Java, etc, becomes important here.
+
+
+
 Using Didingwe framework, the alternative code is:
 
-```
+`signup.yml`
+```yaml
 sign_up:
   access: public
   type: input_page
   inputs:
-    - user_name
+    - first_name
+    - last_name
     - email
     - password
   actions:
     - sign_up
   post:
-    - db.insert: [user, $request]
-	audit: $user_name $email
+    - db.insert: [user, first_name, last_name, email, password]
+  audit: $first_name $last_name $email
 ```
 
+With Didingwe framework the above YAML code is <b>all</b> write to get the page rendered. No HTML, no JavaScript, no CSS, etc. Just plain easy to read text in YAML.  In fact, it also actually does full work of signing up, even without any custom handwritten backend code. 
+
+The only other work is to configure access to database as follows:
+
+`.site-config.yml`
+```yaml
+db:	
+  database: example
+  user: example
+  password: example
+```
+
+## Getting Started
+
+### Dependencies
+
+* jQuery
+* Apache
+* PHP
+* YAML
+
+#### Optional
+* MySQL
+
+Didingwe framework backend is currently implemented using PHP on Apache and nginx. The Node implementation is not up to date but work is currently underway to bring it up to the PHP level. There are also plans to implement the backend in JAVA and C#.
+
+### Installing
+
+### Core
+```bash
+$ cd /path/to/project
+$ git clone https://github.com/fhulu/didingwe.git
+```
+### Debian + Apache + PHP
+```basg
+$ ./didingwe/apache/install-debian-php.sh
+```
+
+
+
+## Help
+
+Any advise for common problems or issues.
+```
+command to run if program contains helper info
+```
+
+## Authors
+
+Contributors names and contact info
+
+ex. Fhulu Lidzhade
+ex. [@FhuluLidzhade1](https://twitter.com/fhululidzhade1)
+
+## Version History
+
+* 0.1
+    * Initial Release
+
+## License
+
+This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
+
+## Acknowledgments
+
+Inspiration, code snippets, etc.
+* todo
