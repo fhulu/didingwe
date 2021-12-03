@@ -29,12 +29,15 @@ search_paths:
   - $themes
   - $program_path
 
+site_layout: /spa
+
 spa:
-  page: /index
+  page: $site_layout
   template: $didi_web/spa.html
   content: /home
   public: {}
   auth: {}
+
 log:
   dir: $root_path/log
   path: $root_path/log/$program_name.log

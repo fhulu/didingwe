@@ -1,0 +1,3 @@
+banner:
+  type: h1
+  text: $program_name

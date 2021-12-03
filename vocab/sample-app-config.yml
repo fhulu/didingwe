@@ -1,1 +1,3 @@
 didi_root: ../$didi_root  # This setting is mandatory
+program_name: $project_name
+title: $project_title

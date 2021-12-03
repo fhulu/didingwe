@@ -1,7 +1,3 @@
-read_tokens:
-  post:
-    - collection.values: [token,$token, url,method, active, valid_until, now: /now()]
-    - if "$active" == 0 || "$now" > "$valid_until":
-        - abort: Invalid token or token expired
-    - write_session: token
-    - $method: $url
+home:
+  type: h2
+  text: Welcome to $title

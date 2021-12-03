@@ -1,0 +1,11 @@
+include: [first_page]
+spa_banner_content:
+  type: first_page
+  contents:
+    - type: page
+    - banner
+    - main:
+        type: container
+        contents:
+          - current_page
+

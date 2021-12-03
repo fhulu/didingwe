@@ -1,0 +1,5 @@
+include: [first_page]
+
+spa:
+  type: first_page
+  contents: [current_page]

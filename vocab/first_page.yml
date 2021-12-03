@@ -1,10 +1,13 @@
-index:
+first_page:
+  type: container
   is_body: true
   parent:
     class: [didi]
-  type: container
   read:
     - if $use_triggers:
       - this.post: trigger/fire
-  contents:
-    - program: { type: page_title}
+
+current_page:
+  type: page
+  url: $content
+  class: [widest]

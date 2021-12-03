@@ -81,7 +81,8 @@ cp -p $didi_dir/.gitignore $app_dir/.gitignore
 
 # Initial app configuration file 
 didi_root=${didi_dir//\//\\/}
-sed "s/\$didi_root/${didi_root}/g" $didi_dir/vocab/sample-app-config.yml >$app_dir/vocab/app-config.yml
+project_title=${project_name^}
+sed "s/\$didi_root/${didi_root}/g; s/\$project_name/${project_name}/g; s/\$project_title/${project_title}/g" $didi_dir/vocab/sample-app-config.yml >$app_dir/vocab/app-config.yml
 
 # Sample site-specific configuration file
 sed "s/\$project_name/${project_name}/g" $didi_dir/vocab/sample-site-config.yml >$app_dir/vocab/.site-config.yml
