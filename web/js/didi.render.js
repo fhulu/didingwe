@@ -725,7 +725,7 @@ dd.render = function(options) {
         me.parent.trigger('loaded', [field,result]);
     });
     if (field.autoload || field.autoload === undefined) {
-      dd.json('/', serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
+      $.json('/', serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
         me.respond(result, object);
         object.trigger('loaded', [field, result.data]);
       });
