@@ -20,7 +20,7 @@ site_config: $program_path/.site-config.yml
 image_url: /images
 favicon: 
   type: image/png
-  href: /didi/images/mukoni-favicon.png
+  href: /didi/images/didingwe-favicon.png
 
 title: $program_name
 
@@ -60,6 +60,7 @@ meta:
   - description: $description
   - viewport: $viewport
   - application-name: $program_name
+
 css:
   - /didi/css/font-awesome/css/font-awesome.min.css
   - /didi/css/didi.css
