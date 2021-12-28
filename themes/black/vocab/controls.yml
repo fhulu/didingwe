@@ -28,10 +28,6 @@ label_fieldset:
     errors: [ ^border-white, border-red]
     clear-error: [border-white, ^border-red]
 
-link:
-  class: [text-blue]
-
-
 modal:
   dialog: {class: [black]}
   close_button:

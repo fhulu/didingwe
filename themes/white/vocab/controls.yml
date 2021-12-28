@@ -1,5 +1,5 @@
 button:
-  class: [hover-text-black hover-whitesmoke]
+  class: [border-lightgrey hover-border-grey]
 
 datatable:
   slide: { class: [blue, border-light-grey] }
@@ -28,12 +28,10 @@ label_fieldset:
     errors: [ ^border-light-grey]
     clear-error: [border-light-grey]
 
-link:
-  class: [text-blue]
-
-
 modal:
   dialog: {class: [white, text-dark-grey]}
   close_button:
     class: [hover-text-red]
 
+page:
+  class: [ text-dark-grey, white]

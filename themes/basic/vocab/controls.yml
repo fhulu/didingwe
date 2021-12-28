@@ -6,7 +6,7 @@ big_text:
   class: [bold font-xxlarge block]
 
 button:
-  class: [pad pad-small rounded border border-width-thin]
+  class: [pad pad-small rounded border border-width-thin cursor-pointer]
 
 datatable:
   class: [border-collapse]
@@ -20,7 +20,6 @@ input:
   class: [pad pad-tiny]
 
 input_page:
-  class: [pad pad-medium]
   inputs:
     - template: label_fieldset
   actions_pane:
@@ -49,16 +48,18 @@ label_fieldset:
       focustout: [ ^hide-placeholder ]
       errors: [ hide-placeholder]
 link:
-  class: [undecorated]
+  class: [pointer-cursor]
 
 
 modal:
-  title_bar: { class: [pad pad-small]}
+  title_bar: { class: [pad,pad-small,font-large, cursor-move]}
   close_button:
     class: [round, center-text pad pad-tiny]
     top: -8
     right: -8
 
+page:
+  class: [pad pad-medium]
 
 small_text:
   type: plain_text
@@ -66,3 +67,4 @@ small_text:
 
 submit:
   class: [pad pad-small border rounded]
+
