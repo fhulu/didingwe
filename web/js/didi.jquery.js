@@ -158,7 +158,7 @@ $.fn.json = function(url, options, callback) {
     data = $.extend({}, options.data, data);
 
   options = $.extend({}, options, {data: data});
-  dd.json(url, options, function(result){
+  $.json(url, options, function(result){
     callback(result);
   });
   return this;

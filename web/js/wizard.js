@@ -93,7 +93,7 @@ $.widget( "didi.wizard", {
 
     if (info.next != false && index != last_step) {
       opts.next.path = info.path;
-      var next = $.copy(opts.next);
+      var next = dd.copy(opts.next);
       next.post_prefix = info.post_prefix;
       info.navigate.push({next: next});
     }
@@ -134,8 +134,8 @@ $.widget( "didi.wizard", {
       path = path.substr(0, path.lastIndexOf('/')+1) + props.id;
     page.empty();
     $.loadPage({path: path, key: options.key}, page).then(function(info, options) {
-      info.fields = $.merge(me.options.step, info.fields);
-      info.fields = $.merge(info.fields, props);
+      info.fields = dd.merge(me.options.step, info.fields);
+      info.fields = dd.merge(info.fields, props);
       info.fields.path = info.path;
       var object = $.createPage(options, info, page);
       me.updateNavigation(index, info.fields, page);
