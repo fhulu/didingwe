@@ -29,7 +29,7 @@ dd.render = function(options) {
     var result = {};
     for (var i in array) {
       var type = array[i];
-      var merged = me.mergeType(types[type], undefined, type);
+      var merged = me.mergeType({}, types[type], undefined, type);
       result = dd.merge(result, merged);
     }
     return result;
@@ -97,12 +97,13 @@ dd.render = function(options) {
   }
 
   var mergeDefaultType = function(base, item, type) {
-    type = dd.copy(type);
+    if (!base)
+      return dd.merge(type, item);
     mergeImmutables(item, base, type);
     base = dd.copy(base);
     dd.deleteKeys(base, ['type', 'styles', 'style'])
     dd.deleteKeys(base, geometry)
-    return dd.merge(dd.merge(type,base), item);
+    return dd.merge(type, base, item);
   }
 
   var mergeDefaults = function(item, defaults, base) {
@@ -218,14 +219,13 @@ dd.render = function(options) {
     var sow = parent_field.sow;
     var removed = [];
     var index = 0;
-    for(var i in items) {
-      var item = items[i];
+    items.forEach((item,i)=>{
       var id;
       var array;
       var template;
       removed.push(i);
       if ($.isPlainObject(item)) {
-        if (setDefaults(defaults, item, parent_field)) continue;
+        if (setDefaults(defaults, item, parent_field)) return;
         id = item.id;
         if (id == 'query') {
           item.defaults = dd.copy(defaults);
@@ -282,7 +282,7 @@ dd.render = function(options) {
       if (item.template) initTemplate(item)
       items[i] = item;
       removed.pop();
-    }
+    });
 
     for (var i in removed) {
       items.splice(removed[i]-i,1);
@@ -357,10 +357,10 @@ dd.render = function(options) {
     return value;
   }
 
-  this.expandValues = function(data, parent_id, exclusions)
+  this.expandValues = function(data, id, exclusions)
   {
     if (!data) return data;
-    if (parent_id === undefined) parent_id = data.id;
+    if (id === undefined) id = data.id;
     var expanded;
     var count = 0;
     if (!exclusions) exclusions = [];
@@ -370,13 +370,11 @@ dd.render = function(options) {
       expanded = false;
       for (var field in data) {
         var value = data[field];
-        if ($.isPlainObject(value)) 
-          deriveParent(data, value);
         if ($.isNumeric(value)) continue;
         if ($.isArray(value)) data[field] = substArray(data, value);
         if (typeof value !== 'string' || value.indexOf('$') < 0 || exclusions.indexOf(field) >=0) continue;
-        var old_value = value = value.replace('$id', parent_id);
-        data[field] = value = me.expandValue(data, value, parent_id);
+        var old_value = value = value.replace('$id', id);
+        data[field] = value = me.expandValue(data, value, id);
         expanded = old_value !== value;
       }
     } while (expanded);
@@ -416,8 +414,8 @@ dd.render = function(options) {
   var deriveParent = function(parent, field)
   {
     if (!parent) return;
-    if (!field.parent_id) field.parent_id = parent.id;
-    if (!field.parent_name) field.parent_name = parent.name;
+    if (!field.parent_id && parent.id) field.parent_id = parent.id;
+    if (!field.parent_name && parent.name) field.parent_name = parent.name;
     for (var i in field.derive) {
       var key = field.derive[i];
       var value = field[key];
@@ -425,7 +423,7 @@ dd.render = function(options) {
         field[key] = parent[key];
       else if ($.isPlainObject(value) || $.isArray(value))
         field[key] = dd.merge(parent[key], value);
-      else if (value[0] == '$')
+      else if (typeof value === 'string' && value[0] === '$')
         field[key] = parent[value.substr(1)];
     }
     delete field.derive;
@@ -491,7 +489,7 @@ dd.render = function(options) {
   this.render = function(parent, key) {
     var field = parent[key] = me.initField(parent[key], parent);
     me.root_field = field;
-    var obj = me.root = me.create(parent, key);
+    var obj = me.root = me.create(parent, key, false);
     me.initModel(obj, field);
     return obj;
   }
@@ -1425,7 +1423,7 @@ dd.render = function(options) {
 
   this.initModel = function(parent, field) {
     var vars = [];
-    var parent_id = field.id;
+    var parent_id = parent.id;
 
     // add initial vars
     if (field.dd_init) $.each(field.dd_init, function(key, value) {

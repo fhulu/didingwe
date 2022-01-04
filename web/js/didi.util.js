@@ -184,20 +184,20 @@ var didi = {
       if (!a2.hasOwnProperty(i)) continue;
       var v2 = a2[i];
       if (!a1.hasOwnProperty(i)) {
-        r[i] = v2;
+        r[i] = dd.copy(v2);
         continue;
       }
       var v1 = r[i];
       if (typeof v1 !== typeof v2
               || dd.isArray(v1) && !dd.isArray(v2)
               || dd.isPlainObject(v1) && !dd.isPlainObject(v2)) {
-        r[i] = v2;
+        r[i] = this.copy(v2);
         continue;
       }
 
       if (dd.isArray(v1)) {
         if (v2[0] == '_reset')
-          r[i] = v2.slice(1);
+          r[i] = dd.copy(v2.slice(1));
         else
           r[i] = ([].concat(v1)).concat(v2);
         //note: no deep copying arrays, only objects
@@ -206,7 +206,7 @@ var didi = {
       if (dd.isPlainObject(v1))
         r[i] = dd.merge(v1, v2);
       else
-        r[i] = v2;
+        r[i] = dd.copy(v2);
     }
     return r;
   },
@@ -238,13 +238,24 @@ var didi = {
   },
 
   copy: function(src) {
-    if (dd.isArray(src)) return [].concat(src);
-    var r = {};
-    for (const k in src) {
-      if (!src.hasOwnProperty(k)) continue;
-      r[k] = src[k];
+    if (src === undefined || dd.isAtomicValue(src)) return src;
+    var me = this;
+    var copy_array = () => {
+      var r = [];
+      src.forEach(v => r.push(me.copy(v)));
+      return r;
     }
-    return r;
+
+    var copy_object = () => {
+      var r = {};
+      for (const k in src) {
+        if (!src.hasOwnProperty(k)) continue;
+        r[k] = this.copy(src[k]);
+      }
+      return r;
+    }
+
+    return me.isArray(src)? copy_array(): copy_object();
   },
 
   size: function(obj) {
@@ -404,7 +415,7 @@ var didi = {
     return result;
   },
 
-  isAtomicValue: function(x) { return typeof x == 'string' || typeof x == 'number'; },
+  isAtomicValue: function(x) { return typeof x == 'string' || !isNaN(x); },
 
   removeXSS: function(object) {
     var r = /<script(?:\s+[^>]*)?>.*<\/script>/;
