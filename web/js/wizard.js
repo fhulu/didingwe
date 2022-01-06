@@ -122,7 +122,7 @@ $.widget( "didi.wizard", {
     if (typeof props == 'string')
       props = { id: props };
     else if (!props.id)
-      props.id = $.firstKey(props);
+      props.id = dd.firstKey(props);
     var path = options.path;
     if (props.id.indexOf('/') >= 0)
       path = props.id;
@@ -134,8 +134,7 @@ $.widget( "didi.wizard", {
       path = path.substr(0, path.lastIndexOf('/')+1) + props.id;
     page.empty();
     $.loadPage({path: path, key: options.key}, page).then(function(info, options) {
-      info.fields = dd.merge(me.options.step, info.fields);
-      info.fields = dd.merge(info.fields, props);
+      info.fields = dd.merge(me.options.step, info.fields, props);
       info.fields.path = info.path;
       var object = $.createPage(options, info, page);
       me.updateNavigation(index, info.fields, page);
