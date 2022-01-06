@@ -176,39 +176,46 @@ var didi = {
     return last;
   },
 
-  merge: function(a1, a2) {
-    if (a1 === undefined || a1 === null) return a2;
-    if (a2 === undefined || a2 === null) return a1;
-    var r = this.copy(a1);
-    for (var i in a2) {
-      if (!a2.hasOwnProperty(i)) continue;
-      var v2 = a2[i];
-      if (!a1.hasOwnProperty(i)) {
-        r[i] = dd.copy(v2);
-        continue;
-      }
-      var v1 = r[i];
-      if (typeof v1 !== typeof v2
-              || dd.isArray(v1) && !dd.isArray(v2)
-              || dd.isPlainObject(v1) && !dd.isPlainObject(v2)) {
-        r[i] = this.copy(v2);
-        continue;
-      }
+  merge: function() {
+    let doit = function(a1, a2) {
+      if (a1 === undefined || a1 === null) return a2;
+      if (a2 === undefined || a2 === null) return a1;
+      var r = dd.copy(a1);
+      for (var i in a2) {
+        if (!a2.hasOwnProperty(i)) continue;
+        var v2 = a2[i];
+        if (!a1.hasOwnProperty(i)) {
+          r[i] = dd.copy(v2);
+          continue;
+        }
+        var v1 = r[i];
+        if (typeof v1 !== typeof v2
+                || dd.isArray(v1) && !dd.isArray(v2)
+                || dd.isPlainObject(v1) && !dd.isPlainObject(v2)) {
+          r[i] = dd.copy(v2);
+          continue;
+        }
 
-      if (dd.isArray(v1)) {
-        if (v2[0] == '_reset')
-          r[i] = dd.copy(v2.slice(1));
+        if (dd.isArray(v1)) {
+          if (v2[0] == '_reset')
+            r[i] = dd.copy(v2.slice(1));
+          else
+            r[i] = ([].concat(v1)).concat(v2);
+          //note: no deep copying arrays, only objects
+          continue;
+        }
+        if (dd.isPlainObject(v1))
+          r[i] = dd.merge(v1, v2);
         else
-          r[i] = ([].concat(v1)).concat(v2);
-        //note: no deep copying arrays, only objects
-        continue;
+          r[i] = dd.copy(v2);
       }
-      if (dd.isPlainObject(v1))
-        r[i] = dd.merge(v1, v2);
-      else
-        r[i] = dd.copy(v2);
+      return r;
     }
-    return r;
+    let result = arguments[0];
+    for (var i=1; i < arguments.length; i++) {
+      result = doit(result, arguments[i]);
+    }
+    return result;
   },
 
   toObject: function(val) {
@@ -270,7 +277,7 @@ var didi = {
     var result = {}
     for (var key in options) {
       var val = options[key];
-      if ($.isPlainObject(val) || $.isArray(val)) continue;
+      if (dd.isPlainObject(val) || dd.isArray(val)) continue;
       result[key] = val;
     };
     return result;
@@ -310,9 +317,6 @@ var didi = {
       return val;
     }
 
-    if ($.isArray(dest))
-      return;
-
     do {
         replaced = false;
         for (var key in dest) {
@@ -328,11 +332,20 @@ var didi = {
     } while (replaced && flags.recurse)
   },
 
+  each: (obj, callback) => {
+    if (dd.isArray(obj)) 
+      return obj.forEach(callback);
+    for (const [key, value] of Object.entries(ojj)) 
+      callback(key, value);
+    return obj;
+  },
+
   replaceFields: function(str, fields, data) {
     if (typeof str != 'string') return str;
-    $.each(fields, function(i, field) {
-      var val = i < data.length? data[i]: "";
-      str = str.replace('$'+field, val);
+    dd.each(fields, function(field, key) {
+      var val = data[key];
+      if (val !== undefined) 
+        str = str.replace('$'+field, val);
     });
     return str;
   },
@@ -351,9 +364,9 @@ var didi = {
 
   walkTree: function(field, callback, level) {
     if (level === undefined) level = 0;
-    $.each(field, function(k, value) {
-      callback(k, value, field, level);
-      if ($.isArray(value) || $.isPlainObject(value))
+    dd.each(field, function(value, key) {
+      callback(value, key, field, level);
+      if (dd.isArray(value) || dd.isPlainObject(value))
         this.walkTree(value, callback, level+1);
     });
   },
@@ -424,11 +437,11 @@ var didi = {
       for (var i in x) {
           var v = x[i];
           var p;
-          if ($.isArray(v) || $.isPlainObject(v))
+          if (dd.isArray(v) || dd.isPlainObject(v))
             replace(x[i]);
           else if (typeof v == 'string' && (p=v.search(r))>=0) {
             var m = v.match(r);
-            x[i] = v.substr(0,p)+$.escapeHtml(m[0])+v.substr(p+m[0].length);
+            x[i] = v.substr(0,p)+dd.escapeHtml(m[0])+v.substr(p+m[0].length);
             replaced = true;
           }
       }
