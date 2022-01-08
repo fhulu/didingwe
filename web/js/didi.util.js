@@ -131,6 +131,8 @@ var didi = {
   isArray: (v) => v && v.constructor === Array,
   
   isPlainObject: (v) => v && v instanceof Object && v.constructor === Object,
+
+  isIterable: (v) => dd.isArray(v) || dd.isPlainObject(v),
     
   appendArray: function(arr,item) {
     if (dd.isArray(arr))
@@ -335,8 +337,20 @@ var didi = {
   each: (obj, callback) => {
     if (dd.isArray(obj)) 
       return obj.forEach(callback);
-    for (const [key, value] of Object.entries(ojj)) 
-      callback(key, value);
+    let entries = Object.entries(obj);
+    for (const [key, value] of entries) {
+      callback(value, key, entries);
+    }
+    return obj;
+  },
+
+  some: (obj, callback) => {
+    if (dd.isArray(obj)) 
+      return obj.some(callback);
+    let entries = Object.entries(obj);
+    for (const [key, value] of entries) {
+      if (callback(value, key, entries)) break;
+    };
     return obj;
   },
 
@@ -482,6 +496,18 @@ var didi = {
     attr: function(name, value) {
       return "$name='$value']".replace('$name',name).replace('$value',value);
     }
+  },
+
+  forEachMatch: (regex, str, callback) => {
+    var match, index = 0;
+    while (match = regex.exec(str)) {
+      if (callback(match, index++) === false) break;
+    }
+  },
+
+  extend: (obj, v) => {
+    if (dd.isArray(obj)) return obj.concat(v);
+    return obj = dd.merge(obj, v);
   },
 }
 
