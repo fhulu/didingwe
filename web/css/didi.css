@@ -13,10 +13,8 @@
   text-decoration: none;
   text-align: left;
   color: inherit;
+  list-style-position: inside;
 }
-
-/* Keep heading sizes */
-.didi:not(h1,h2,h3,h4,h5,h6) { font-size: inherit; }
 
 .didi:focus{outline:none}
 
@@ -234,6 +232,7 @@
 .cross-cursor{cursor:crosshair}
 .col-resize-cursor{cursor:col-resize;}
 .row-resize-cursor{cursor:row-resize;}
+.cursor-move{cursor:move}
 
 /* display styles */
 .block { display: block; }
