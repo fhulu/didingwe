@@ -505,10 +505,7 @@ var didi = {
     }
   },
 
-  extend: (obj, v) => {
-    if (dd.isArray(obj)) return obj.concat(v);
-    return obj = dd.merge(obj, v);
-  },
+  extend: (obj, v) => dd.isArray(obj)? obj.concat(v): dd.merge(obj, v),
 }
 
 if(window.didi === undefined || window.dd === undefined) {

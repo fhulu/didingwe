@@ -431,18 +431,23 @@ dd.render = function(options) {
 
   let performUpgrades = function(field) {
     let upgrades = field.upgrade;
-    if (!upgrades) return;
+    if (!upgrades) return field;
     dd.each(upgrades, (patterns, attr) => {
       let values = field[attr];
       if (values === undefined) return;
-      if (!dd.isIterable(values)) values = [values];
+      values = dd.copy(values);
       dd.each(patterns, (changes, pattern) => {
         let expr = new RegExp(pattern);
-        if (dd.some(values, (value, key) => expr.test(value) || expr.test(key))) {
-          field[attr] = dd.extend(values, changes);
+        if (!dd.isIterable(values)) {
+          if (expr.test(values)) field[attr] += ' ' + changes;
+        }
+        else if (dd.some(values, (value, key) => expr.test(value) || expr.test(key) )) {
+          field[attr] = dd.extend(field[attr], changes);
         }
       });
     });
+    delete field.upgrade;
+    return field;
   }
 
   this.initField = function(field, parent)
@@ -472,7 +477,7 @@ dd.render = function(options) {
       this.expandValues(field, field.id, exclusions);
     }
     // ensure class types are treated individually
-    if (field['class'] !== undefined) {
+    if (field.class !== undefined) {
       if (!dd.isArray(field.class)) field.class = [field.class];
       field.class = field.class.reduce((arr, val)=> typeof val === 'string'? arr.concat(val.split(' ')): arr, []);
     }
