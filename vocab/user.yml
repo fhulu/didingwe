@@ -228,7 +228,6 @@ create:
     - close_dialog
 
 resend_activation_token:
-  class: [blue]
   name: Resend Token
   confirmation: yes
   post:
@@ -444,7 +443,6 @@ list_all:
 login:
   access: public
   type: input_page
-  class: [pad-right pad-xlarge]
   position: { my: 'top', at: 'top+150' }
   desc: Fill in your credentials below and click Login to logon
   enter: "#login,[action=login]"
@@ -452,8 +450,8 @@ login:
     - email: { valid: login_email }
     - password: { valid: login_password }
   actions:
-    - login: {class: [^pad-xlarge]}
-    - forgot_password: { action: dialog, type: link, class: [underlined pointer-cursor] }
+    - login
+    - forgot_password: { action: dialog, type: link}
   post:
     - let: { start_page: "/" }
     - read_server: [HTTP_USER_AGENT,REMOTE_ADDR,REMOTE_HOST]

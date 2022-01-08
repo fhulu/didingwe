@@ -11,7 +11,7 @@ modal:
     contents: [$close_button, $title_bar,$body]
   title_bar:
     tag: div
-    class: [modal-title-bar, widest,pad,center-text,cursor-pointer]
+    class: [modal-title-bar, widest]
     derive: [close_button]
     text: $name
 

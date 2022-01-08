@@ -17,8 +17,9 @@ breach:
       - r3:
           access: public
           name: Your session has timed out.
+      - vspace
   actions_pane:
-    class: [grid space s1 m2 l2, pad pad-large]
+    class: [grid space s1 m2 l2]
   actions:
     - home: { action: redirect }
     - login: { action: dialog }

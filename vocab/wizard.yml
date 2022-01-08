@@ -2,7 +2,7 @@ wizard:
   type: container
   create: wizard
   class: [wizard]
-  script: [/didi/wizard.js]
+  script: [/didi/js/wizard.js]
   dummy: []
   parent_path: $path
   synopsis: ""
