@@ -429,6 +429,21 @@ dd.render = function(options) {
     delete field.derive;
   }
 
+  let performUpgrades = function(field) {
+    let upgrades = field.upgrade;
+    if (!upgrades) return;
+    dd.each(upgrades, (patterns, attr) => {
+      let values = field[attr];
+      if (values === undefined) return;
+      if (!dd.isIterable(values)) values = [values];
+      dd.each(patterns, (changes, pattern) => {
+        let expr = new RegExp(pattern);
+        if (dd.some(values, (value, key) => expr.test(value) || expr.test(key))) {
+          field[attr] = dd.extend(values, changes);
+        }
+      });
+    });
+  }
 
   this.initField = function(field, parent)
   {
@@ -456,6 +471,14 @@ dd.render = function(options) {
       deriveParent(field.template, field);
       this.expandValues(field, field.id, exclusions);
     }
+    // ensure class types are treated individually
+    if (field['class'] !== undefined) {
+      if (!dd.isArray(field.class)) field.class = [field.class];
+      field.class = field.class.reduce((arr, val)=> typeof val === 'string'? arr.concat(val.split(' ')): arr, []);
+    }
+
+    // perform upgrades
+    performUpgrades(field);
     return field;
   }
 
