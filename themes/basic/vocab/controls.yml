@@ -1,23 +1,32 @@
 actioner:
-  class: [pad pad-tiny]
+  class: [pad-tiny]
 
 big_text:
   type: plain_text
   class: [bold font-xxlarge block]
 
 button:
-  class: [pad pad-small rounded border border-width-thin cursor-pointer]
+  class: [pad-small rounded border border-width-thin cursor-pointer]
 
+control:
+  upgrade:
+    class:
+      ^border-width-\w+$: [border]
+      ^border-(left|right|top|bottom)$: [^border border-width-thin]
+      ^border$: [border-width-thin]
+      ^pad-(tiny|small|medium|(x-?)*large|jumbo)$: [pad]
+      ^pad-(left|right|top|bottom|x|y)$: [^pad]
+    
 datatable:
   class: [border-collapse]
-  title: { class: [bold left-text, pad pad-tiny,font-small]}
+  title: { class: [bold left-text, pad-tiny,font-small]}
   body: { class: [widest,font-small] }
-  slide: { class: [border-width-thin border-bottom, top-right ] }
+  slide: { class: [border-bottom, top-right ] }
   cell:
     class: [ border-width-thin border-top, pad pad-small]
 
 input:
-  class: [pad pad-tiny]
+  class: [pad-tiny]
 
 input_page:
   inputs:
@@ -27,13 +36,16 @@ input_page:
     class: [grid space fit pad-y pad-small]
 
 labelled:
-  class: [relative border border-width-thin vspaced]
+  class: [relative border vspaced]
 
 label_fieldset:
   type: fieldset
-  class: [ border border-width-thin font-medium rounded pad pad-tiny hide-legend vspace]
+  class: [ border font-medium rounded pad-tiny hide-legend vspace]
   legend:
-    class: [ margin-left pad-x pad-tiny left-text]
+    class: [ margin-left pad-x pad-tiny left-text static]
+    attr: { id: ""}
+    derive: [name]
+    text: $name
     style: { position: static }
   events:
     focusin: [ show-legend]
@@ -59,12 +71,12 @@ modal:
     right: -8
 
 page:
-  class: [pad pad-medium]
+  class: [pad-medium]
 
 small_text:
   type: plain_text
   class: [block font-small]
 
 submit:
-  class: [pad pad-small border rounded]
+  class: [pad-small border rounded]
 
