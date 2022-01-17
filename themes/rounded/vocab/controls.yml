@@ -1,0 +1,20 @@
+button:
+  class: [rounded]
+
+control:
+  upgrade:
+    class:
+      ^rounded$: [border-width-thin]
+
+label_fieldset:
+  class: [ rounded ]
+
+modal:
+  title_bar: { class: [ rounded-medium]}
+  close_button:
+    class: [round]
+  dialog:
+    class: [rounded-large]
+
+submit:
+  class: [rounded]

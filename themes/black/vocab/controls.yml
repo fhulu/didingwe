@@ -29,7 +29,7 @@ label_fieldset:
     clear-error: [border-white, ^border-red]
 
 modal:
-  dialog: {class: [black]}
+  dialog: {class: [black border-black]}
   close_button:
-    class: [ hover-text-red] 
+    class: [text-whitesmoke, hover-light-grey hover-text-black]
 

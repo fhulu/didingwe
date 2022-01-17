@@ -29,9 +29,20 @@ label_fieldset:
     clear-error: [border-light-grey]
 
 modal:
-  dialog: {class: [white, text-dark-grey]}
+  dialog: {class: [white border-white, text-dark-grey]}
+
   close_button:
-    class: [hover-text-red]
+    class: [text-grey, hover-light-grey hover-text-black]
 
 page:
   class: [ text-dark-grey, white]
+
+wizard:
+  class: [white]
+  bookmarks:
+    class: [height-xlarge,m12,hide-small,font-small, grid fit, border-top border-bottom border-grey border-width-thin]
+    state_styles:
+      active: [border-black]
+      done: [text-black]
+  bookmark:
+    class: [border-grey]

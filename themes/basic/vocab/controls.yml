@@ -6,7 +6,7 @@ big_text:
   class: [bold font-xxlarge block]
 
 button:
-  class: [pad-small rounded border border-width-thin cursor-pointer]
+  class: [pad-small border border-width-thin cursor-pointer]
 
 control:
   upgrade:
@@ -40,7 +40,7 @@ labelled:
 
 label_fieldset:
   type: fieldset
-  class: [ border font-medium rounded pad-tiny hide-legend vspace]
+  class: [ border font-medium pad-tiny hide-legend vspace]
   legend:
     class: [ margin-left pad-x pad-tiny left-text static]
     attr: { id: ""}
@@ -64,11 +64,11 @@ link:
 
 
 modal:
-  title_bar: { class: [pad,pad-small,font-large, cursor-move]}
+  title_bar: { class: [font-large, cursor-move]}
   close_button:
-    class: [round, center-text pad pad-tiny]
-    top: -8
-    right: -8
+    class: [center-text, pad-small]
+  dialog:
+    class: [pad-medium, border-width-thin]
 
 page:
   class: [pad-medium]
@@ -78,5 +78,25 @@ small_text:
   class: [block font-small]
 
 submit:
-  class: [pad-small border rounded]
+  class: [pad-small border]
 
+wizard:
+  css: [/didi/css/font-awesome/css/font-awesome.min.css ]
+  class: [relative pad-x pad-tiny]
+  bookmarks:
+    class: [height-xlarge,m12,hide-small,font-small, grid fit, border-top border-bottom]
+    state_styles:
+      pending: [cursor-not-allowed, hdivider]
+      active: [bold, border-bottom]
+      done: [fa fa-check fa-pad fa-right, hdivider]
+      visited: [underlined,hdivider]
+      committed: [cursor-not-allowed, italic, fa fa-check fa-pad fa-right,hdivider]
+  bookmark:
+    number: ""
+    class: [border, pad-medium,tallest,table-cell]
+    attr: { id: ""}
+  navigation:
+    class: [pad-small, bottom,widest, clear-after,border-top, pad-small, clear]
+  prev: { class: [float-left,w-1-4]}
+  next: { class: [float-right,w-1-4]}
+  step_container: { class: [pad-y pad-small]}
