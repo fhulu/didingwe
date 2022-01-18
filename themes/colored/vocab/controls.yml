@@ -1,0 +1,44 @@
+button:
+  class: [border-$light_color hover-border-$dark_color]
+
+datatable:
+  slide: { class: [$alt_color, border-$light_color] }
+  slideoff: { class: [$alt_color] }
+  row_styles:
+    inactive: [text-$inactive_color]
+  cell:
+    class: [ border-$inactive_color]
+
+dropdown:
+  class: [text-$text_color]
+
+fa_checkbox:
+  label:
+    class: [hover-text-$alt_color]
+
+labelled:
+  class: [border-$light_color]
+
+label_fieldset:
+  class: [ border-$light_color ]
+  events:
+    errors: [ ^border-$light_color]
+    clear-error: [border-$light)color]
+
+modal:
+  dialog: {class: [$color border-$color, text-$text_color]}
+
+  close_button:
+    class: [text-$inactive_color, hover-$light_color hover-text-$dark_color]
+
+page:
+  class: [ text-$text-color, $color]
+
+wizard:
+  class: [$color]
+  bookmarks:
+    state_styles:
+      active: [border-$alt-color]
+      done: [$alt_color]
+  bookmark:
+    class: [border-$inactive_color]

@@ -13,7 +13,7 @@ didi_root: $root_path/didingwe
 didi_web: $didi_root/web
 image_path: $web_path/images
 didi_themes: $didi_root/themes
-themes: [$didi_themes/basic]
+themes: [$didi_themes/basic, $didi_themes/colored]
 program_path: $root_path
 site_config: .site-config.yml
 image_url: /images

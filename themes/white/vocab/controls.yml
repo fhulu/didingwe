@@ -1,48 +1,9 @@
-button:
-  class: [border-lightgrey hover-border-grey]
+config:
+  color: white
+  light_color: light-grey
+  inactive_color: grey
+  dark_color: dark-grey
+  alt_color: black
+  text_color: dark-grey
+  search_paths: [$didi_themes/colored]
 
-datatable:
-  slide: { class: [blue, border-light-grey] }
-  slideoff: { class: [blue] }
-  edit: { class: [orange] }
-  delete: { class: [red] }
-  row_styles:
-    inactive: [text-grey]
-  cell:
-    class: [ border-grey]
-
-dropdown:
-  class: [text-dark-grey]
-
-fa_checkbox:
-  label:
-    class: [hover-text-black]
-
-labelled:
-  class: [border-light-grey]
-
-label_fieldset:
-  type: fieldset
-  class: [ border-light-grey ]
-  events:
-    errors: [ ^border-light-grey]
-    clear-error: [border-light-grey]
-
-modal:
-  dialog: {class: [white border-white, text-dark-grey]}
-
-  close_button:
-    class: [text-grey, hover-light-grey hover-text-black]
-
-page:
-  class: [ text-dark-grey, white]
-
-wizard:
-  class: [white]
-  bookmarks:
-    class: [height-xlarge,m12,hide-small,font-small, grid fit, border-top border-bottom border-grey border-width-thin]
-    state_styles:
-      active: [border-black]
-      done: [text-black]
-  bookmark:
-    class: [border-grey]

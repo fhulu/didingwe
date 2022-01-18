@@ -1,35 +1,7 @@
-button:
-  class: [hover-text-white hover-dark-grey]
-
-datatable:
-  slide: { class: [blue, border-light-grey] }
-  slideoff: { class: [blue] }
-  edit: { class: [orange] }
-  delete: { class: [red] }
-  row_styles:
-    inactive: [text-grey]
-  cell:
-    class: [ border-whitesmoke]
-
-dropdown:
-  class: [text-white]
-
-fa_checkbox:
-  label:
-    class: [hover-text-white]
-
-labelled:
-  class: [border-white]
-
-label_fieldset:
-  type: fieldset
-  class: [ border-white ]
-  events:
-    errors: [ ^border-white, border-red]
-    clear-error: [border-white, ^border-red]
-
-modal:
-  dialog: {class: [black border-black]}
-  close_button:
-    class: [text-whitesmoke, hover-light-grey hover-text-black]
-
+config:
+  color: black
+  light_color: dark-grey
+  inactive_color: grey
+  dark_color: light-grey
+  alt_color: white
+  text_color: light-grey
