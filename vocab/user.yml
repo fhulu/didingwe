@@ -81,12 +81,15 @@ check_otp:
   inputs:
     - otp
   pre_validation:
+    - let: {server_otp: '', time_of_otp: '' }
     - read_session: [server_otp,time_of_otp]
   values:
+    - let: {server_otp: '', time_of_otp: '' }
     - read_session: [server_otp,time_of_otp]
-    - if !"$server_otp":
-        - sql_values: select lpad(floor(rand()*9999),4,'0') server_otp, now() time_of_otp
-        - write_session: [server_otp,time_of_otp]
+    - db.values: >
+        select if('$time_of_otp'='' or timestampdiff(minute, '$time_of_otp', now()) > 30 ,now(),'$time_of_otp') time_of_otp 
+        , if('$time_of_otp'='' or timestampdiff(minute, '$time_of_otp', now()) > 30, lpad(floor(rand()*9999),4,'0'),'$server_otp') server_otp
+    - write_session: [server_otp,time_of_otp]
     - read_session: email,first_name,last_name,cellphone
     - read_config: sms_otp,email_otp
     - if $sms_otp:
@@ -94,6 +97,8 @@ check_otp:
     - if $email_otp:
         emailer.send: { type: otp_email }
     - clear_values
+  post:
+    - clear_session: [server_otp, time_of_otp]
 
 otp_sms:
   message: Your OTP for $program_name is $server_otp
@@ -325,7 +330,7 @@ forgot_password:
   position: { my: 'top', at: 'top+50' }
   type: wizard
   steps:
-    - enter_email
+    - enter_email: { name: Start}
     - check_otp: { clear: yes }
     - update_password: { prev: no}
   modal:
@@ -355,7 +360,6 @@ is_active:
     Account $value has been deactivated.
     Please ask the administrator to reactivate your account
 
-
 is_registered:
   valid: collection.exists(user,email,$value )
   error: >
@@ -363,8 +367,7 @@ is_registered:
     Click on <b>Register</b> if you would like to register to use the system.
 
 is_unlocked:
-  max_attempts: 5
-  valid: collection.exists(user,email,$value,attempts,/<$max_attempts)
+  valid: collection.exists(user,email,$value,attempts,/<$max_password_attempts)
   error: |
     Account $value locked because of too many incorrect attempts.
     Please ask the administrator to unlock your account.
@@ -452,6 +455,8 @@ login:
   actions:
     - login
     - forgot_password: { action: dialog, type: link}
+  pre_validation:
+    - read_config: max_password_attempts 
   post:
     - let: { start_page: "/" }
     - read_server: [HTTP_USER_AGENT,REMOTE_ADDR,REMOTE_HOST]
@@ -476,17 +481,13 @@ login:
       class: [col s11 m6 l5 ]
 
 login_email:
-  valid: [is_registered, is_active, is_unlocked]
+  valid: [provided, is_registered, is_active, is_unlocked]
 
 login_password:
   valid:
     - depends(email, validated)
-    - collection.exists(user,email,$email,password,/=password2('$value'))
-  error:
-    - collection.values: [user, email: $email, user: id]
-    - collection.update: [user, $user, attempts: /attempts+1]
-    - collection.insert: [audit, user, action: Failed Login attempt, time: /sysdate(), detail: $email]
-    - error: [password, Invalid user name or password for $email ]
+    - provided
+    - verify_password
 
 logout:
   read: action
@@ -604,8 +605,20 @@ update_password:
     - update_password: {class: [float-right]}
   post:
     - read_session: email
-    - collection.values: [user,email: $email, found: id]
-    - collection.update: [user,$found,password: /password('$password'),attempts: 0]
+    - collection.values: [user,email: $email,  user_id: id]
+    - hash_password: $password
+    - collection.update: [user,$user_id,password: '$password_hash',attempts: 0]
     - clear_values
     - close_dialog: Password has been changed successfully
   audit: $email
+
+
+verify_password:
+  valid:
+    - collection.values: [user, [email], hash: password]
+    - password_verify($password,$hash)
+  error:
+    - collection.values: [user, email: $email, user: id]
+    - collection.update: [user, $user, attempts: /attempts+1]
+    - collection.insert: [audit, user, action: Failed Login attempt, time: /sysdate(), detail: $email]
+    - error: [password, Invalid user name or password for $email ]
