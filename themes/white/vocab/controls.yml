@@ -1,9 +1,12 @@
 config:
   color: white
-  light_color: light-grey
-  inactive_color: grey
-  dark_color: dark-grey
   alt_color: black
   text_color: dark-grey
-  search_paths: [$didi_themes/colored]
-
+  text_alt_color: black
+  action_color: blue
+  light_color: light-grey
+  dark_color: dark-grey
+  active_color: white
+  text_active_color: black
+  inactive_color: grey
+  error_color: red

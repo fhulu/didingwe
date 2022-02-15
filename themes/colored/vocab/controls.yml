@@ -1,5 +1,8 @@
 button:
-  class: [border-$light_color hover-border-$dark_color]
+  class: [$action_color hover-text-$text_active_color border-$light_color hover-border-$dark_color]
+
+body:
+  class: [$color]
 
 datatable:
   slide: { class: [$alt_color, border-$light_color] }
@@ -22,14 +25,17 @@ labelled:
 label_fieldset:
   class: [ border-$light_color ]
   events:
-    errors: [ ^border-$light_color]
-    clear-error: [border-$light)color]
+    errors: [ ^border-$light_color, border-$error_color]
+    clear-error: [border-$light_color, ^border-$error_color]
+
+link:
+  class: [text-$action_color hover-$action_darker_color]
 
 modal:
-  dialog: {class: [$color border-$color, text-$text_color]}
+  dialog: {class: [$color border-$color, text-$dark_color]}
 
   close_button:
-    class: [text-$inactive_color, hover-$light_color hover-text-$dark_color]
+    class: [text-$inactive_color, hover-$light_color hover-text-$text_active_color]
 
 page:
   class: [ text-$text-color, $color]
@@ -37,8 +43,10 @@ page:
 wizard:
   class: [$color]
   bookmarks:
+    class: [$color border-$inactive_color]
     state_styles:
-      active: [border-$alt-color]
-      done: [$alt_color]
+      active: [border-$active_color]
+      pending: [border-$inactive_color]
+      done: [$done_color]
   bookmark:
-    class: [border-$inactive_color]
+    class: []

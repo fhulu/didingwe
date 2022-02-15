@@ -5,3 +5,4 @@ config:
   dark_color: light-grey
   alt_color: white
   text_color: light-grey
+  error_color: red

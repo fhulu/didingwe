@@ -6,7 +6,7 @@ big_text:
   class: [bold font-xxlarge block]
 
 button:
-  class: [pad-small border border-width-thin cursor-pointer]
+  class: [pad-small border border-width-thin cursor-pointer center-text]
 
 control:
   upgrade:
@@ -26,52 +26,35 @@ datatable:
     class: [ border-width-thin border-top, pad pad-small]
 
 input:
-  class: [pad-tiny]
+  class: [pad-tiny border]
 
 input_page:
-  inputs:
-    - template: label_fieldset
+  synopsis: 
+    class: [pad-y pad-medium]
+  layout: { type: label_fieldset }
   actions_pane:
     template: none
-    class: [grid space fit pad-y pad-small]
+    class: [vspace grid space clear-after]
 
 labelled:
-  class: [relative border vspaced]
+  class: [relative vspaced]
 
 label_fieldset:
-  type: fieldset
-  class: [ border font-medium pad-tiny hide-legend vspace]
+  class: [ font-medium vspace]
   legend:
-    class: [ margin-left pad-x pad-tiny left-text static]
-    attr: { id: ""}
-    derive: [name]
-    text: $name
-    style: { position: static }
+    class: [margin-left pad-x pad-tiny left-text static]
   events:
-    focusin: [ show-legend]
-    errors: [ border-red, border-width-small, show-legend]
-    clear-error: [ ^border-red, ^border-width-small]
-  subject:
-    label: $name
-    attr: { placeholder: $label, title: $desc}
-    class: [widest]
-    events:
-      focusin: [ hide-placeholder]
-      focustout: [ ^hide-placeholder ]
-      errors: [ hide-placeholder]
+    errors: [ border-width-small, show-legend]
+    clear-error: [ ^border-width-small]
+      
 link:
   class: [pointer-cursor]
 
 
 modal:
-  title_bar: { class: [font-large, cursor-move]}
-  close_button:
-    class: [center-text, pad-small]
-  dialog:
-    class: [pad-medium, border-width-thin]
-
-page:
-  class: [pad-medium]
+  dialog: { class: [pad-medium border-width-thin] }
+  title_bar: { class: [font-large, cursor-move ]}
+  close_button: { class: [center-text, pad-small] }
 
 small_text:
   type: plain_text
@@ -82,21 +65,24 @@ submit:
 
 wizard:
   css: [/didi/css/font-awesome/css/font-awesome.min.css ]
-  class: [relative pad-x pad-tiny]
+  class: [pad-medium]
   bookmarks:
-    class: [height-xlarge,m12,hide-small,font-small, grid fit, border-top border-bottom]
+    class: [height-xlarge,m12,hide-small,font-small, grid fit]
     state_styles:
       pending: [cursor-not-allowed, hdivider]
       active: [bold, border-bottom]
       done: [fa fa-check fa-pad fa-right, hdivider]
       visited: [underlined,hdivider]
-      committed: [cursor-not-allowed, italic, fa fa-check fa-pad fa-right,hdivider]
-  bookmark:
-    number: ""
-    class: [border, pad-medium,tallest,table-cell]
-    attr: { id: ""}
+      committed: [cursor-not-allowed, italic, fa fa-check fa-pad fa-right,hdivider]      
   navigation:
     class: [pad-small, bottom,widest, clear-after,border-top, pad-small, clear]
   prev: { class: [float-left,w-1-4]}
   next: { class: [float-right,w-1-4]}
   step_container: { class: [pad-y pad-small]}
+
+wizard_bookmark:
+  class: [border, pad-medium,tallest,table-cell border-collapse]
+  attr: { id: ""}
+  
+wizard_bookmark_title: 
+  class: [pad-tiny pad-left]

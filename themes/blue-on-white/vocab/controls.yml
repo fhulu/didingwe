@@ -1,0 +1,14 @@
+config:
+  color: white
+  alt_color: black
+  text_color: white
+  text_alt_color: black
+  action_color: blue
+  light_color: blue
+  dark_color: blue
+  active_color: blue
+  text_active_color: amber
+  inactive_color: grey
+  done_color: blue borderless
+  error_color: red
+
