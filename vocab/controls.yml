@@ -458,8 +458,7 @@ input_page:
   layout: { type: label_left }
   synopsis:
     derive: [desc]
-    type: plain_text
-    class: [center-text]
+    classes: p
     name: $desc
   inputs:
     - template: $layout
@@ -481,6 +480,7 @@ labelled:
   label:
     classes: label
     class: [inline-block]
+    derive: [name]
     attr: { for: $templated}
   subject:
     attr: { title: $desc }
@@ -514,6 +514,29 @@ label_bottom:
   subject:
     class: [widest]
   text: $field$label
+
+label_fieldset:
+  type: fieldset
+  class: [border hide-legend]
+  legend:
+    class: [ static]
+    attr: { id: ""}
+    derive: [name]
+    text: $name
+    style: { position: static }
+  events:
+    focusin: [ show-legend]
+    errors: [ show-legend]
+    clear-error: []
+  subject:
+    label: $name
+    attr: { placeholder: $label, title: $desc}
+    class: [widest, ^border]
+    events:
+      focusin: [ hide-placeholder]
+      focustout: [ ^hide-placeholder ]
+      errors: [ hide-placeholder]
+
 
 label_left:
   type: labelled
