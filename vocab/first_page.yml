@@ -1,9 +1,11 @@
 first_page:
   type: container
+  class: [$color]
   is_body: true
   parent:
     class: [didi]
   read:
+    - read_config: [use_triggers]
     - if $use_triggers:
       - this.post: trigger/fire
 
