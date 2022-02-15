@@ -9,29 +9,12 @@ wizard:
   bookmarks:
     type: container
     class: [wizard-bookmarks]
-    state_styles: {pending: [disabled], active: "", done: "", visited: "",committed: [disabled]}
+    state_styles: {pending: [disabled], active: [], done: [], visited: [],committed: [disabled]}
     derive: [bookmark,steps,parent_path]
     contents:
-      - type: $bookmark
-      - default: { sub_page: false, hello: africa}
+      - template: wizard_bookmark
+      - type: wizard_bookmark_title
       - merge: steps
-  bookmark:
-    type: wizard_jump
-    sub_page: false
-    class: [wizard-bookmark]
-    derive: [parent_path]
-    path: $parent_path/$id
-    attr: { step: $id }
-    step_no:
-      tag: label
-      class: [bookmark-number]
-      derive: [number]
-      name: $number
-    step_title:
-      tag: label
-      class: [bookmark-title]
-      derive: [name]
-    text: $step_no$step_title
   contents: [$synopsis,$bookmarks]
   steps: []
   step_container:
@@ -61,8 +44,22 @@ wizard:
     text: $navigate
 
 
-wizard_jump:
+wizard_bookmark:
   tag: div
+  sub_page: false
+  class: [wizard-bookmark]
+  derive: [parent_path]
+  path: $parent_path/$id
+  attr: { step: $id }
+  numbering: 
+    type: plain_text
+    derive: [number] 
+    name: $number
+  subject: { sub_page: false }
+  text: $numbering $field
   action: post
   post:
     - trigger: [wizard-jump, .wizard, $id ]
+
+wizard_bookmark_title:
+  classes: plain_text
