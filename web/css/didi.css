@@ -25,7 +25,6 @@
   border: 1px solid lightgrey;
   background: #fffff0;
   width: 95%;
-  color: red;
   font-weight: normal;
   color: red;
   -moz-box-shadow: 3px 3px 4px #0f0f0f;
@@ -40,6 +39,9 @@
 .spin,.animate-spin,.hover-spin:hover{animation:spin 2s infinite linear;-webkit-animation:spin 2s infinite linear}
 .blink {animation: blinker 1s step-start infinite;}
 
+/*
+ * Copied from w3schools
+ */
 @-webkit-keyframes spin{
 0%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-webkit-transform:rotate(359deg);transform:rotate(359deg)}}
 @keyframes spin{
@@ -109,12 +111,24 @@
 .shadow {box-shadow:0 2px 4px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12) }
 
 /* border rounding */
-.rounded-small{border-radius:2px;overflow:hidden}
-.rounded,.rounded-medium{border-radius:4px;overflow:hidden}
-.rounded-large{border-radius:8px;overflow:hidden}
-.rounded-xlarge{border-radius:16px;overflow:hidden}
-.rounded-xxlarge{border-radius:32px;overflow:hidden}
-.rounded-jumbo{border-radius:64px;overflow:hidden}
+.rounded-small{border-radius:0.25em;overflow:hidden}
+.rounded-top-left-small{border-top-left-radius:0.25em;overflow:hidden}
+.rounded-top-right-small{border-top-right-radius:0.25em;overflow:hidden}
+.rounded-bottom-left-small{border-bottom-left-radius:0.25em;overflow:hidden}
+.rounded-bottom-right-small{border-bottom-right-radius:0.25em;overflow:hidden}
+.rounded,.rounded-medium{border-radius:0.5em;overflow:hidden}
+.rounded-top-left{border-top-left-radius:0.5em;overflow:hidden}
+.rounded-top-right{border-top-right-radius:0.5em;overflow:hidden}
+.rounded-bottom-left{border-bottom-left-radius:0.5em;overflow:hidden}
+.rounded-bottom-right{border-bottom-right-radius:0.5em;overflow:hidden}
+.rounded-large{border-radius:0.75em;overflow:hidden}
+.rounded-top-left-large{border-top-left-radius:0.75em;overflow:hidden}
+.rounded-top-right-large{border-top-right-radius:0.75em;overflow:hidden}
+.rounded-bottom-left-large{border-bottom-left-radius:0.75em;overflow:hidden}
+.rounded-bottom-right-larege{border-bottom-right-radius:0.75em;overflow:hidden}
+.rounded-xlarge{border-radius:1em;overflow:hidden}
+.rounded-xxlarge{border-radius:1.25em;overflow:hidden}
+.rounded-jumbo{border-radius:1.5em;overflow:hidden}
 .round,.circle{border-radius:50%;overflow:hidden}
 
 /* clearing */
@@ -125,11 +139,16 @@
 .noclear{clear:none}
 
 
-/* closebtn - from w3.css */
+/* closebtn - from w3chools.com */
 .closebtn{text-decoration:none;float:right;font-size:24px;font-weight:bold;color:inherit}
 .closebtn:hover,.closebtn:focus{color:#000;text-decoration:none;cursor:pointer}
 
-/* colors */
+/* 
+ * colors 
+ * (copied from w3schools.com)
+ * 
+ * 
+**/
 .hover-none:hover{box-shadow:none;background-color:transparent}
 .amber,.hover-amber:hover{color:#000;background-color:#ffc107}
 .aqua,.hover-aqua:hover{color:#000;background-color:#00ffff}
@@ -417,7 +436,7 @@ li.paragraph {text-indent: -1em }
 .pad-tiny.pad,.pad-tiny.pad-x,.pad-tiny.pad-right{padding-right:0.25em}
 .pad-small.pad,.pad-small.pad-x,.pad-small.pad-left{padding-left:0.5em}
 .pad-small.pad,.pad-small.pad-x,.pad-small.pad-right{padding-right:0.5em}
-.pad-medium.pad,.pad-medium.pad-x,.pad-x.pad-left{padding-left:1em}
+.pad-medium.pad,.pad-medium.pad-x,.pad-medium.pad-left{padding-left:1em}
 .pad-medium.pad,.pad-medium.pad-x,.pad-medium.pad-right{padding-right:1em}
 .pad-large.pad,.pad-large.pad-x,.pad-large.pad-left{padding-left:2em}
 .pad-large.pad,.pad-large.pad-x,.pad-large.pad-right{padding-right:2em}
@@ -477,7 +496,6 @@ li.paragraph {text-indent: -1em }
 .vspace-64+.vspace-64{display:block;margin-top:64px}
 
 /* spacing between - relative */
-
 .hspace-tiny+.hspace-tiny{margin-left:1%}
 .vspace-tiny+.vspace-tiny:before{content:"";display:block;margin-top:1%}
 .hspace-small+.hspace-small{margin-left:2%}
@@ -498,7 +516,6 @@ li.paragraph {text-indent: -1em }
 .one-half-spacing { line-height: 1.5em }
 .double-spacing { line-height: 2em }
 .tripple-spacing { line-height: 3em }
-
 
 /* text letter spacing */
 .letter-space,.letter-space-medium { letter-spacing: 2 }
@@ -524,8 +541,11 @@ li.paragraph {text-indent: -1em }
 .vertical-up { -webkit-transform:rotate(270deg);transform:rotate(270deg)}
 .vertical-down { -webkit-transform:rotate(90deg);transform:rotate(90deg)}
 
-/* responsive widths */
-/* fractional width */
+/* fractional width 
+ * set the width of an element relative to the container's width in fractional terms
+ * w-(x)-(y)
+ * where x is the numerator and y is the denominator
+ */
 .w-1-2,.half {width:49.99999%}
 .w-1-3,.third {width:33.33333%}
 .w-1-4,.quarter {width:24.99999%}
@@ -588,39 +608,92 @@ li.paragraph {text-indent: -1em }
 .w-9-10 {width:89.99999%}
 .w-9-11 {width:81.81818%}
 
-/* responsive grid */
-.grid>*,.col{float:left;display: inline-block}
-.col.centered{float:none;display:block}
-.col.float-right{float:right}
-.grid.space>*{margin-bottom:2%;margin-right:2%}
-.center-contents>.col{float:none}
-
-/* modern browser grid */
-.modern-grid{display: grid}
-
-/* autofit grid */
-.grid.fit>:first-child:nth-last-child(1){width:100%}
-.grid.fit>:first-child:nth-last-child(2),.grid.fit>:first-child:nth-last-child(2) ~ *{width:50%}
-.grid.fit.space>:first-child:nth-last-child(2),.grid.fit.space>:first-child:nth-last-child(2) ~ *{width:49%}
-.grid.fit>:first-child:nth-last-child(3),.grid.fit>:first-child:nth-last-child(3) ~ *{width:33.333%}
-.grid.fit.space>:first-child:nth-last-child(3),.grid.fit.space>:first-child:nth-last-child(3) ~ *{width:32%}
+/* 
+ * fit elements onto a container in a grid
+ * usage:
+ *   on container: 
+ *     grid ([s|m|l]row_size|fit) [space]
+ *     e.g. 
+ *      <div class="grid s1 m3 l5 space">...</div>
+ *     the above will fit elements as follows:
+ *        on small devices, size each child element to 100% of container width and space them 2% vertically
+ *        on medium devices, size each child element to 32% of container width and space them 2% spacing vertically and horizontally
+ *        on large devices, size each child element to 23.5% of contaier width and space them 2% spacing vertically and horizontally
+ *     e.g.
+ *       <div class="grid fit space">
+ *         <p>A</p>
+ *         <p>B</p>
+ *         <p>C</p>
+ *       </div>
+ *     the above will for all device sizes, size each child element to 32.5% of container width and space them 2% horizontally
+ * optional usage:
+ *   on elements
+ *     span[(number_of_columns)][number_of_columns_to_span]
+ *     e.g.
+ *       <div class="grid s1 m3 l5">
+ *         <p>A</p>
+ *         <p>B</p>
+ *         <p class="span">C</p>
+ *         <p>D</p>
+ *         <p>E</p>
+ *       </div>
+ *     the above will fit elements as follows:
+ *        on small devices, size each child element to 100% of container width
+ *        on medium devices, size all child elements to 33% of container width, except for C which will be sized to 100%
+ *        on medium devices, size all child elements to 25% of container width, except for C which will be sized to 100%
+**/
+.grid>*{float:left;display:inline-block}          /* all grid children floated in left to right and inline */
+.grid.space>*{margin-bottom:2%;margin-right:2%}   /* default spacing for all grid item is 2% */
+.grid.fit>:first-child:nth-last-child(1){width:100%}  /* one child */
+.grid.fit>:first-child:nth-last-child(2),.grid.fit>:first-child:nth-last-child(2) ~ *{width:50%}  /* 2 children, not spaced */
+.grid.fit.space>:first-child:nth-last-child(2),.grid.fit.space>:first-child:nth-last-child(2) ~ *{width:49%} /* 2 children, spaced */
+.grid.fit>:first-child:nth-last-child(3),.grid.fit>:first-child:nth-last-child(3) ~ *{width:33.3333%} /* 3 children, not spaced */
+.grid.fit.space>:first-child:nth-last-child(3),.grid.fit.space>:first-child:nth-last-child(3) ~ *{width:32%} /* 3 children, spaced */
 .grid.fit>:first-child:nth-last-child(4),.grid.fit>:first-child:nth-last-child(4) ~ *{width:25%}
 .grid.fit.space>:first-child:nth-last-child(4),.grid.fit.space>:first-child:nth-last-child(4) ~ *{width:23.5%}
 .grid.fit>:first-child:nth-last-child(5),.grid.fit>:first-child:nth-last-child(5) ~ *{width:20%}
 .grid.fit.space>:first-child:nth-last-child(5),.grid.fit.space>:first-child:nth-last-child(5) ~ *{width:18.4%}
+.grid.fit>:first-child:nth-last-child(6),.grid.fit>:first-child:nth-last-child(6) ~ *{width:16.6666%}
+.grid.fit.space>:first-child:nth-last-child(6),.grid.fit.space>:first-child:nth-last-child(6) ~ *{width:15%}
 .grid.fit.space>:last-child{margin-right:0}
-
-/* modern browser grid */
-.modern-grid{display: grid}
+.grid.fit.space>*{margin-bottom:0}
 
 
-
-/* responsive media queries */
+/* 
+ * responsive classes
+ * 
+**/
 @media only screen and (max-width:600px){
-  .font-size-base {font-size: 18px}
-
-  .nav-small {height:100%}
-  .hide-small{display:none}
+/* 
+ * responsive grid sizing and positioning 
+ * 
+ * fit elements onto a container in a grid
+ * usage:
+ *   on container: 
+ *     grid ([s|m|l]max_number_of_children_per_row) [space]
+ *     e.g. 
+ *      <div class="grid s1 m3 l5 space">...</div>
+ *     the above will fit elements as follows:
+ *        on small devices, size each child element to 100% of container width and space them 2% vertically
+ *        on medium devices, size each child element to 32% of container width and space them 2% spacing vertically and horizontally
+ *        on large devices, size each child element to 23.5% of contaier width and space them 2% spacing vertically and horizontally
+ * optional usage:
+ *   on elements
+ *     span[(number_of_columns)][number_of_columns_to_span]
+ *     e.g.
+ *       <div class="grid s1 m3 l5">
+ *         <p>A</p>
+ *         <p>B</p>
+ *         <p class="span">C</p>
+ *         <p>D</p>
+ *         <p>E</p>
+ *       </div>
+ *     the above will fit elements as follows:
+ *        on small devices, size each child element to 100% of container width
+ *        on medium devices, size all child elements to 33% of container width, except for C which will be sized to 100%
+ *        on medium devices, size all child elements to 25% of container width, except for C which will be sized to 100%
+ *  
+**/
   .grid.s1>*,.grid.s1.space>*,.grid.s2>.span,.grid.s2.space.span{width:100%;margin-right:0;display: inline-block}
   .grid.s2>*{width:50%}
   .grid.s2.space>*{width:49%}
@@ -628,6 +701,7 @@ li.paragraph {text-indent: -1em }
   .grid.s3>*{width:33.3333%}
   .grid.s3.space>*{width:32%}
   .grid.s3.space>:nth-child(3n+3){margin-right:0}
+  .grid.s3.space>:nth-child(3n+4){margin-bottom:0}
   .grid.s4>*{width:25%}
   .grid.s4.space>*{width:23.5%}
   .grid.s4.space>:nth-child(4n+4){margin-right:0}
@@ -651,11 +725,27 @@ li.paragraph {text-indent: -1em }
   .grid.s10.space>:nth-child(10n+10){margin-right:0}
 
 
+/* 
+ * responsive 12 column sizing
+ * 
+ * size an element in a virtual 12 column space, each number represents the number of columns spanned
+ * usage:
+ *   col (s|m|l)number_of_columns_spanned
+ *     e.g. 
+ *      <div class="col s12 m6 l3"></div>
+ *      the above will size the div element as follows:
+ *        on small devices, size the element to 12 columns or 100% or full width of the container
+ *        on medium devices, size the element to 6 columns or 50% or half width of the container
+ *        on large devices, size the element to 3 columns or 25% or quorter width of the container
+ *   if the number of columns spanned is zero, then the element is hidden
+ *   e.g
+ *     <div class="col s0 m0 l6"
+ *    the above will hide the element on small and medium devices but occupy 50% of the container width on large devices
+ *    
+**/
   .col.s0,.hide-small{display:none}
   .col.s1{width:8.33333%}
-  .col.s1.hspace{width:6.33333%}
   .col.s2{width:16.66666%}
-  .col.s2.hspace{width:14.66666%}
   .col.s3{width:24.99999%}
   .col.s4{width:33.33333%}
   .col.s5{width:41.66666%}
@@ -665,10 +755,9 @@ li.paragraph {text-indent: -1em }
   .col.s9{width:74.99999%}
   .col.s10{width:83.33333%}
   .col.s11{width:91.66666%}
-  .col.s12{width:99.99999%}
-  .col.widest{width:100%}
-
+  .col.s12,.col.widest{width:100%}
 }
+
 @media only screen and (min-width:601px) and (max-width:992px){
    .font-size-base{font-size: 16px}
 
@@ -722,44 +811,53 @@ li.paragraph {text-indent: -1em }
   .col.m12{width:99.99999%}
 
   .col.widest{width:100%}
-
-
 }
 @media only screen and (min-width:993px){
   .font-size-base {font-size: 16px}
 
-  /* style grid children - enough children */
-  .grid.l1>*,.grid.l1.space>*,.grid.m2>.span,.grid.m2.space>.span{width:100%;margin-right:0;display: inline-block}
+  /* fit elements onto a container in a grid
+   * usage on container: 
+   *  grid [media_size*row_size] [space]
+   * usage on 
+   * where
+   *   media_size*row_size - is either (s)mall, (m)edium or (l)arge combined with the number of elements per row
+   *   space  - indicates to put spacing between elements, spacing is 2% of the total container width
+   */
+  .grid.l1>*,.grid.l1.space>*{width:100%;margin-right:0;display: inline-block}
+
   .grid.l2>*{width:50%}
   .grid.l2.space>*{width:49%}
-  .grid.l2.space>:nth-child(2n){margin-right:0}
+  .grid.l2.space>:nth-child(2n+2){margin-right:0}
+  .grid.l2.space>:nth-last-child(2){margin-bottom:0} 
+
   .grid.l3>*{width:33.3333%}
+
   .grid.l3.space>*{width:32%}
   .grid.l3.space>:nth-child(3n+3){margin-right:0}
+  .grid.l3.space>:nth-last-child(2),.grid.l3.space>:nth-last-child(3){margin-bottom:0} 
+
+  .grid.l3>.span,.grid.l3>.span{width:100%}
   .grid.l3>.span2{width:66.6666%}
-  .grid.l3.space>.span2{width:64.6666%}
-  .grid.l3>.span3,.grid.l3.space>.span3{width:99.9999%}
+
   .grid.l4>*{width:25%}
-  .grid.l4.space>*{width:23.5%}
+
+  .grid.l4.space>*{width:23%}
   .grid.l4.space>:nth-child(4n+4){margin-right:0}
+  .grid.l4.space>:nth-last-child(2),.grid.l4.space>:nth-last-child(3),.grid.l4.space>:nth-last-child(4){margin-bottom:0} 
+
+  .grid.l4>.span2{width:50%}
+  .grid.l4>.span3{width:66.6666%}
+  .grid.l4>.span4{width:100%}
+
   .grid.l5>*{width:20%}
-  .grid.l5.space>*{width:18.4%}
+  .grid.l5.space>*{width:16%}
   .grid.l5.space>:nth-child(5n+5){margin-right:0}
-  .grid.l6>*{width:16.6666%}
-  .grid.l6.space>*{width:15%}
-  .grid.l6.space>:nth-child(6n+6){margin-right:0}
-  .grid.l7>*{width:14.2857%}
-  .grid.l7.space>*{width:12.5715%}
-  .grid.l7.space>:nth-child(7n+7){margin-right:0}
-  .grid.l8>*{width:12.5%}
-  .grid.l8.space>*{width:10.75%}
-  .grid.l8.space>:nth-child(8n+8){margin-right:0}
-  .grid.l9>*{width:11.1111%}
-  .grid.l9.space>*{width:9.3333%}
-  .grid.l9.space>:nth-child(9n+10){margin-right:0}
-  .grid.l10>*{width:10%}
-  .grid.l10.space>*{width:8.2%}
-  .grid.l10.space>:nth-child(10n+10){margin-right:0}
+  .grid.l5.space>:nth-last-child(2),.grid.l5.space>:nth-last-child(3),.grid.l5.space>:nth-last-child(4),.grid.l5.space>:nth-last-child(5){margin-bottom:0} 
+
+  .grid.l5>.span2{width:40%}
+  .grid.l5>.span3{width:60%}
+  .grid.l5>.span4{width:75%}
+  .grid.l5>.span5{width:100%}
 
   .col.l0,.hide-large{display:none}
   .col.l1{width:8.33333%}
@@ -775,6 +873,33 @@ li.paragraph {text-indent: -1em }
   .col.l11{width:91.66666%}
   .col.l12{width:99.99999%}
 }
+
+
+@media only screen and (max-width:600px){
+  .font-size-base {font-size: 18px}
+
+  .nav-small {height:100%}
+  .hide-small{display:none}
+}
+
+/* grid spanning */
+.grid,.grid.space>.span{width:100%;margin-right:0;display: inline-block}
+
+.col.centered{float:none;display:block}
+.col.float-right{float:right}
+
+
+/* specifiy an element as part of a 12 column virtual width
+ * usage:
+ *   col [s|m|l][1-12]
+**/
+.col{float:left;display:inline-block}
+.center-contents>.col{float:none}
+
+/* modern browser grid */
+.modern-grid{display: grid}
+
+
 
 .widest,.col.widest{width:100%}
 .no-float,.col.no-float{float:none}
