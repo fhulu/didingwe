@@ -81,7 +81,8 @@ script:
   - /didi/js/didi.jquery.js
   - /didi/js/didi.render.js
    
-  
+use_minified: true
+
 modules:
   - db: mysql
   - db2: mysql
