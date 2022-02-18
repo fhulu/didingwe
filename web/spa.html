@@ -5,6 +5,7 @@ $head_tag...
 <script>
   $(function() {
     $.showPage($options);
+    if ($session_timeout <= 0) return;
     var timer;
     var start_timer = ()=> {
       if (timer) clearTimeout(timer);
