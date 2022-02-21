@@ -1,0 +1,12 @@
+sign_up:
+  access: public
+  type: input_page
+  inputs:
+    - first_name
+    - last_name
+    - email
+  actions:
+    - sign_up
+  post:
+    - db.insert: [user, first_name, last_name, email]
+  audit: $first_name $last_name $email
