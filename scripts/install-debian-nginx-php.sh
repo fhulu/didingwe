@@ -12,7 +12,7 @@ export default_sites_dir sample_web_server_conf web_server_conf_dir
 $script_source_dir/install-debian-php.sh
 
 # Reload php-fpm
-sudo service php7.4-fpm reload
+sudo service php8.1-fpm reload
 
 # Reload nginx with new site
 sudo service nginx reload

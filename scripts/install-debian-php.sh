@@ -55,7 +55,7 @@ mkdir -p $sites_dir
 sudo ln -s $web_server_conf $sites_dir/$project_name.conf
 
 # Install PHP
-sudo apt install php7.4 php7.4-yaml
+sudo apt install php8.1 php8.1-yaml php8.1-fpm
 
 # Get PHP repostory
 php_dir=didingwe-php
