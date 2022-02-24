@@ -4,6 +4,10 @@ default_app_dir=`pwd`
 dest_dir=$1
 app_dir=${dest_dir:-$default_app_dir}
 cd $app_dir
+
+# Initialize git repo
+git init
+
 project_name="$(basename $app_dir)"
 didi_dir=didingwe
 
@@ -57,10 +61,9 @@ sudo ln -s $web_server_conf $sites_dir/$project_name.conf
 # Install PHP
 sudo apt install php8.1 php8.1-yaml php8.1-fpm
 
-# Get PHP repostory
+# Add PHP repostory submodule
 php_dir=didingwe-php
-mkdir -p $php_dir
-git clone https://github.com/fhulu/didingwe-php.git $php_dir
+git submodule add https://github.com/fhulu/didingwe-php.git $php_dir
 
 # Link PHP index page
 ln -s ../$php_dir/index.php -t $web_dir
@@ -78,6 +81,7 @@ sed "s/\$didi_root/${didi_root}/g; s/\$project_name/${project_name}/g; s/\$proje
 
 # Sample site-specific configuration file
 sed "s/\$project_name/${project_name}/g" $didi_dir/vocab/sample-site-config.yml >$app_dir/vocab/.site-config.yml
+
 
 exit 0
 
