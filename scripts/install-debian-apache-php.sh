@@ -13,9 +13,13 @@ $script_source_dir/install-debian-php.sh
 
 # Link PHP rewrite rules and enable Apache Rewrite module
 ln -s dididngwe-php/.htaccess -t web
-sudo a2enmod rewrite
+
+# Commit project with Didingwe Framework
+git add .
+git commit -m"First Didingwe Framework commit"
 
 # Reload apache with new settings
+sudo a2enmod rewrite
 sudo service apache2 reload
 
 echo ""
