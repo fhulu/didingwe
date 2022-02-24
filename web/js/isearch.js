@@ -104,7 +104,7 @@ $.widget( "didi.isearch", {
     var maxHeight = parseInt(drop.css('max-height'));
     me.autoScrolls = 0;
     $.each(data, function(i, row) {
-      var option = $.copy(opts.option);
+      var option = dd.copy(opts.option);
       option.array = row;
       option = opts.render.initField(option, opts);
       me._boldTerm(option, me.params.term);
@@ -117,7 +117,7 @@ $.widget( "didi.isearch", {
     var terms = term.split(' ');
     for (var i in option.embolden) {
       var key = option.embolden[i];
-      var value = $.escapeHtml(option[key]);
+      var value = dd.escapeHtml(option[key]);
       for (var j in terms) {
         var term = terms[j].trim();
         if (term == '') continue;

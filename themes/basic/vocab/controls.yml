@@ -36,6 +36,20 @@ input_page:
     template: none
     class: [vspace grid space clear-after]
 
+isearch:
+  searcher:
+    class: [pad pad-small]
+  buttons:
+    class: [pad pad-tiny]
+  adder:
+    class: [pad-x pad-tiny]
+  dropper:
+    class: [pad-x pad-tiny]
+  drop:
+    class: [border]
+  option:
+    class: [pad pad-small]
+
 labelled:
   class: [relative vspaced]
 

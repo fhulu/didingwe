@@ -1,6 +1,7 @@
 isearch:
   type: container
   create: isearch
+  script: /didi/js/isearch.js
   placeholder: Search $name
   class: [ isearch,relative]
   contents: [ $searcher, $buttons, $drop]
@@ -13,16 +14,16 @@ isearch:
     type: input
     derive: [placeholder]
     attr: { placeholder: $placeholder }
-    class: [isearch-searcher isearch-actioner, widest, pad pad-small]
+    class: [isearch-searcher isearch-actioner, widest]
   buttons:
-    class: [isearch-buttons absolute top-right, pad pad-tiny,tallest]
+    class: [isearch-buttons absolute top-right, tallest]
     type: container
     derive: [name,adder,dropper]
     contents: [$adder,$dropper]
   adder:
     tag: label
     text: +
-    class: [isearch-adder isearch-actioner,pad-x pad-tiny,inline-block, pointer-cursor]
+    class: [isearch-adder isearch-actioner,inline-block, pointer-cursor]
     derive: [name]
     desc: Add a new $name
     action: dialog
@@ -30,7 +31,7 @@ isearch:
   dropper:
     type: [font_awesome,fanthom]
     icon: caret-down
-    class: [isearch-dropper isearch-actioner, pad-x pad-tiny, inline-block, pointer-cursor middle-y]
+    class: [isearch-dropper isearch-actioner,  inline-block, pointer-cursor middle-y]
     desc: Show all items
   drop:
     type: container
@@ -41,7 +42,7 @@ isearch:
     autoload: 10
   option:
     type: anchor
-    class: [isearch-option,block,nomargin,undecorated,pad pad-small,hover-light-grey]
+    class: [isearch-option,block,nomargin,undecorated,]
     value: $1
     chosen: $2
     name: $2

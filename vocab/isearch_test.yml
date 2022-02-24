@@ -6,16 +6,21 @@ isearch_test:
   inputs:
     - country: { type: isearch }
     - bound: { value: <didi test }
-  actions: [test]
+  actions: [isearch_test]
+  validate: [country,bound]
   post: [write_session: $test]
 
 
 country:
   adder: { url: /isearch_test/add }
   drop: { max-height: 180px }
+  post:
+    - collection.search: []
+
   option:
     type: container
     country: $value
+    class: [hover-blue]
     label: { derive: [value], name: $parent_name ($value) }
     contents: [$label, $flag]
     flag:
