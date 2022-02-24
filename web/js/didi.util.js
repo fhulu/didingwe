@@ -246,21 +246,25 @@ var didi = {
     return this.firstElement(obj)[0];
   },
 
-  copy: function(src) {
-    if (src === undefined || dd.isAtomicValue(src)) return src;
-    var me = this;
-    var copy_array = () => {
-      var r = [];
+  copy: function(src, prev) {
+    prev = prev || [];
+    let me = this;
+    if (src === undefined || me.isAtomicValue(src)) return src;
+    let copy_array = () => {
+      let r = [];
       src.forEach(v => r.push(me.copy(v)));
       return r;
     }
 
-    var copy_object = () => {
-      var r = {};
-      for (const k in src) {
-        if (!src.hasOwnProperty(k)) continue;
-        r[k] = this.copy(src[k]);
-      }
+    let copy_object = () => {
+      let r = {};
+      Object.entries(src).forEach(([key, value]) => {
+        if (prev.includes(value))
+          r[key] = prev;
+        else
+          r[key] = prev.push(value), me.copy(value, prev);
+        r[key] = prev.includes(value)? value: me.copy(value, level+1);
+      })
       return r;
     }
 
@@ -442,7 +446,7 @@ var didi = {
     return result;
   },
 
-  isAtomicValue: function(x) { return typeof x == 'string' || !isNaN(x); },
+  isAtomicValue: function(x) { return typeof x === 'string' || x === undefined || !isNaN(x); },
 
   removeXSS: function(object) {
     var r = /<script(?:\s+[^>]*)?>.*<\/script>/;
