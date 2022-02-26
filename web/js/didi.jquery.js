@@ -165,13 +165,14 @@ $.fn.json = function(url, options, callback) {
 }
 
 
-$.fn.setChildren = function(result, server) {
+$.fn.setChildren = function(result, server, callback) {
   var self = this;
   if (result === null) return;
   $.each(result, function(key, val) {
     var obj = self.find("#"+key+",[name='"+key+"']");
     if (server) obj.attr('server', val);
     obj.setValue(val);
+    callback(obj, val, key);
   });
   return this;
 }
