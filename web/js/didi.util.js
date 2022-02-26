@@ -246,7 +246,8 @@ var didi = {
     return this.firstElement(obj)[0];
   },
 
-  copy: function(src, prev) {
+  copy: function(src, prev, level) {
+    level = level || 1;
     prev = prev || [];
     let me = this;
     if (src === undefined || me.isAtomicValue(src)) return src;
@@ -258,12 +259,15 @@ var didi = {
 
     let copy_object = () => {
       let r = {};
-      Object.entries(src).forEach(([key, value]) => {
-        if (prev.includes(value))
-          r[key] = prev;
-        else
-          r[key] = prev.push(value), me.copy(value, prev);
-        r[key] = prev.includes(value)? value: me.copy(value, level+1);
+      Object.entries(src).forEach(([k, v]) => {
+        if (level > 10) {
+          console.log("level 10", src, k, v);
+          return;
+        }
+        if (prev.includes(v) || Object.is(v,src))
+          r[k] = v;
+        else 
+          r[k] = (prev.push(v), me.copy(v, prev, level+1));
       })
       return r;
     }
