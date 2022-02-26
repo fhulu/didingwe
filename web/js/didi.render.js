@@ -629,7 +629,6 @@ dd.render = function(options) {
 
     runJquery(obj, field);
     if ('didi-functions' in field) obj.addClass('didi-watcher');
-    field['mkn-object'] = obj;
 
     if ($.isPlainObject(field.position))
       obj.position(field.position);
@@ -807,10 +806,10 @@ dd.render = function(options) {
   }
 
   var initOnEvents = function(obj, field) {
-    var events = {};
+    let events = {};
     if (field.action)
       events['click'] = [field];
-    var id = field.id;
+    let id = field.id;
     initListeners(obj, field);
     $.each(field, function(key, value) {
       if (key.indexOf('on_') != 0) return;
@@ -823,7 +822,6 @@ dd.render = function(options) {
 
       if (!obj.hasClass('didi-listener')) obj.addClass('didi-listener')
     });
-    if ($.isEmptyObject(events)) return;
     $.each(events, function(key, values) {
       $.each(values, function(i, value) {
         if ($.isPlainObject(value) && !value.path) value.path = field.path + '/on_' + key;
@@ -942,7 +940,7 @@ dd.render = function(options) {
     obj.on('keyup input cut paste change', function() {
       var func = me.model["set_"+id];
       if (!func || func($(this).value()))
-      	me.updateWatchers();
+      	me.updateWatchers({invoker: obj});
     });
   };
 
@@ -1314,18 +1312,29 @@ dd.render = function(options) {
     }
   }
 
+  var setModelValue = function(obj, options) {
+    options = options || { update_watchers: false}
+    let field = obj.data("didi-field");
+    if (!field || !field.id) return;
+    var func = me.model["set_"+field.id];
+    let val = obj.value();
+    obj.trigger(val === ''? 'clear': 'set');
+    if ((!func || func(val)) && options.update_watchers)
+      me.updateWatchers({invoker: obj});
+  }
+
   var loadValues =  function(parent, data)
   {
     var params = $.extend({key: data.key}, data.params);
+
     $.json('/', serverParams('values', data.path, params), function(result) {
       if (!result) return;
       parent.trigger('loaded_values', [result]);
       if ($.isPlainObject(result))
-        parent.setChildren(result, true);
+        parent.setChildren(result, true, setModelValue);
       else for (var i in result) {
-        parent.setChildren(result[i], true);
-      }
-      me.updateWatchers();
+        parent.setChildren(result[i], true, setModelValue);
+      }    
       me.respond(result);
     });
   }
@@ -1451,7 +1460,7 @@ dd.render = function(options) {
 
   this.initModel = function(parent, field) {
     var vars = [];
-    var parent_id = parent.id;
+    var parent_id = field.id;
 
     // add initial vars
     if (field.dd_init) $.each(field.dd_init, function(key, value) {
@@ -1508,9 +1517,9 @@ dd.render = function(options) {
     if (field.js_functions) src += "\n\n" + field.js_functions + "\n\n";
     if (me.model_src)
       src = me.model_src + src;
-    me.model_src  = src;
 
     src += funcs;
+    me.model_src  = src;
 
     // create model
     me.model = new Function(src)();
@@ -1519,12 +1528,13 @@ dd.render = function(options) {
       me.model["set_"+key](value);
     });
 
-    me.updateWatchers(parent);
+    me.updateWatchers({ root: parent });
   }
 
 
-  me.updateWatchers = function(root) {
-    if (!root) root = me.root;
+  me.updateWatchers = function(options) {
+    let root = options && options.root || me.root;
+    let invoker = options && options.invoker || undefined;
 
     function update(obj, field, id) {
       if (!field || !field['didi-model']) return false;
@@ -1546,7 +1556,10 @@ dd.render = function(options) {
           if (value !== old_value) changed = true;
           field[key] = value;
           if (key == 'text') obj.text(value);
-          if (key == 'value') obj.val(value)
+          if (key == 'value') { 
+            obj.val(value);
+            setModelValue(obj, {update_watchers: false});
+          }
         });
       })
       return changed;
@@ -1555,11 +1568,19 @@ dd.render = function(options) {
     if (!root_field) return;
     var root_id = root_field.id;
 
+    let invoker_id = null;
+    if (invoker) {
+      let field = invoker.data('didi-field');
+      invoker_id = field && field.id;  
+    }
+
     root.find('.didi-watcher').addBack('.didi-watcher').each(function() {
-      var obj = $(this);
+      var obj = $(this)
+      if (obj.is(invoker)) return;
       var field = obj.data('didi-field');
       if (!field || field.parent_page != root_id) return;
-      if (!field) return;
+      let peers = field.peers;
+      if (peers && !peers.includes(invoker_id)) return; // dont update if peer is not updating
       var id = field.id || obj.attr("for");
       var changed = update(obj, field, id);
       var style_changed = update(obj, field.style, id);
