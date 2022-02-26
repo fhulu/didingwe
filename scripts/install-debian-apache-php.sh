@@ -12,7 +12,7 @@ export default_sites_dir sample_web_server_conf web_server_conf_dir
 $script_source_dir/install-debian-php.sh
 
 # Link PHP rewrite rules and enable Apache Rewrite module
-ln -s dididngwe-php/.htaccess -t web
+ln -s ../didingwe-php/.htaccess -t web
 
 # Commit project with Didingwe Framework
 git add .
