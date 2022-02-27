@@ -17,6 +17,8 @@ accordion_tab:
 actioner:
   tag: button
   attr: { action: $id, id: "", title: $desc }
+  class: [action]
+  url: /$id
   action: redirect
 
 alert_message:
@@ -65,10 +67,6 @@ bookmark:
 
 button:
   type: actioner
-  class: [action]
-  tag: button
-  attr: { title: $desc }
-  action: redirect
 
 button_image:
   class: [action]
@@ -158,6 +156,10 @@ control:
   class: [didi]
   text: $name
 
+cost_input:
+  type: quantity_input
+  precision: 2
+  
 date:
   type: datetime
   timepicker: false
@@ -170,6 +172,8 @@ date_future:
 datetime:
   type: input
   create: datetimepicker
+  script: [/didi/js/jquery.datetimepicker.js]
+  css: [/didi/css/jquery.datetimepicker.css]
   format: Y-m-d H:i
   validateOnBlur: false
   allowBlanks: false
@@ -224,8 +228,6 @@ dropdown_table:
 element:
   text: ""
   html: <$tag>$text</$tag>
-
-
 
 email_input:
   type: input
@@ -292,11 +294,11 @@ font_awesome_text:
 fieldset:
   tag: fieldset
   text: $legend $field
-  title: $name
   legend:
     tag: legend
-    derive: [title]
-    text: $title
+    attr: { id: ""}
+    derive: [name]
+    name: $name
 
 
 file_input:
@@ -520,12 +522,11 @@ label_fieldset:
   class: [border hide-legend]
   legend:
     class: [ static]
-    attr: { id: ""}
-    derive: [name]
-    text: $name
     style: { position: static }
   events:
     focusin: [ show-legend]
+    set: [show-legend]
+    clear: [hide-legend]
     errors: [ show-legend]
     clear-error: []
   subject:
