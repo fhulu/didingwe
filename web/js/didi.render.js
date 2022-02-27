@@ -1556,7 +1556,9 @@ dd.render = function(options) {
           if (value !== old_value) changed = true;
           field[key] = value;
           if (key == 'text') obj.text(value);
-          if (key == 'value') { 
+          if (key == 'value') {
+            if (field.precision && dd.isNumeric(value))
+               value = parseFloat(value).toFixed(field.precision); 
             obj.val(value);
             setModelValue(obj, {update_watchers: false});
           }
