@@ -410,9 +410,7 @@ var didi = {
     return this.loadLink(href, 'css');
   },
 
-  isNumeric: (n)=> {
-    typeof n === "number" && (+n) == n;
-  },
+  isNumeric: (n)=> n !== null && !isNaN(n),
 
   // from stackoverflow http://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript/4835406#4835406
   escapeHtml: function(text, exclude, include) {
