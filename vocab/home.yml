@@ -1,3 +1,3 @@
 home:
   type: h2
-  text: Welcome to $title
+  name: Welcome to $title
