@@ -7,5 +7,4 @@ spa_banner_content:
     - main:
         type: container
         contents:
-          - current_page
-
+          - current_page: { class: [content]}
