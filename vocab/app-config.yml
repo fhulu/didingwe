@@ -1,7 +1,7 @@
 server_ip: 127.0.0.1
 server_port: 3434
 cache_age: 8460000
-session_timeout: 300
+session_timeout: 1800
 program_name: Didi SPA
 author: Mukoni Software
 description: Didi Framework Single Page Application
