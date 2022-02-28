@@ -560,7 +560,8 @@ $.createPage = (options, data, parent) => {
   data.fields.path = data.path;
   data.fields.sub_page = false;
   data.fields.values = values;
-  var r = new dd.render({invoker: parent, types: data.types, id: id, key: options.key, request: options.request} );
+  if (data.key === undefined) data.key = options.key;
+  var r = new dd.render({invoker: parent, types: data.types, id: id, key: data.key, request: options.request} );
   var object = r.render(data, 'fields');
   if (data._responses)  r.respond(data);
   object.addClass('page');
