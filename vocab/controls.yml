@@ -18,7 +18,6 @@ actioner:
   tag: button
   attr: { action: $id, id: "", title: $desc }
   class: [action]
-  url: /$id
   action: redirect
 
 alert_message:
