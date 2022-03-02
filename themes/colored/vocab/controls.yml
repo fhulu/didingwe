@@ -12,9 +12,6 @@ datatable:
   cell:
     class: [ border-$inactive_color]
 
-dropdown:
-  class: [text-$text_color]
-
 fa_checkbox:
   label:
     class: [hover-text-$alt_color]
