@@ -118,9 +118,10 @@
     load: function(args)
     {
       args = args || {};
-      var start = new Date().getTime();
       var me = this;
       var opts = me.options;
+      if (args.key) opts.key = args.key;
+      var start = new Date().getTime();
       me.head().find('.paging [action]').attr('disabled','');
       var action = opts.data_from == 'post'? 'action': 'values';
       var data = $.extend(opts.request, me.params, args, {action: action});
