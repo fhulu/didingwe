@@ -1356,10 +1356,12 @@ dd.render = function(options) {
       params = field.params;
       if (params !== undefined && !$.isArray(params))
         params = [params];
-      if (event === 'show' || event  == 'show_hide')
+      if (event == 'toggle' || event == '.toggle' && params !== undefined) 
+        params = [parseInt(params[0]) === 1 || params[0] === true]
+      if (event === 'show' || event == 'hide') {
+        params = [event==='show'];
         event = '.toggle';
-      if (event == 'toggle' || event == '.toggle' && params !== undefined)
-        params = [parseInt(params[0]) === 1 || params[0] === true];
+      }
     }
 
     if (sink) {
