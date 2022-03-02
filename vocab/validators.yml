@@ -36,6 +36,10 @@ blank:
 
 collection:
   valid: collection.exists($1,$2)
+  error: $name does not exist
+
+collection_exists:
+  valid: collection($1, $2)
 
 collection_filter:
   4: ""
