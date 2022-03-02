@@ -13,7 +13,8 @@ datatable:
   search_delay: 250
   defaults: {}
   row_actions: []
-  row_styles:
+  validate: no
+  row_styles: 
   row:
     actions: []
     class: []
