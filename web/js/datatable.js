@@ -528,6 +528,10 @@
           cell.id = field.id;
           if (key) cell.id +=  "_" + key;
         }
+        if (field.precision && dd.isNumber(cell.name)) {
+          cell.name = parseFloat(cell.name).toFixed(field.precision)
+        }
+        
 
         data[i] = cell;
         if (this.prev_row && this.prev_row[i] && this.prev_row[i].row_span > 1) {
