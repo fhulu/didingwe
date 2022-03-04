@@ -799,8 +799,8 @@ dd.render = function(options) {
     if (!field.listen) return;
     var events = $.isArray(field.listen)? field.listen: [field.listen];
     $.each(events, function(i, event) {
-      obj.on(event, function() {
-        obj.trigger(event + '_' + field.id);
+      obj.on(event, function(e, ...args) {
+        obj.trigger(event + '_' + field.id, [args]);
       });
     })
   }
@@ -866,13 +866,21 @@ dd.render = function(options) {
   }
 
   var initEventTriggers = function(obj, field) {
-    var triggers = getArray(field.triggers);
-    if (!triggers.length) return;
-    obj.on('click', function(e) {
-      if (obj.is($(e.target))) $.each(triggers, function(i, action) {
-        obj.trigger(action);
-      });
-    })
+    let triggers = field.triggers;
+    if (!triggers) return;
+    $.each(field.triggers, function(trigger, triggered) {
+      let event = triggered;
+      let sink_selector = null;
+      let sink_pos =triggered.indexOf(' ');
+      if (sink_pos > 0) {
+        sink_selector = triggered.substring(sink_pos+1);
+        triggered = triggered.substring(0, sink_pos);
+      }
+      obj.on(trigger, function(event, ...args) {
+        let sink = sink_selector? $(sink_selector): obj;
+        sink.trigger(triggered, [args]);
+      })
+    });
   }
 
   var initClassToggle = function(obj, field) {
@@ -1160,26 +1168,15 @@ dd.render = function(options) {
           if (!field.params) field.params = [];
           params = serverParams('action', url, $.extend({key: field.key}, params[0], field.params[0]));
           if ($.isArray(field.params)) params = $.extend({}, params, field.params[0]);
-          var selector = field.selector;
-          if (selector !== undefined) {
-            selector = selector.replace(/(^|[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
-            params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
-            me.sink.find(".error").remove();
-            me.sink.find(".in-error").unsetClass('in-error').trigger('clear-error');
-            obj.trigger('posting', [params]);
-            $(selector).json('/', params, function(result) {
-              trigger_post_result(result);
-              me.respond(result, obj, event);
-            });
-            break;
-          }
+          var selector = field.selector || "#page *";
+          selector = selector.replace(/(^|[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
+          params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
           me.sink.find(".error").remove();
-          me.sink.find(".in-error").removeClass('in-error').trigger('clear-error');
+          me.sink.find(".in-error").unsetClass('in-error').trigger('clear-error');
           obj.trigger('posting', [params]);
-          obj.trigger('posting');
-          $.json('/', params, function(result) {
+          $(selector).json('/', params, function(result) {
             trigger_post_result(result);
-            me.respond(result, obj);
+            me.respond(result, obj, event);
           });
           break;
         case 'trigger':
@@ -1313,7 +1310,7 @@ dd.render = function(options) {
   }
 
   var setModelValue = function(obj, options) {
-    options = options || { update_watchers: false}
+    options = options || { update_watchers: true}
     let field = obj.data("didi-field");
     if (!field || !field.id) return;
     var func = me.model["set_"+field.id];
@@ -1323,19 +1320,21 @@ dd.render = function(options) {
       me.updateWatchers({invoker: obj});
   }
 
-  var loadValues =  function(parent, data)
-  {
+  var loadValues =  function(parent, data) {
     var params = $.extend({key: data.key}, data.params);
 
     $.json('/', serverParams('values', data.path, params), function(result) {
       if (!result) return;
       parent.trigger('loaded_values', [result]);
+    });
+    parent.on('loaded_values', function(event, result) {
       if ($.isPlainObject(result))
         parent.setChildren(result, true, setModelValue);
       else for (var i in result) {
-        parent.setChildren(result[i], true, setModelValue);
+        parent.setChildren(result[i], true,setModelValue);
       }    
       me.respond(result);
+      parent.trigger('update_watchers');
     });
   }
 
@@ -1471,7 +1470,7 @@ dd.render = function(options) {
 
 
     // add input vars
-    parent.find('input,select,textarea').addBack('input,select,textarea').each(function() {
+    parent.find('input,select,textarea,.isearch').addBack('input,select,textarea,.isearch').each(function() {
       var field = $(this).data('didi-field');
       if (!field || field.parent_page != parent_id) return;
       var id = getModelId(field);
@@ -1530,7 +1529,10 @@ dd.render = function(options) {
       me.model["set_"+key](value);
     });
 
-    me.updateWatchers({ root: parent });
+    parent.on('update_watchers', function(e) {
+      me.updateWatchers({ root: parent });
+    })
+    .trigger('update_watchers');
   }
 
 

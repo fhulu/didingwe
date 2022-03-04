@@ -946,15 +946,6 @@ tri_input:
   split: 32.5%
   spacing: 0.5%
 
-trigger_action:
-  tag: div
-  class: [trigger $id]
-  triggers: [ $id ]
-
-trigger_button:
-  type: [trigger_action, button]
-
-
 twin_input:
   type: multi_input
   split: half
