@@ -39,6 +39,7 @@ datatable:
 
   sow: [slide,slideoff]
   propagated_events: []
+  trap: [reload]
 
   #paging
   paging:

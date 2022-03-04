@@ -38,18 +38,15 @@
       me._init_params();
       var el = me.element;
       me.head().addClass(opts.head.class.join(' ')).prependTo(el);
-      me.showHeader();
-      me.showTitles();
-      me.createRowBlueprint();
       if (opts.no_records)
         this.no_records = this.element.find('#no_records');
-      me.head().toggle(me.hasFlag('show_titles') || me.hasFlag('show_header') || me.hasFlag('filter'));
-      me.showFooterActions();
-      if (opts.auto_load) {
-        var args = $.isPlainObject(r.request)? r.request: {};
-        me.showData(args);
-      }
-      el.on('refresh', function(e, args) {
+
+      var args = $.isPlainObject(r.request)? r.request: {};
+      me.reload(args);
+      el.on('reload', function(e, args) {
+        me.reload(args);
+      })
+      .on('refresh', function(e, args) {
         el.trigger('refreshing', args);
         me.showData(args);
         return opts.propagated_events.indexOf(e.type) >= 0;
@@ -68,6 +65,18 @@
       me.body().scroll($.proxy(me._scroll,me));
       me.bindRowActions()
     },
+
+    reload: function(args) {
+      let me = this;
+      if (args.key) me.options.key = me.params.key = args.key;
+      me.showHeader();
+      me.showTitles();
+      me.head().toggle(me.hasFlag('show_titles') || me.hasFlag('show_header') || me.hasFlag('filter'));
+      me.createRowBlueprint();
+      me.showFooterActions();  
+      if (me.options.auto_load) me.showData(args);
+      me.element.trigger('reloaded', [args]);
+   },
 
     _init_params: function()
     {
@@ -120,7 +129,6 @@
       args = args || {};
       var me = this;
       var opts = me.options;
-      if (args.key) opts.key = args.key;
       var start = new Date().getTime();
       me.head().find('.paging [action]').attr('disabled','');
       var action = opts.data_from == 'post'? 'action': 'values';
@@ -1006,6 +1014,7 @@
       this.options.render.expandFields(this.options, "footer_actions", this.options.footer_actions);
       var actions = this.options.footer_actions;
       if (!actions.length) return;
+      this.element.children('tfoot').remove();
       var footer = $('<tfoot>').appendTo(this.element);
       var tr = $('<tr>').addClass('actions').appendTo(footer);
       var td = $('<td>').appendTo(tr);
