@@ -6,6 +6,7 @@ isearch:
   class: [ isearch,relative]
   contents: [ $searcher, $buttons, $drop]
   attr: { value: ""}
+  validate_children: no
   on_disabled: |
     ~ function(e, disable) {
         $(this).find('.isearch-actioner').prop('disabled', disable).toggleClass('disabled', disable)
