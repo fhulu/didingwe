@@ -865,22 +865,52 @@ dd.render = function(options) {
     })
   }
 
+  // trigger event B  when one event A occurs
+  // usage:
+  // triggers: { A: B}
+  // or 
+  // triggers: { A: { B: sink_selector} }
+  // or
+  // triggers: { A: {B: [sink_selector, ...arguments]}"}  
+  // or
+  // triggers: [{ A: B}, {A: C}, {B: D}, ...]
   var initEventTriggers = function(obj, field) {
     let triggers = field.triggers;
     if (!triggers) return;
-    $.each(field.triggers, function(trigger, triggered) {
-      let event = triggered;
-      let sink_selector = null;
-      let sink_pos =triggered.indexOf(' ');
-      if (sink_pos > 0) {
-        sink_selector = triggered.substring(sink_pos+1);
-        triggered = triggered.substring(0, sink_pos);
-      }
-      obj.on(trigger, function(event, ...args) {
-        let sink = sink_selector? $(sink_selector): obj;
-        sink.trigger(triggered, [args]);
-      })
-    });
+    let me = this;
+    $.each(triggers, function(trigger, events) {
+      dd.asArray(events).forEach(function (triggered) {
+        let sink = obj;
+        let event, fixed_args;
+        if (typeof triggered == 'string') {
+          event = triggered; 
+        }
+        else if ($.isPlainObject(triggered)) {
+          [event, fixed_args] = dd.firstElement(triggered);
+          fixed_args = dd.asArray(fixed_args);
+          let sink_selector = fixed_args.shift();
+          if (sink_selector) {
+            let [self_selector, parent_selector, page_selector, child_selector] = sink_selector.regexCapture(/^(?:(self)|(parent)|(page)) (.*)$/g);
+            if (parent_selector)
+              sink = obj.parent();
+            else if (page_selector)
+              sink = me.root;
+            else if(!self_selector)
+              sink = $(sink_selector);
+
+            if (child_selector)
+              sink = sink.find(child_selector);
+          } 
+        }
+        else  
+          throw "triggered event must be either a string on an object";
+
+        //add handler
+        obj.on(trigger, function(e, ...args) {
+          sink.trigger(event, [...fixed_args, ...args]);
+        });
+      });
+    })
   }
 
   var initClassToggle = function(obj, field) {
@@ -946,8 +976,11 @@ dd.render = function(options) {
 
     var id = getModelId(field)
     obj.on('keyup input cut paste change', function() {
-      var func = me.model["set_"+id];
-      if (!func || func($(this).value()))
+      let val = obj.value();
+      let event = val === ''? 'clear': 'set';
+      obj.trigger(event);
+      let func = me.model["set_"+id];
+      if (!func || func(val))
       	me.updateWatchers({invoker: obj});
     });
   };
@@ -1169,7 +1202,7 @@ dd.render = function(options) {
           params = serverParams('action', url, $.extend({key: field.key}, params[0], field.params[0]));
           if ($.isArray(field.params)) params = $.extend({}, params, field.params[0]);
           var selector = field.selector || "#page *";
-          selector = selector.replace(/(^|[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
+          selector = selector.replace(/(^[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
           params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
           me.sink.find(".error").remove();
           me.sink.find(".in-error").unsetClass('in-error').trigger('clear-error');
@@ -1373,10 +1406,6 @@ dd.render = function(options) {
       sink = invoker;
     else
       sink = $('.didi-listener');
-    if (event[0] === '.') {
-      sink[event.substring(1)].apply(sink,params);
-      return;
-    }
     sink.trigger(event, params);
   }
 
