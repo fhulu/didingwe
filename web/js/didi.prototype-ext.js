@@ -1,10 +1,11 @@
 if (!String.prototype.regexCapture) {
   String.prototype.regexCapture = function(regex) {
+    if (!regex.global) 
+      throw "regexCapture must use the global flag";
     var matches = [];
     var match;
-    while ((match = regex.exec(this)) !== null) {
+    while ((match = regex.exec(this)) !== null) 
       matches = matches.concat(match.slice(1))
-    }
     return matches;
   }
 }
