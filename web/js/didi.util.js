@@ -512,6 +512,12 @@ var didi = {
   },
 
   extend: (obj, v) => dd.isArray(obj)? obj.concat(v): dd.merge(obj, v),
+
+  asArray: (v) => {
+    if (v === null || v === undefined) return [];
+    if (!dd.isArray(v)) return [v];
+    return v;
+  }
 }
 
 if(window.didi === undefined || window.dd === undefined) {
