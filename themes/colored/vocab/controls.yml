@@ -16,11 +16,13 @@ fa_checkbox:
   label:
     class: [hover-text-$alt_color]
 
+fieldset:
+  class: [ border-$light_color ]
+
 labelled:
   class: [border-$light_color]
 
 label_fieldset:
-  class: [ border-$light_color ]
   events:
     errors: [ ^border-$light_color, border-$error_color]
     clear-error: [border-$light_color, ^border-$error_color]

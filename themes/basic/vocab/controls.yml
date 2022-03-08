@@ -25,6 +25,12 @@ datatable:
   cell:
     class: [ border-width-thin border-top, pad pad-small]
 
+
+fieldset:
+  class: [border font-medium vspace]
+  legend:
+    class: [margin-left pad-x pad-tiny left-text static no-float]
+
 input:
   class: [pad-tiny border]
 
@@ -53,17 +59,19 @@ isearch:
 labelled:
   class: [relative vspaced]
 
+label_embedded:
+  label: 
+    class: [font-tiny]
+    
+  
+
 label_fieldset:
-  class: [ font-medium vspace]
-  legend:
-    class: [margin-left pad-x pad-tiny left-text static]
   events:
     errors: [ border-width-small, show-legend]
     clear-error: [ ^border-width-small]
       
 link:
   class: [pointer-cursor]
-
 
 modal:
   dialog: { class: [pad-medium border-width-thin] }

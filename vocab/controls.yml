@@ -295,10 +295,19 @@ fieldset:
   text: $legend $field
   legend:
     tag: legend
+    class: [ static no-float]
+    style: { position: static }
     attr: { id: ""}
     derive: [name]
     name: $name
 
+fieldset_container:
+  type: fieldset
+  text: $legend $container
+  container:
+    classes: container
+    derive: [contents]
+  contents: []
 
 file_input:
   type: input
@@ -516,12 +525,30 @@ label_bottom:
     class: [widest]
   text: $field$label
 
+label_embedded:
+  templates: div
+  label: 
+    classes: label
+    class: [clear-after]
+    derive: [name]
+    attr: { id: ""}
+    show: no
+  subject:
+    attr: { placeholder: $name, title: $desc}
+    triggers: 
+      set: { .toggle: ["parent .label", true]}
+      clear: { .toggle: ["parent .label", false]}
+  events:
+    focusin: [ show-label]
+    set: [show-label]
+    clear: [hide-label]
+    errors: [ show-label]
+    clear-error: []
+  text: $label $field
+
 label_fieldset:
   type: fieldset
-  class: [border hide-legend]
-  legend:
-    class: [ static]
-    style: { position: static }
+  class: [hide-legend]
   events:
     focusin: [ show-legend]
     set: [show-legend]
