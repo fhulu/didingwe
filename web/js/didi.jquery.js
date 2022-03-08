@@ -471,6 +471,13 @@ $.fn.enableOnSet = function(controls, events) {
   });
 }
 
+let oldTrigger = $.fn.trigger;
+$.fn.trigger = function(event, args) {
+  if (event[0] === '.') 
+    this.run(event.substr(1), ...args);
+  oldTrigger.call(this, event, args);
+}
+
 $.send = function(url, options, callback) {
   if (options instanceof Function) {
     callback = options;
@@ -526,7 +533,6 @@ $.send = function(url, options, callback) {
     cache: false,
     dataType: options.dataType,
     success: function(data) {
-      console.log("AJAX SUCCESS", data);
       if (progress.timeout !== undefined) clearTimeout(progress.timeout);
       if (progress.box !== undefined) progress.box.hide();
       if (callback !== undefined) callback(data, options.event);
@@ -666,6 +672,7 @@ $.loadLink = (link, type) => {
     document.head.appendChild(element);
   }).promise();
 }
+
 
 
 } (jQuery) );
