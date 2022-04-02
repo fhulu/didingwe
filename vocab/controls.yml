@@ -168,6 +168,10 @@ date_future:
   type: date
   minDate: 0
 
+date_past:
+  type: date
+  maxDate: 0
+
 datetime:
   type: input
   create: datetimepicker
@@ -529,20 +533,21 @@ label_embedded:
   templates: div
   label: 
     classes: label
-    class: [clear-after]
+    class: [widest]
     derive: [name]
     attr: { id: ""}
     show: no
   subject:
     attr: { placeholder: $name, title: $desc}
+    class: [widest]
     triggers: 
-      set: { .toggle: ["parent .label", true]}
-      clear: { .toggle: ["parent .label", false]}
+      set: [ .show: "parent .label" ]
+      clear: [ .hide: "parent .label" ]
   events:
     focusin: [ show-label]
-    set: [show-label]
-    clear: [hide-label]
-    errors: [ show-label]
+    set: [tallest]
+    clear: [^tallest]
+    errors: []
     clear-error: []
   text: $label $field
 
