@@ -471,11 +471,12 @@ $.fn.enableOnSet = function(controls, events) {
   });
 }
 
-let oldTrigger = $.fn.trigger;
-$.fn.trigger = function(event, args) {
-  if (event[0] === '.') 
-    this.run(event.substr(1), ...args);
-  oldTrigger.call(this, event, args);
+$.fn.triggerEx = function(event, args) {
+  if (event[0] === '.') {
+    event = event.substr(1);
+    this.run(event, ...dd.asArray(args));
+  }
+  this.trigger(event, args);
 }
 
 $.send = function(url, options, callback) {
