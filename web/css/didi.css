@@ -642,7 +642,7 @@ li.paragraph {text-indent: -1em }
  *        on medium devices, size all child elements to 33% of container width, except for C which will be sized to 100%
  *        on medium devices, size all child elements to 25% of container width, except for C which will be sized to 100%
 **/
-.grid>*{float:left;display:inline-block}          /* all grid children floated in left to right and inline */
+.grid>*{display:inline-block}          /* all grid children displayed inline from left to right */
 .grid.space>*{margin-bottom:2%;margin-right:2%}   /* default spacing for all grid item is 2% */
 .grid.fit>:first-child:nth-last-child(1){width:100%}  /* one child */
 .grid.fit>:first-child:nth-last-child(2),.grid.fit>:first-child:nth-last-child(2) ~ *{width:50%}  /* 2 children, not spaced */
@@ -765,15 +765,32 @@ li.paragraph {text-indent: -1em }
   .grid.m2>*{width:50%}
   .grid.m2.space>*{width:49%}
   .grid.m2.space>:nth-child(2n){margin-right:0}
+  .grid.m2>.span,.grid.m2>.span2{width:100%}
+
   .grid.m3>*{width:33.3333%}
   .grid.m3.space>*{width:32%}
   .grid.m3.space>:nth-child(3n+3){margin-right:0}
+  .grid.m3>.span,.grid.m3>.span3{width:100%}
+  .grid.m3>.span2{width:66.6666%}
+
+
   .grid.m4>*{width:25%}
   .grid.m4.space>*{width:23.5%}
   .grid.m4.space>:nth-child(4n+4){margin-right:0}
+  .grid.m4>.span2{width:50%}
+  .grid.m4>.span3{width:66.6666%}
+  .grid.m4>.span4,.grid.m4.span{width:100%}
+
+
   .grid.m5>*{width:20%}
   .grid.m5.space>*{width:18.4%}
   .grid.m5.space>:nth-child(5n+5){margin-right:0}
+  .grid.m5>.span2{width:40%}
+  .grid.m5>.span3{width:60%}
+  .grid.m5>.span4{width:75%}
+  .grid.m5>.span5,.grid.m5.span{width:100%}
+
+
   .grid.m6>*{width:16.6666%}
   .grid.m6.space>*{width:15%}
   .grid.m6.space>:nth-child(6n+6){margin-right:0}
@@ -829,6 +846,7 @@ li.paragraph {text-indent: -1em }
   .grid.l2.space>*{width:49%}
   .grid.l2.space>:nth-child(2n+2){margin-right:0}
   .grid.l2.space>:nth-last-child(2){margin-bottom:0} 
+  .grid.l2>.span,.grid.l2>.span2{width:100%}
 
   .grid.l3>*{width:33.3333%}
 
@@ -836,7 +854,7 @@ li.paragraph {text-indent: -1em }
   .grid.l3.space>:nth-child(3n+3){margin-right:0}
   .grid.l3.space>:nth-last-child(2),.grid.l3.space>:nth-last-child(3){margin-bottom:0} 
 
-  .grid.l3>.span,.grid.l3>.span{width:100%}
+  .grid.l3>.span,.grid.l3>.span3{width:100%}
   .grid.l3>.span2{width:66.6666%}
 
   .grid.l4>*{width:25%}
@@ -847,7 +865,7 @@ li.paragraph {text-indent: -1em }
 
   .grid.l4>.span2{width:50%}
   .grid.l4>.span3{width:66.6666%}
-  .grid.l4>.span4{width:100%}
+  .grid.l4>.span4,.grid.l4.span{width:100%}
 
   .grid.l5>*{width:20%}
   .grid.l5.space>*{width:16%}
@@ -857,8 +875,11 @@ li.paragraph {text-indent: -1em }
   .grid.l5>.span2{width:40%}
   .grid.l5>.span3{width:60%}
   .grid.l5>.span4{width:75%}
-  .grid.l5>.span5{width:100%}
+  .grid.l5>.span5,.grid.l5.span{width:100%}
 
+  .grid>.no-float{width:auto}
+  .grid>.span{width:100%}
+  
   .col.l0,.hide-large{display:none}
   .col.l1{width:8.33333%}
   .col.l2{width:16.66666%}
