@@ -519,6 +519,16 @@ dd.render = function(options) {
     me.root_field = field;
     var obj = me.root = me.create(parent, key, false);
     me.initModel(obj, field);
+    obj.on('values', function(event, result) {
+      if ($.isPlainObject(result))
+        obj.setChildren(result, true, setModelValue);
+      else for (var i in result) {
+        obj.setChildren(result[i], true,setModelValue);
+      }    
+      me.respond(result);
+      obj.trigger('update_watchers');
+    });
+
     return obj;
   }
 
@@ -657,7 +667,7 @@ dd.render = function(options) {
       target.trigger('dying');
       target.replaceWith(obj);
       if (!selector) return;
-      var classes = selector.regexCapture(/(\.[\w-][\w-\.]*)$/g);
+      var classes = /(\.[\w-][\w-\.]*)$/g.capture(selector);
       if (classes.length) obj.addClass(classes[0].replace('.', ' '));
     });
   }
@@ -881,7 +891,7 @@ dd.render = function(options) {
     $.each(triggers, function(trigger, events) {
       dd.asArray(events).forEach(function (triggered) {
         let sink = obj;
-        let event, fixed_args;
+        let event, fixed_args=[];
         if (typeof triggered == 'string') {
           event = triggered; 
         }
@@ -890,7 +900,7 @@ dd.render = function(options) {
           fixed_args = dd.asArray(fixed_args);
           let sink_selector = fixed_args.shift();
           if (sink_selector) {
-            let [self_selector, parent_selector, page_selector, child_selector] = sink_selector.regexCapture(/^(?:(self)|(parent)|(page)) (.*)$/g);
+            let [self_selector, parent_selector, page_selector, child_selector] = /^(?:(self)|(parent)|(page)) (.*)$/g.capture(sink_selector);
             if (parent_selector)
               sink = obj.parent();
             else if (page_selector)
@@ -907,7 +917,7 @@ dd.render = function(options) {
 
         //add handler
         obj.on(trigger, function(e, ...args) {
-          sink.trigger(event, [...fixed_args, ...args]);
+          sink.triggerEx(event, [...fixed_args, ...args]);
         });
       });
     })
@@ -1198,9 +1208,7 @@ dd.render = function(options) {
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
-          if (!field.params) field.params = [];
-          params = serverParams('action', url, $.extend({key: field.key}, params[0], field.params[0]));
-          if ($.isArray(field.params)) params = $.extend({}, params, field.params[0]);
+          params = serverParams('action', url, {key: field.key});
           var selector = field.selector || "#page *";
           selector = selector.replace(/(^[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
           params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
@@ -1358,9 +1366,10 @@ dd.render = function(options) {
 
     $.json('/', serverParams('values', data.path, params), function(result) {
       if (!result) return;
-      parent.trigger('loaded_values', [result]);
+      parent.trigger('values', [result]);
     });
-    parent.on('loaded_values', function(event, result) {
+    parent.on('values', function(event, result) {
+      console.log("values", parent, result);
       if ($.isPlainObject(result))
         parent.setChildren(result, true, setModelValue);
       else for (var i in result) {
@@ -1390,10 +1399,6 @@ dd.render = function(options) {
         params = [params];
       if (event == 'toggle' || event == '.toggle' && params !== undefined) 
         params = [parseInt(params[0]) === 1 || params[0] === true]
-      if (event === 'show' || event == 'hide') {
-        params = [event==='show'];
-        event = '.toggle';
-      }
     }
 
     if (sink) {
@@ -1406,7 +1411,10 @@ dd.render = function(options) {
       sink = invoker;
     else
       sink = $('.didi-listener');
-    sink.trigger(event, params);
+
+    if (event=='loaded_values')  console.log("loaded_values", sink, params);
+
+    sink.triggerEx(event, params);
   }
 
   var getModelId = function(field) {
@@ -1425,7 +1433,7 @@ dd.render = function(options) {
       if (/^~|\s*function\s*\([^)]*\)/gm.test(value))
         exprs = [value];
       else
-        exprs = value.regexCapture(/(`[^`]+`)/g);
+        exprs = /(`[^`]+`)/g.capture(value);
       var replaced = false;
       key = key.replace(/\W/g, '_');
       exprs.forEach(function(expr, i) {
@@ -1574,7 +1582,7 @@ dd.render = function(options) {
       var changed = false;
       $.each(field['didi-model'], function(key, value) {
         if (key.indexOf('on_') == 0) return;
-        var vars = value.regexCapture(/\$\{(\d+)\}/g);
+        var vars = /\$\{(\d+)\}/g.capture(value);
         var prefix = "get_"+id+"_";
         vars.forEach(function(index) {
           var func = me.model[prefix+index];
