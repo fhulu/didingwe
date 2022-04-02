@@ -1,14 +1,15 @@
-if (!String.prototype.regexCapture) {
-  String.prototype.regexCapture = function(regex) {
-    if (!regex.global) 
-      throw "regexCapture must use the global flag";
+if (!RegExp.prototype.capture) {
+  RegExp.prototype.capture = function(str) {
+    if (!this.global) 
+      throw "capture regex must use the global flag";
     var matches = [];
     var match;
-    while ((match = regex.exec(this)) !== null) 
+    while ((match = this.exec(str)) !== null) 
       matches = matches.concat(match.slice(1))
     return matches;
   }
 }
+
 
 
 if (!RegExp.quote) {
