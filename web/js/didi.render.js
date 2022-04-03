@@ -1368,16 +1368,6 @@ dd.render = function(options) {
       if (!result) return;
       parent.trigger('values', [result]);
     });
-    parent.on('values', function(event, result) {
-      console.log("values", parent, result);
-      if ($.isPlainObject(result))
-        parent.setChildren(result, true, setModelValue);
-      else for (var i in result) {
-        parent.setChildren(result[i], true,setModelValue);
-      }    
-      me.respond(result);
-      parent.trigger('update_watchers');
-    });
   }
 
   var trigger = function(field, invoker)
