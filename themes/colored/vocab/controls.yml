@@ -19,6 +19,12 @@ fa_checkbox:
 fieldset:
   class: [ border-$light_color ]
 
+isearch:
+  drop:
+    class: [border-$inactive_color]
+  option:
+    class: [hover-$active_color]
+
 labelled:
   class: [border-$light_color]
 
