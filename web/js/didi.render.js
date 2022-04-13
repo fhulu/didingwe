@@ -98,24 +98,24 @@ dd.render = function(options) {
 
   var mergeDefaultType = function(base, item, type) {
     if (!base)
-      return dd.merge(type, item);
+      return dd.merge({}, type, item);
     mergeImmutables(item, base, type);
     base = dd.copy(base);
     dd.deleteKeys(base, ['type', 'styles', 'style'])
     dd.deleteKeys(base, geometry)
-    return dd.merge(type, base, item);
+    return dd.merge({}, type, base, item);
   }
 
   var mergeDefaults = function(item, defaults, base) {
     if (!item.action && defaults.action) item.action = defaults.action;
-    if (defaults.attr) item.attr = dd.merge(item.attr,defaults.attr);
+    if (defaults.attr) item.attr = dd.merge({}, item.attr,defaults.attr);
     if (!item.template) item.template = defaults.template;
-    if (defaults.default) item = dd.merge(defaults.default, item);
+    if (defaults.default) item = dd.merge({}, defaults.default, item);
     if (defaults.types)
       return mergeDefaultType(base, item, defaults.types.shift());
     else if (!item.type && defaults.type)
       return mergeDefaultType(base, item, defaults.type);
-    return dd.merge(base, item);
+    return dd.merge({}, base, item);
   }
 
 
@@ -142,7 +142,7 @@ dd.render = function(options) {
         items.push(item);
       else if (push == 'merge') {
        pos = dd.firstIndexOfKey(items, 'id', item.id);
-       items[pos] = dd.merge(items[pos], item);
+       items[pos] = dd.merge({}, items[pos], item);
       }
       else
         items.splice(dd.firstIndexOfKey(items, 'id', push), 0, item);
@@ -211,18 +211,17 @@ dd.render = function(options) {
   this.expandFields = function(parent_field, name, items, defaults)
   {
     if (!defaults) defaults = { template: "$field" };
-    var path = parent_field.path? parent_field.path + '/' + name: name;
+    let path = parent_field.path? parent_field.path + '/' + name: name;
     objectify(items);
     pushPop(items);
     mergeSubItems(parent_field,items);
-    var wrap;
-    var sow = parent_field.sow;
-    var removed = [];
-    var index = 0;
+    let wrap;
+    let sow = parent_field.sow;
+    let removed = [];
+    let index = 0;
     items.forEach((item,i)=>{
-      var id;
-      var array;
-      var template;
+      let id;
+      let array;
       removed.push(i);
       if ($.isPlainObject(item)) {
         if (setDefaults(defaults, item, parent_field)) return;
@@ -233,18 +232,18 @@ dd.render = function(options) {
 
         if (id[0] == '$') {
           id = id.substr(1);
-          item = dd.merge(parent_field[id], item);
+          item = dd.merge({}, parent_field[id], item);
         }
         id = me.expandValue(parent_field, id);
         if (sow && sow.indexOf(id) >=0)
-          item = dd.merge(parent_field[id], item);
+          item = dd.merge({}, parent_field[id], item);
         promoteAttr(item);
-        var base = dd.copy(me.types[id]);
-        var merged = dd.merge(base, item);
+        let base = dd.copy(me.types[id]);
+        let merged = base? dd.merge({}, base, item): item;
         item.id = id;
         if (mutable(merged))
           item = mergeDefaults(item, defaults, base);
-        else
+        else if (merged)
           item = merged;
       }
       else if ($.isArray(item)) {
@@ -260,7 +259,7 @@ dd.render = function(options) {
 
       if (path && !item.path)
         item.path = path + '/' + id;
-      var template = item.template;
+      let template = item.template;
       if (template == 'none' || template  == '$field')
         delete item.template;
       else if (typeof template == 'string') {
@@ -312,7 +311,7 @@ dd.render = function(options) {
     for (var key in field) {
       if (key.indexOf('on_') == 0) delete field[key];
     }
-    item.template = me.initField(dd.merge(template, field));
+    item.template = me.initField(dd.merge({}, template, field));
     item.template.id = "";
   };
 
@@ -406,7 +405,7 @@ dd.render = function(options) {
       var key = parent.sow[i];
       var sowed = {};
       sowed[key] = parent[key];
-      field = dd.merge(sowed, field);
+      field = dd.merge({}, sowed, field);
     }
     return field;
   }
@@ -422,7 +421,7 @@ dd.render = function(options) {
       if (value === undefined)
         field[key] = parent[key];
       else if ($.isPlainObject(value) || $.isArray(value))
-        field[key] = dd.merge(parent[key], value);
+        field[key] = dd.merge({}, parent[key], value);
       else if (typeof value === 'string' && value[0] === '$')
         field[key] = parent[value.substr(1)];
     }
@@ -454,7 +453,7 @@ dd.render = function(options) {
   {
     field.page_id = this.page_id;
     if (field.template && field.template.subject) {
-      field = dd.merge(field.template.subject, field);
+      field = dd.merge({}, field.template.subject, field);
       if (!field.template.tag) delete field.template;
     }
     deriveParent(parent, field);
@@ -850,7 +849,7 @@ dd.render = function(options) {
           }
           if ($.isPlainObject(value)) {
             var params = Array.prototype.slice.call(arguments, 1);
-            value.params = dd.merge(value.params, params);
+            value.params = dd.merge({}, value.params, params);
             dd.replaceVars(value, value.params);
             accept(e, obj, value);
           }
@@ -1090,7 +1089,7 @@ dd.render = function(options) {
   {
     var prev = defaults[name];
     if ($.isPlainObject(prev))
-      value = dd.merge(prev, value);
+      value = dd.merge({}, prev, value);
     else if (typeof value == 'string')
       value.type = prev;
     return value;
@@ -1109,7 +1108,7 @@ dd.render = function(options) {
         value = parent[value.substring(1)];
       if (value === undefined) continue;
       if (sow && sow.indexOf(value) >=0 )
-        value = dd.merge(parent[value], defaults[name]);
+        value = dd.merge({}, parent[value], defaults[name]);
       if (name === 'template' && value === 'none')
         value = '$field';
       else if (name === 'wrap' && $.isPlainObject(value))
