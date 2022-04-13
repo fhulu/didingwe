@@ -1,8 +1,12 @@
-button:
-  class: [$action_color hover-text-$text_active_color border-$light_color hover-border-$dark_color]
+
+actioner:
+  class: [$action_color hover-text-$text_active_color]
 
 body:
   class: [$color]
+
+button:
+  class: [$action_color hover-text-$text_active_color border-$light_color hover-border-$dark_color]
 
 datatable:
   slide: { class: [$alt_color, border-$light_color] }
