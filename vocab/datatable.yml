@@ -37,7 +37,6 @@ datatable:
     - type: none
     - default: { span: 1, filter: yes, data: false}
 
-  sow: [slide,slideoff]
   propagated_events: []
   trap: [reload]
 
