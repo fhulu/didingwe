@@ -69,7 +69,6 @@ meta:
   - application-name: $program_name
 
 css:
-  - /didi/css/font-awesome/css/font-awesome.min.css
   - /didi/css/didi.css
 
 script:
