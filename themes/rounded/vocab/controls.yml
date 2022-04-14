@@ -15,8 +15,5 @@ modal:
   dialog:
     class: [rounded-large]
 
-submit:
-  class: [rounded]
-
 wizard_bookmark:
   class: [rounded-top-left-large]

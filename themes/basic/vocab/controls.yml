@@ -82,9 +82,6 @@ small_text:
   type: plain_text
   class: [block font-small]
 
-submit:
-  class: [pad-small border]
-
 wizard:
   css: [/didi/css/font-awesome/css/font-awesome.min.css ]
   class: [pad-medium]
