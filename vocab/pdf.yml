@@ -1,0 +1,29 @@
+pdf:
+  page:
+    orientation: P
+    unit: mm
+    size: A4
+  font:
+    family: Arial
+    style: ""
+    size: 8
+  
+  pdf_object:
+  fill_color: [255,255,255]
+  text_color: [0,0,0]
+  draw_color: [0,0,0]
+  line_width: 1
+  line_area: []
+  font_name: Arial
+  font_size: 8
+  height: 5
+  line_width: 1
+  width: auto
+  break: off
+
+pdf_line:
+  type: 
+
+
+
+  
