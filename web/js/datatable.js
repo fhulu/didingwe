@@ -495,8 +495,8 @@
       for (var i=0; i<count; ++i) {
         var field = fields[offset++];
         var cell = data[i];
-        if (field.id == 'style' && cell !== undefined) {
-          me.setRowStyles(tr, cell);
+        if (field.id == 'style') {
+          if (cell) me.setRowStyles(tr, cell);
           continue;
         }
         if (field.data) {
