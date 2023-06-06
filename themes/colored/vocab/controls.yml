@@ -25,7 +25,7 @@ fieldset:
 
 isearch:
   drop:
-    class: [border-$inactive_color]
+    class: [$color border-$inactive_color]
   option:
     class: [hover-$active_color]
 
