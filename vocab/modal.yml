@@ -16,7 +16,10 @@ modal:
     text: $name
 
   close_button:
-    tag: div
-    name: ""
-    class: [modal-close-button, absolute, top-right, overlay, cursor-pointer, fa fa-times]
+    type: container
+    class: [modal-close-button, absolute, top-right, overlay, cursor-pointer]
     action: close_dialog
+    contents: [$icon]
+    icon: 
+      tag: i
+      class: [fa fa-times fa-solid] 
