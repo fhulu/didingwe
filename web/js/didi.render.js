@@ -42,7 +42,7 @@ dd.render = function(options) {
     if (type === undefined && field.html === undefined) {
       if (!id) id = field.id;
       var cls;
-      if (id) cls = id.replace(/_/g, '-');
+      if (typeof id === 'string') cls = id.replace(/_/g, '-');
       if (field.classes) {
         type = 'control';
         if (types[field.classes])
@@ -462,7 +462,7 @@ dd.render = function(options) {
 
     var id = field.id;
     if (field.array && field.array.length>1 && field.name === undefined) field.name = field.array[1];
-    if (id && field.name === undefined)
+    if (typeof id==="string" && field.name === undefined)
       field.name = dd.toTitleCase(id.replace(/[_\/]/g, ' '));
     if (field.array)
       this.expandArray(field);
@@ -1200,6 +1200,11 @@ dd.render = function(options) {
         params = action.slice(1);
         action = action[0];
       }
+
+      // set url for dialog and redirect action when not explicitly specifiedggit 
+      if (!field.url && ['dialog', 'redirect'].includes(action)) {
+        field.url = field.path.split('/')[0] + '/' + field.id;
+      }
       switch(action) {
         case 'page': $.showPage(field); return;
         case 'dialog': $.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
@@ -1207,7 +1212,7 @@ dd.render = function(options) {
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
-          params = serverParams('action', url, {key: field.key});
+          params = serverParams('action', url, {key: fi.key});
           var selector = field.selector || "#page *";
           selector = selector.replace(/(^[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
           params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
