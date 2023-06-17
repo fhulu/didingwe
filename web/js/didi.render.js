@@ -1212,7 +1212,7 @@ dd.render = function(options) {
         case 'redirect': redirect(field); break;
         case 'post':
           var url = field.url? field.url: field.path;
-          params = serverParams('action', url, {key: fi.key});
+          params = serverParams('action', url, {key: field.key});
           var selector = field.selector || "#page *";
           selector = selector.replace(/(^[^\w]+)page([^\w]+)/,"$1"+field.page_id+"$2");
           params = $.extend(params, {invoker: obj, event: event, async: true, post_prefix: field.post_prefix });
