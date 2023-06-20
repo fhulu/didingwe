@@ -549,7 +549,8 @@ $.loadPage = (options, parent) => {
   var path = options.path;
   if  (path[0] === '/') path=options.path.substr(1);
   var data = $.extend({key: options.key}, options.request, {path: path, action: 'read'});
-  $.json('/', { data: data }, function(result) {
+  if (!options.processor) options.processor = '/';
+  $.json(options.processor, { data: data }, function(result) {
     parent.trigger('server_response', result);
     if (!result.path) return;
     result.values = $.extend({}, options.values, result.values );
@@ -568,7 +569,7 @@ $.createPage = (options, data, parent) => {
   data.fields.sub_page = false;
   data.fields.values = values;
   if (data.key === undefined) data.key = options.key;
-  var r = new dd.render({invoker: parent, types: data.types, id: id, key: data.key, request: options.request} );
+  var r = new dd.render({invoker: parent, types: data.types, id: id, key: data.key, request: options.request, processor: options.processor} );
   var object = r.render(data, 'fields');
   if (data._responses)  r.respond(data);
   object.addClass('page');
@@ -578,8 +579,11 @@ $.createPage = (options, data, parent) => {
 },
 
 $.showPage = (options, parent, data) => {
+  if (typeof options == 'string') {
+    options = { path: options}
+  }
   if (parent == undefined) {
-    parent = options.parent? $(parent): $('body');
+    parent = options.parent? $(options.parent): $('body');
   }
   var defer = $.Deferred();
   var createPage = function(result, options) {
@@ -601,7 +605,7 @@ $.showDialog = (path, field) => {
   var params = $.extend({ path: path }, field);
   var defer = $.Deferred();
 
-  $.loadPage({path: '/modal', show: false}).done(function(modal, options) {
+  $.loadPage({path: '/modal', show: false, processor: field.processor}).done(function(modal, options) {
     var tmp = $("<div>");
     $.showPage(params, tmp).done(function(obj, page) {
       if (page.fields.modal) modal.fields = dd.merge(modal.fields, page.fields.modal);

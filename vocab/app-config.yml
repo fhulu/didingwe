@@ -23,6 +23,8 @@ favicon:
   type: image/png
   href: /didi/images/didingwe-favicon.png
 
+processor: /
+
 title: $program_name
 
 search_paths:

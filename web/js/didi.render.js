@@ -16,7 +16,8 @@ dd.render = function(options) {
   me.model = {};
   me.model_src = options.model_src;
   me.model_funcs = options.model_funcs;
-
+  me.processor = options.processor;
+ 
   var array_defaults = [ 'type', 'types', 'template', 'action', 'attr', 'wrap', 'default'];
   var geometry = ['left','right','width','top','bottom','height', 'line-height','max-height', 'max-width'];
 
@@ -659,7 +660,7 @@ dd.render = function(options) {
     delete field.sub_page;
     delete field.appendChild;
     field.path = field.url? field.url: field.id;
-    return $.showPage($.extend({request: options.request}, field), target).done(function(obj, result, field) {
+    return $.showPage($.extend({request: options.request, processor: options.processor}, field), target).done(function(obj, result, field) {
       setStyle(obj, field);
       setClass(obj, field);
       setResponsive(obj, field);
@@ -759,7 +760,7 @@ dd.render = function(options) {
         me.parent.trigger('loaded', [field,result]);
     });
     if (field.autoload || field.autoload === undefined) {
-      $.json('/', serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
+      $.json(me.processor, serverParams('data', field.path+'/'+name, $.extend({}, field.params, {key: field.key})), function(result) {
         me.respond(result, object);
         object.trigger('loaded', [field, result.data]);
       });
@@ -1206,8 +1207,8 @@ dd.render = function(options) {
         field.url = field.path.split('/')[0] + '/' + field.id;
       }
       switch(action) {
-        case 'page': $.showPage(field); return;
-        case 'dialog': $.showDialog(field.url, $.extend({key: field.key}, params[0])); return;
+        case 'page': $.showPage($.extend({processor: me.processor}, field)); return;
+        case 'dialog': $.showDialog(field.url, $.extend({key: field.key, processor: me.processor}, params[0])); return;
         case 'close_dialog': $.closeDialog(obj); break;
         case 'redirect': redirect(field); break;
         case 'post':
@@ -1219,7 +1220,7 @@ dd.render = function(options) {
           me.sink.find(".error").remove();
           me.sink.find(".in-error").unsetClass('in-error').trigger('clear-error');
           obj.trigger('posting', [params]);
-          $(selector).json('/', params, function(result) {
+          $(selector).json(me.processor, params, function(result) {
             trigger_post_result(result);
             me.respond(result, obj, event);
           });
@@ -1368,7 +1369,7 @@ dd.render = function(options) {
   var loadValues =  function(parent, data) {
     var params = $.extend({key: data.key}, data.params);
 
-    $.json('/', serverParams('values', data.path, params), function(result) {
+    $.json(me.processor, serverParams('values', data.path, params), function(result) {
       if (!result) return;
       parent.trigger('values', [result]);
     });

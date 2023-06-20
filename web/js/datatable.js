@@ -140,7 +140,7 @@
 
       var el = me.element;
       me.loading = true;
-      $.json('/', {data: dd.plainValues(data)}, function(data) {
+      $.json(opts.render.processor, {data: dd.plainValues(data)}, function(data) {
         if (!data) {
           el.triggerHandler('refreshed', [data]);
           return;
