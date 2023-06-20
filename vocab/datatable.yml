@@ -17,7 +17,7 @@ datatable:
   row_styles: 
   row:
     actions: []
-    class: []
+    class: [didi]
   cell:
     class: [didi]
     styles: {}
