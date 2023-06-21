@@ -18,6 +18,20 @@ datatable:
   row:
     actions: []
     class: [didi]
+  full_db_reader: select * from $id
+  row_db_filter: where id = $key
+  row_db_reader: $full_db_reader $row_db_filter
+  values:
+    - db.sql: $full_db_reader
+  reload_row:
+    - read_page: [full_db_reader,row_db_filter,row_db_reader]
+    - db.values: $row_db_reader
+    - clear_values: [full_db_reader,row_db_filter,row_db_reader]
+    - trigger: [setRowData, "#affiliate_list", $key, _values]
+    - clear_values
+  
+
+
   cell:
     class: [didi]
     styles: {}

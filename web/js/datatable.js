@@ -580,6 +580,7 @@
 
     setCellValue: function(td, cell)
     {
+      if (!$.isPlainObject(cell)) cell = { value: cell} 
       if (!cell.name) cell.name = "";
       if (!cell.value) cell.value = cell.name;
       if (td.attr('field') == 'actions')
@@ -832,7 +833,7 @@
       .on('delete', function(e) {
         e.stopPropagation();
       })
-      .on('setRowStyles', function(e, key, styles) {
+      .on('setRowStyles setRowStyle', function(e, key, styles) {
         if (!$(e.target).is(el)) return;
         me.setRowStyles(me.getRowByKey(key), styles);
     })
@@ -876,6 +877,8 @@
         var val = data[id];
         if (id == 'style')
           this.setRowStyles(tr, val);
+        else if (id == 'actions')
+          this.createRowActions(this.getCellById(tr, id), val);
         else
           this.setCellValue(this.getCellById(tr, id), val);
       }
