@@ -956,6 +956,12 @@ time:
   datepicker: false
   format: H:i
 
+
+tinymce: 
+  type: textarea
+  create: tinymce
+  menubar: false
+
 titled_paragraph:
   tag: div
   class: [titled_paragraph]
