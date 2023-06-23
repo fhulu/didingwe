@@ -605,7 +605,7 @@ $.showDialog = (path, field) => {
   var params = $.extend({ path: path }, field);
   var defer = $.Deferred();
 
-  $.loadPage({path: '/modal', show: false, processor: field.processor}).done(function(modal, options) {
+  $.loadPage({path: '/modal', show: false, processor: field? field.processor: undefined}).done(function(modal, options) {
     var tmp = $("<div>");
     $.showPage(params, tmp).done(function(obj, page) {
       if (page.fields.modal) modal.fields = dd.merge(modal.fields, page.fields.modal);

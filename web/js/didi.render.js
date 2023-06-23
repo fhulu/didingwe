@@ -1175,6 +1175,7 @@ dd.render = function(options) {
       }
     }
     if (!url) return;
+    if (!/^[\w]+:\//.test(url)) url = field.processor + '/' + url; 
     if (field.target === '_blank')
       window.open(url, field.target);
     else if (field.target) {
@@ -1243,7 +1244,7 @@ dd.render = function(options) {
     }
     if (!field.confirmation || action)
       dispatch();
-    else $.showDialog('/confirm_dialog').done(function(dialog) {
+    else $.showDialog('/confirm_dialog', {processor: me.processor}).done(function(dialog) {
       if (typeof field.confirmation == 'string')
         dialog.find('#message').text(field.confirmation);
       dialog.find('.action').click(function() {
@@ -1307,7 +1308,7 @@ dd.render = function(options) {
     {
       switch(action) {
         case 'alert': alert(val); break;
-        case 'show_dialog': $.showDialog(val, responses.options); break;
+        case 'show_dialog': $.showDialog(val, $.extend({processor: me.processor}, responses.options)); break;
         case 'close_dialog': $.closeDialog(parent, val); break;
         case 'redirect': redirect(val); break;
         case 'update': parent.setChildren(val, true); break;
