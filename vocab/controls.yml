@@ -462,12 +462,17 @@ input:
 
 input_page:
   type: page
-  text: $synopsis $inputs $actions_pane
+  text: $synopsis $inputs_pane $actions_pane
   layout: { type: label_left }
   synopsis:
     derive: [desc]
     classes: p
     name: $desc
+  inputs_pane:
+    type: container
+    class: [inputs]
+    derive: [inputs,layout] 
+    contents: $inputs 
   inputs:
     - template: $layout
     - type: input
