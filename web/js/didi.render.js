@@ -1165,7 +1165,7 @@ dd.render = function(options) {
     dd.replaceVars(field,field);
     var url = field.url;
     if ((!url || field.query) && field.target === '_blank') {
-      url = '/?action=action';
+      url = me.processor +'/?action=action';
       field = $.extend({key: options.key}, field);
       var exclude = ['action', 'desc', 'html', 'id', 'name', 'page_id', 'query', 'selector','tag', 'target','text', 'type', 'template']
       for (var key in field) {
@@ -1274,7 +1274,7 @@ dd.render = function(options) {
     parent.addClass('in-error').attr('error-message', error);
     if (parent.hasClass('no-error-box') || subject.hasClass('no-error-box')) return;
 
-    var box = $("<div class=error>"+error+"</div>");
+    var box = $("<div class='didi error'>"+error+"</div>");
     parent.after(box);
     var zIndex = parseInt(parent.css('z-index'));
     box.css('z-index', zIndex+1);
