@@ -644,7 +644,7 @@ dd.render = function(options) {
       obj.position(field.position);
 
      initLinks(obj, field).then(function() {
-      if (subitem_count) me.setValues(obj, field);
+      if (field.values) me.setValues(obj, field);
       initEvents(obj, field);
       obj.triggerHandler('created', [field]);
     });
