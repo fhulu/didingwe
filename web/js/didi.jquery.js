@@ -578,6 +578,13 @@ $.createPage = (options, data, parent) => {
   return object;
 },
 
+$.redirectPane = (path, pane, processor) => {
+  if (!processor) processor = '/';
+  $.showPage({path: path, processor: processor}).done(function(obj) {
+    $(pane).replaceWith(obj);
+  })
+}
+
 $.showPage = (options, parent, data) => {
   if (typeof options == 'string') {
     options = { path: options}
