@@ -258,12 +258,6 @@ entity_dropdown:
         join entity e on ea.entity_type = e.entity_type and v.entity = e.id
         join metadata met on ea.entity_type = met.id and met.name = if('$entity'='','$parent_id','$entity')
 
-        
-single_choice:
-  type: entity_dropdown
-
-    
-
 fanthom:
   attr: { name: "", id: "", value: ""}
 

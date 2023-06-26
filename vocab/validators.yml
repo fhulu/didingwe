@@ -276,7 +276,13 @@ unique:
   valid: not(in($1,$2))
   error: $name ($value) already exists
 
-url: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+uri: 
+  valid: 
+    - /^([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+
+url: 
+  valid: 
+    - /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
 
 validator:
   error: $value is not a valid validator
