@@ -312,11 +312,12 @@
     {
       var self = this;
       th.click(function() {
-        th.siblings().attr('sort','');
+        th.siblings().attr('sort','').children().remove();
         var order = 'asc';
         if (self.params.sort == field.number)
           order = th.attr('sort')==='asc'?'desc':'asc';
-        th.attr('sort', order);
+        th.attr('sort', order).children().remove();
+        $('<i>').addClass(self.options.title['sort_'+order].join(' ')).appendTo(th);
         self.params.sort = field.number;
         self.params.sort_order = order;
         self.refresh();
@@ -329,6 +330,7 @@
       var opts = this.options;
       var tr = head.find('.titles').empty();
       if (!tr.exists()) tr = $('<tr class=titles>').appendTo(head);
+      tr.addClass(opts.titles.class.join(' '));
       if (!this.hasFlag('show_titles')) tr.hide();
       var self = this;
       var fields = opts.fields;

@@ -7,7 +7,11 @@ datatable:
   class: [data,didi-listener,datatable]
   create: datatable
   head: { class: [didi] }
-  title: { class: [didi] }
+  titles: { class: [didi]}
+  title: 
+    class: [didi pad pad-small]
+    sort_asc: [fa-solid fa-sort-up didi float-right pad-x pad-small] 
+    sort_desc: [fa-solid fa-sort-down didi float-right pad-x pad-small]  
   body: { class: [didi,table-body] }
   min_row_height: 20
   search_delay: 250
