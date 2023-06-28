@@ -975,20 +975,22 @@
     },
 
 
-    createEditor: function(template, cls)
+    createEditor: function(template, type)
     {
-      var editor = template.clone(true);
+      var editor = $('<tr>');
       var td;
-      editor.addClass('datatable-editor').addClass(cls).removeClass("title");
-      var opts = this.options.filter.box;
-      box_class = opts.class.join(' ')
-      editor.children().each(function(i) {
-        var th = $(this);
-        th.width = template.children().eq(i).width();
-        var field = th.data('field');
+      editor.addClass('datatable-editor').addClass(type).removeClass("title");
+      var first_row = this.body().children().eq(0);
+      var opts = this.options[type].box;
+      box_class = opts.class.join(' ');
+      template.children().each(function() {
+        var field = $(this).data('field');
         if (field && field.id == 'actions') return;
-        th.text('');
-        th.append($('<input type=text></input>').addClass(box_class));
+        var td = $('<td>');
+        var set = field[type];
+        if (set === undefined || set)
+          td.append($('<input type=text></input>').addClass(box_class));
+        td.appendTo(editor);
       });
       editor.insertAfter(template);
       return editor;
@@ -997,7 +999,7 @@
 
     createFilter: function()
     {
-      var filter = this.head().find('.filter');
+      var filter = this.head().find('.filter'); 
       if (filter.exists()) return filter;
 
       var me = this;
@@ -1022,8 +1024,8 @@
     {
       var filter = this.createFilter();
       filter.toggle();
-      if (filter.is(':visible'))
-        this.adjustWidths(filter);
+      // if (filter.is(':visible'))
+      //   this.adjustWidths(filter);
     },
 
     showFooterActions: function()
