@@ -50,6 +50,13 @@ datatable:
   filter:
     name: ""
     desc: Filter by specific columns
+    icon:
+      tag: i
+      class: [didi fa-solid fa-filter]
+    box:
+      class: [didi border border-width-thin tallest]
+
+
 
   fields:
     - type: none
@@ -67,15 +74,27 @@ datatable:
   goto_first:
     name: First
     desc: Go to first page
+    icon:
+      tag: i
+      class: [didi fa-solid fa-backward-fast]
   goto_prev:
     name: "<"
     desc: Go to previous page
+    icon:
+      tag: i
+      class: [didi fa-solid fa-backward]
   goto_next:
     name: ">"
     desc: Go to next page
+    icon:
+      tag: i
+      class: [didi fa-solid fa-forward]
   goto_last:
     name: Last
     desc: Go to last page
+    icon:
+      tag: i
+      class: [didi fa-solid fa-forward-fast]
 
   # row actions
   row_actions:

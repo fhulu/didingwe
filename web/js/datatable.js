@@ -687,6 +687,11 @@
       div.html(props.name);
       div.attr('title', props.desc);
       div.attr('action', action);
+      if (props.class)
+        div.addClass(props.class.join(' '));
+      if (props.icon) {
+        $('<' + props.icon.tag + '>').addClass(props.icon.class.join(' ')).appendTo(div);
+      }
       props.id = action;
       this.bindAction(div, props, sink, path);
       return div;
@@ -975,12 +980,15 @@
       var editor = template.clone(true);
       var td;
       editor.addClass('datatable-editor').addClass(cls).removeClass("title");
+      var opts = this.options.filter.box;
+      box_class = opts.class.join(' ')
       editor.children().each(function(i) {
         var th = $(this);
+        th.width = template.children().eq(i).width();
         var field = th.data('field');
         if (field && field.id == 'actions') return;
         th.text('');
-        th.append($('<input type=text></input>').addClass("tallest widest"));
+        th.append($('<input type=text></input>').addClass(box_class));
       });
       editor.insertAfter(template);
       return editor;
