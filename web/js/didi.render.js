@@ -596,6 +596,7 @@ dd.render = function(options) {
     var values = $.extend({}, this.types, field);
     var matches = dd.getMatches(field.html, /\$(\w+)/g);
     var subitem_count = 0;
+    var has_child = false;
     for (var i = 0; i< matches.length; ++i) {
       var code = matches[i];
       var value = values[code];
@@ -622,6 +623,7 @@ dd.render = function(options) {
       if (value.id === undefined) value.id = code;
       value.parent_page = field.parent_page;
       var child = this.create(field, code, true);
+      has_child = true;
       if (table_tag)
         obj.append(child)
       if (field.html == '$'+code)
@@ -644,7 +646,7 @@ dd.render = function(options) {
       obj.position(field.position);
 
      initLinks(obj, field).then(function() {
-      if (field.values) me.setValues(obj, field);
+      if (has_child && field.values) me.setValues(obj, field);
       initEvents(obj, field);
       obj.triggerHandler('created', [field]);
     });
