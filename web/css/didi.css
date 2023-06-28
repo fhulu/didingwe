@@ -138,6 +138,9 @@
 .didi.clear-after-8:after,.didi.clear-after-8::after {content:"";display:block;clear:both;padding:8}
 .didi.noclear{clear:none}
 
+/* inherit default - override global styles */
+.didi.inherit-width{width:inherit}
+.didi.inherit-height{height:inherit}
 
 /* closebtn - from w3chools.didi.com */
 .didi.closebtn{text-decoration:none;float:right;font-size:24px;font-weight:bold;color:inherit}

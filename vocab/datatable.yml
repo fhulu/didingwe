@@ -54,7 +54,7 @@ datatable:
       tag: i
       class: [didi fa-solid fa-filter]
     box:
-      class: [didi border border-width-thin tallest]
+      class: [didi border border-width-thin tallest inherit-width]
 
 
 
