@@ -142,6 +142,9 @@
 .didi.inherit-width{width:inherit}
 .didi.inherit-height{height:inherit}
 
+/* remove some global styles */
+.didi.didi.no-back-image{background-image: none}
+
 /* closebtn - from w3chools.didi.com */
 .didi.closebtn{text-decoration:none;float:right;font-size:24px;font-weight:bold;color:inherit}
 .didi.closebtn:hover,.didi.closebtn:focus{color:#000;text-decoration:none;cursor:pointer}
