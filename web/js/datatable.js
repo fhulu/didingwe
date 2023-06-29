@@ -1050,6 +1050,7 @@
         var index = tds.index(td);
         delete params['f'+index]; 
       })
+      params.page_num = 1;
       this.refresh();
       head.find('[action=filter]').toggle();
       head.find('[action=clear_filter]').toggle();
