@@ -215,6 +215,11 @@
           self.showFilter();
           e.stopImmediatePropagation();
         });
+        this.createAction('clear_filter').hide().appendTo(th);
+        this.element.on('clear_filter', function(e) {
+          self.hideFilter();
+          e.stopImmediatePropagation();
+        });
       }
       if (this.options.page_size !== undefined && !this.hasFlag('hide_paging')) this.createPaging(th);
     },
@@ -688,9 +693,9 @@
       div.attr('title', props.desc);
       div.attr('action', action);
       if (props.class)
-        div.addClass(props.class.join(' '));
+        div.setClass(props.class);
       if (props.icon) {
-        $('<' + props.icon.tag + '>').addClass(props.icon.class.join(' ')).appendTo(div);
+        $('<' + props.icon.tag + '>').setClass(props.icon.class).appendTo(div);
       }
       props.id = action;
       this.bindAction(div, props, sink, path);
@@ -1022,10 +1027,28 @@
 
     showFilter: function()
     {
+      var head = this.head()
+      head.find('[action=filter]').toggle();
+      head.find('[action=clear_filter]').toggle();
       var filter = this.createFilter();
       filter.toggle();
-      // if (filter.is(':visible'))
-      //   this.adjustWidths(filter);
+    },
+
+    hideFilter: function()
+    {
+      var head = this.head();
+      var params = this.params;
+      var row = head.find('.filter');
+      var tds = row.children();
+      row.hide().find('input').each(function() {
+        $(this).val('');
+        var td = $(this).parent();
+        var index = tds.index(td);
+        delete params['f'+index]; 
+      })
+      this.refresh();
+      head.find('[action=filter]').toggle();
+      head.find('[action=clear_filter]').toggle();
     },
 
     showFooterActions: function()

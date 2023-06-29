@@ -55,6 +55,12 @@ datatable:
       class: [didi fa-solid fa-filter]
     box:
       class: [didi border border-width-thin tallest inherit-width]
+  clear_filter:
+    name: ""
+    desc: Clear all current filters
+    icon:
+      tag: i
+      class: [didi fa-solid fa-filter-circle-xmark]
 
 
 
