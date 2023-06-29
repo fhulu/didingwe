@@ -81,7 +81,7 @@ $.widget( "didi.isearch", {
     el.val("");
     me.drop.width(el.width()).show();
     var start = new Date().getTime();
-    $.json('/', {data: me.params}, function(result) {
+    $.json(opts.render.processor, {data: me.params}, function(result) {
       var end = new Date().getTime();
       console.log("Load: ", end - start);
       if (result._responses)
