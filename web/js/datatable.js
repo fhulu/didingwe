@@ -132,7 +132,10 @@
       var start = new Date().getTime();
       me.head().find('.paging [action]').attr('disabled','');
       var action = opts.data_from == 'post'? 'action': 'values';
-      var data = $.extend(opts.request, me.params, args, {action: action});
+      var params = me.params;
+      params.size = opts.page_size;
+      params.offset = (params.page_num - 1) * params.size;
+      var data = $.extend(opts.request, params, args, {action: action});
       var selector = opts.selector;
       if (selector !== undefined) {
         $.extend(data, $(selector).values());
@@ -168,7 +171,7 @@
       if (this.cell_render) delete this.cell_render;
       var opts = this.options;
       var render = this.cell_render = new dd.render({invoker: opts.render.root, model_src: opts.render.model_src,  model_funcs: opts.render.model_funcs, types: opts.render.types, id: opts.id, key: opts.key, request: opts.request});
-      if (this.options.page_size !== undefined) this.showPaging(parseInt(data.total));
+      if (this.options.page_size !== undefined) this.showPaging(parseInt(data.count));
       this.no_records.hide();
       if (data.data.length == 0 && this.body().children().length == 0 && this.no_records)
         this.element.append(this.no_records.show());
@@ -292,7 +295,7 @@
       var head = this.head();
       head.find('#page_total').text(total);
       var page = this.params.page_num;
-      var size = this.params.size;
+      var size = this.params.page_size;
       var prev = head.find('[action=goto_first],[action=goto_prev]');
       var next = head.find('[action=goto_last],[action=goto_next]');
       if (page <= 1) {
@@ -335,7 +338,7 @@
       var opts = this.options;
       var tr = head.find('.titles').empty();
       if (!tr.exists()) tr = $('<tr class=titles>').appendTo(head);
-      tr.addClass(opts.titles.class.join(' '));
+      tr.setClass(opts.titles.class);
       if (!this.hasFlag('show_titles')) tr.hide();
       var self = this;
       var fields = opts.fields;
@@ -344,10 +347,10 @@
         var field = fields[i];
         var id = field.id;
         if (field.id=='style' || field.data) continue;
-        var th = $('<th></th>').addClass(classes).appendTo(tr);
+        var th = $('<th></th>').setClass(classes).appendTo(tr);
         th.toggle(dd.visible(field));
         th.data('field', field);
-        if (field.class) th.addClass(field.class.join(' '));
+        if (field.class) th.setClass(field.class);
         if (id === 'actions') {
           field.filter = false;
           continue;
@@ -1017,6 +1020,7 @@
         var td = input.parent();
         var index = tds.index(td);
         me.params['f'+index] = input.value();
+        me.params.page_num = 1;
         me.refresh();
       }, me.options.search_delay))
       .on('click', function(e) {

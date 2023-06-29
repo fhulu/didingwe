@@ -1,5 +1,4 @@
 datatable:
-  head: ""
   tooltip: false
   type: table
   auto_load: true
@@ -78,25 +77,25 @@ datatable:
     - wrap: class
 
   goto_first:
-    name: First
+    name: ""
     desc: Go to first page
     icon:
       tag: i
       class: [didi fa-solid fa-backward-fast]
   goto_prev:
-    name: "<"
+    name: ""
     desc: Go to previous page
     icon:
       tag: i
       class: [didi fa-solid fa-backward]
   goto_next:
-    name: ">"
+    name: ""
     desc: Go to next page
     icon:
       tag: i
       class: [didi fa-solid fa-forward]
   goto_last:
-    name: Last
+    name: ""
     desc: Go to last page
     icon:
       tag: i
