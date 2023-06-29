@@ -80,7 +80,7 @@
 
     _init_params: function()
     {
-      this.params = { page_num: 1, offset: 0};
+      this.params = { page_num: 1, offset: 0, size: this.options.page_size};
       var exclude = [ 'create', 'action', 'css', 'id', 'content', 'disabled','parent_name','parent_id','parent_page',
           'auto_load', 'searchDelay', 'number', 'data_from', 'min_row_height', 'desc', 'index',
           'html','name', 'page_id', 'position', 'sort', 'script','slideSpeed', 'text', 'tag', 'target', 'type', 'show', 'selector', 'js'];
@@ -133,7 +133,6 @@
       me.head().find('.paging [action]').attr('disabled','');
       var action = opts.data_from == 'post'? 'action': 'values';
       var params = me.params;
-      params.size = opts.page_size;
       params.offset = (params.page_num - 1) * params.size;
       var data = $.extend(opts.request, params, args, {action: action});
       var selector = opts.selector;
@@ -266,14 +265,19 @@
     {
       var self = this;
       var head = self.head();
+      var params = self.params;
       head.find(".paging [type='text']").bind('keyup input cut paste', function(e) {
         if (e.keyCode === 13) {
-          self.params.size = $(this).val();
+          if ($(this).attr('id') == 'page_size') {
+              params.size = parseInt($(this).val());
+              params.page_num = 1;
+          }
+          if ($(this).attr('id') == 'page_num') params.page_num = parseInt($(this).val());
+
           self.refresh();
         }
       });
 
-      var page = head.find('#page_num');
       this.element.on('goto_first', function(e, btn) {
         self.pageTo(btn, 1);
       })
@@ -295,7 +299,7 @@
       var head = this.head();
       head.find('#page_total').text(total);
       var page = this.params.page_num;
-      var size = this.params.page_size;
+      var size = this.params.size;
       var prev = head.find('[action=goto_first],[action=goto_prev]');
       var next = head.find('[action=goto_last],[action=goto_next]');
       if (page <= 1) {
