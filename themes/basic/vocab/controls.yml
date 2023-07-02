@@ -23,7 +23,7 @@ datatable:
   body: { class: [widest,font-small] }
   slide: { class: [border-bottom, top-right ] }
   cell:
-    class: [ border-width-thin border-top, pad pad-small]
+    class: [ pad pad-small]
 
 
 fieldset:
