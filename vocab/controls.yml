@@ -629,7 +629,7 @@ line:
 link:
   class: [pointer-cursor]
   tag: a
-  attr: { title: $desc, template: $url }
+  attr: { title: $desc}
   text: $name
   immutable: [url]
   url: /$id

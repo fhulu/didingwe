@@ -1,5 +1,6 @@
 datatable:
   tooltip: false
+  page_size: 0
   type: table
   auto_load: true
   text: $head $body $no_records
@@ -171,3 +172,7 @@ datatable_no_records:
   type: p
   name: No records found.
   class: [datatable-no-records]
+
+datatable_link:
+  type: link
+  cell: { name: $value, text: $value, url: $value }

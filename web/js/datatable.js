@@ -223,7 +223,7 @@
           e.stopImmediatePropagation();
         });
       }
-      if (this.options.page_size !== undefined && !this.hasFlag('hide_paging')) this.createPaging(th);
+      if (this.options.page_size > 0 && !this.hasFlag('hide_paging')) this.createPaging(th);
     },
 
     createPaging: function(th)
@@ -354,7 +354,6 @@
         var th = $('<th></th>').setClass(classes).appendTo(tr);
         th.toggle(dd.visible(field));
         th.data('field', field);
-        if (field.class) th.setClass(field.class);
         if (id === 'actions') {
           field.filter = false;
           continue;
@@ -573,7 +572,7 @@
           tr.attr('key', cell.name);
           key = cell.name;
         }
-
+        td.data('field', field);
         me.setCellValue(td, cell);
       }
       me.adjustColWidths(tr);
@@ -595,7 +594,6 @@
     setCellValue: function(td, cell)
     {
       if (!$.isPlainObject(cell)) cell = { value: cell} 
-      if (!cell.name) cell.name = "";
       if (!cell.value) cell.value = cell.name;
       if (td.attr('field') == 'actions')
         return this.createRowActions(td, cell.value);
@@ -609,12 +607,13 @@
       if (cell.style)
         td.addStyle(cell.style, this.options.cell.styles)
 
-      if (cell.key)
-        td.attr("key", cell.key)
-      if (cell.type) {
-        cell.path = this.options.path + "/cell/controls/" + cell.type
-        var src = this.cell_render.create(this.options.cell, cell, true, td);
-        src && td.append(src);
+      var field = td.data('field');
+      var args = $.extend(true, {}, this.options.cell, field, field.cell, cell);
+      if (args.html) {
+        var obj = this.cell_render.create(field, args);
+        td.children().remove();
+        obj.appendTo(td);
+        return td;
       }
       if (cell.data) {
         td.data(JSON.parse(cell.data));
