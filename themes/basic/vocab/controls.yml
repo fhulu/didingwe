@@ -24,8 +24,10 @@ datatable:
   slide: { class: [border-bottom, top-right ] }
   cell:
     class: [ pad pad-small]
-
-
+    
+dropdown:
+ class: [pad-tiny]
+ 
 fieldset:
   class: [border font-medium vspace]
   legend:

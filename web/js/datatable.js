@@ -893,12 +893,13 @@
       if ('key' in data)
         tr.attr('key', data['key']);
       for (var id in data) {
+        if (id == 'id') continue; // ignore id, it would have been used to locate the row
         var val = data[id];
         if (id == 'style')
           this.setRowStyles(tr, val);
         else if (id == 'actions')
           this.createRowActions(this.getCellById(tr, id), val);
-        else
+        else 
           this.setCellValue(this.getCellById(tr, id), val);
       }
     },
@@ -989,19 +990,25 @@
 
     createEditor: function(template, type)
     {
-      var editor = $('<tr>');
+      var editor = $('<tr>').addClass('didi');
       var td;
       editor.addClass('datatable-editor').addClass(type).removeClass("title");
       var first_row = this.body().children().eq(0);
-      var opts = this.options[type].box;
-      box_class = opts.class.join(' ');
+      var me = this;
+      var props = this.options[type];
+      var render = this.options.render;
       template.children().each(function() {
         var field = $(this).data('field');
         if (field && field.id == 'actions') return;
-        var td = $('<td>');
-        var set = field[type];
-        if (set === undefined || set)
-          td.append($('<input type=text></input>').addClass(box_class));
+        var td = $('<td>').addClass('didi').data('field', field);
+        var my_props = field[type];
+        if (my_props === undefined || my_props) { 
+          if ($.isPlainObject(my_props))         
+            my_props = $.extend(true, {}, field, props, {box: my_props});
+          else 
+            my_props = props;
+          render.create(dd.copy(my_props), 'box').appendTo(td).addClass(type + '-box');
+        }
         td.appendTo(editor);
       });
       editor.insertAfter(template);
@@ -1018,12 +1025,17 @@
       var titles = me.head().find('.titles');
       filter = me.createEditor(titles,'filter').hide();
       var tds = filter.children();
-      filter.find('input').bind('keyup cut paste', dd.debounce(function(e) {
+      filter.find('.filter-box').bind('keyup cut paste change', dd.debounce(function(e) {
         var input = $(this);
         me.params.offset = 0;
         var td = input.parent();
+        var input_field = input.data('didi-field');
+        var td_field = td.data('field');
         var index = tds.index(td);
-        me.params['f'+index] = input.value();
+        var value = input.value();
+        if (input_field.distinct || td_field && td_field.distinct) 
+          value = "=" + value;
+        me.params['f'+index] = value;
         me.params.page_num = 1;
         me.refresh();
       }, me.options.search_delay))

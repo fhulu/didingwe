@@ -214,7 +214,7 @@ dropdown:
   options:
     - $default_option
     - type: $option
-
+  distinct: yes
 
 dropdown_collection:
   type: dropdown
