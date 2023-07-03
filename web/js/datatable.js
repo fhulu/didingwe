@@ -71,6 +71,7 @@
       if (args.key) me.options.key = me.params.key = args.key;
       me.showHeader();
       me.showTitles();
+      me.showHeaderActions();
       me.head().toggle(me.hasFlag('show_titles') || me.hasFlag('show_header') || me.hasFlag('filter'));
       me.createRowBlueprint();
       me.showFooterActions();  
@@ -1059,22 +1060,31 @@
       head.find('[action=clear_filter]').toggle();
     },
 
-    showFooterActions: function()
-    {
-      this.options.render.expandFields(this.options, "footer_actions", this.options.footer_actions);
-      var actions = this.options.footer_actions;
+    showHeaderFooterActions: function(parent, type, append) {
+      var actions = this.options[type];
+      this.options.render.expandFields(this.options, type, actions);
       if (!actions.length) return;
-      this.element.children('tfoot').remove();
-      var footer = $('<tfoot>').appendTo(this.element);
-      var tr = $('<tr>').addClass('actions').appendTo(footer);
+      var tr = $('<tr>').addClass('actions ' + type);
+      append? tr.appendTo(parent): tr.prependTo(parent);
       var td = $('<td>').appendTo(tr);
+      var box = this.options.render.create(this.options, type+'_box');
+      box.appendTo(td);
       var key = this.options.key;
       actions.map(function(action) {
         action.key = key;
         return action;
       })
-      this.options.render.createItems(td, this.options, undefined, actions);
       this.spanColumns(td);
+
+    },
+
+    showHeaderActions: function() {
+      this.showHeaderFooterActions(this.head(), 'header_actions', false);
+    },
+
+    showFooterActions: function() {
+      var footer = $('<tfoot>').appendTo(this.element);
+      this.showHeaderFooterActions(footer, "footer_actions", true);
     },
 
     _scroll: function(e) {

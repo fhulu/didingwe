@@ -111,6 +111,19 @@ datatable:
     - slideoff
     - action: post
 
+  header_actions_box:
+    type: container
+    derive: [header_actions]
+    contents: $header_actions
+
+  header_actions:
+    - type: actioner
+
+  footer_actions_box:
+    type: container
+    derive: [footer_actions]
+    contents: $footer_actions
+
   footer_actions:
     - type: actioner
 
@@ -142,7 +155,6 @@ datatable:
 
 #todo: fix backend inheritance
 export:
-  name: Export to Excel
   desc: Export to an Excel spreadsheet
   action: redirect
   validate: none
