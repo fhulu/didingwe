@@ -246,6 +246,7 @@
 .didi.border-pale-blue,.didi.hover-border-pale-blue:hover{border-color:#e7ffff}
 .didi.border-lightgrey,.didi.hover-border-lightgrey:hover{border-color:lightgrey}
 
+.didi.alt-light-grey:nth-of-type(even) {background-color:#f1f1f1}
 
 /* status */
 [disabled],.didi.disabled { color: grey !important; pointer-events: none}

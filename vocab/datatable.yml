@@ -33,8 +33,15 @@ datatable:
     - clear_values: [full_db_reader,row_db_filter,row_db_reader]
     - trigger: [setRowData, "#affiliate_list", $key, _values]
     - clear_values
-  
-
+  export:
+    desc: Export to an Excel spreadsheet
+    action: redirect
+    validate: no
+    query: " "
+    target: _blank
+    post:
+      - msexcel.export
+ 
 
   cell:
     class: [didi]
@@ -154,15 +161,6 @@ datatable:
   slideSpeed: 150
   searchDelay: 250
 
-#todo: fix backend inheritance
-export:
-  desc: Export to an Excel spreadsheet
-  action: redirect
-  validate: none
-  post:
-    call: datatable::export(root,$key)
-  query: " "
-  target: _blank
 
  # todo: fix back-end to contextualise
 print:

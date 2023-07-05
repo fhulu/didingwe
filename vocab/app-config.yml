@@ -102,6 +102,7 @@ aliases:
 
 mysql:
   path: mysql/db.php
+  class: db
   host: localhost
   port: 3306
   database: didingwe

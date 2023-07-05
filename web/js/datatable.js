@@ -1022,6 +1022,7 @@
       if (filter.exists()) return filter;
 
       var me = this;
+      var element = me.element;
       var titles = me.head().find('.titles');
       filter = me.createEditor(titles,'filter').hide();
       var tds = filter.children();
@@ -1036,6 +1037,11 @@
         if (input_field.distinct || td_field && td_field.distinct) 
           value = "=" + value;
         me.params['f'+index] = value;
+        element.find('.header_actions [action],.footer_actions [action]').each(()=>{
+          var field = $(this).data(field);
+          field.params = dd.copy(me.params);
+          field.params.size = 0;
+        })
         me.params.page_num = 1;
         me.refresh();
       }, me.options.search_delay))

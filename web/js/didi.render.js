@@ -579,8 +579,10 @@ dd.render = function(options) {
       this.createSubPage(parent[key], tmp);
       return tmp;
     }
-    var id = field.id;
-    if (field.html === undefined) return null;
+    if (field.html === undefined) {
+      console.error("Unable to create object, no type, tag, or html defined)", field);
+      return null;
+    }
     field.text = this.expandValue(field, field.text);
     field.html = this.expandValue(field, field.html);
     field.html = field.html.trim().replace(/\$tag(\W)/, field.tag+'$1');
@@ -1172,12 +1174,12 @@ dd.render = function(options) {
       var exclude = ['action', 'desc', 'html', 'id', 'name', 'page_id', 'query', 'selector','tag', 'target','text', 'type', 'template']
       for (var key in field) {
         var val = field[key];
-        if ($.isPlainObject(val) || $.isArray(val) || exclude.indexOf(key) >= 0) continue;
-        url += '&'+key+'='+encodeURIComponent(field[key]);
+        if ($.isPlainObject(val) || $.isArray(val) || exclude.indexOf(key) >= 0 || val === undefined) continue;
+        url += '&'+key+'='+encodeURIComponent(val);
       }
     }
     if (!url) return;
-    if (!/^[\w]+:\//.test(url)) url = field.processor + '/' + url; 
+    if (/^[\w]+:\//.test(url)) url = field.processor + '/' + url; 
     if (field.target === '_blank')
       window.open(url, field.target);
     else if (field.target) {
