@@ -1026,7 +1026,7 @@
       var titles = me.head().find('.titles');
       filter = me.createEditor(titles,'filter').hide();
       var tds = filter.children();
-      filter.find('.filter-box').bind('keyup cut paste change', dd.debounce(function(e) {
+      filter.find('.filter-box').bind('keyup cut paste change', dd.debounce(function() {
         var input = $(this);
         me.params.offset = 0;
         var td = input.parent();
@@ -1037,10 +1037,18 @@
         if (input_field.distinct || td_field && td_field.distinct) 
           value = "=" + value;
         me.params['f'+index] = value;
-        element.find('.header_actions [action],.footer_actions [action]').each(()=>{
-          var field = $(this).data(field);
-          field.params = dd.copy(me.params);
-          field.params.size = 0;
+
+        // pass over these parameters to any header or footer action
+        element.find('.header_actions [action],.footer_actions [action]').each(function() {
+          var params = dd.copy(me.params);
+
+          // exclude parameter size and path, header and footer action may define these
+          delete params.size
+          delete params.path;
+          
+          // overwrite current action params
+          params = $.extend({}, $(this).data('didi-action'), params);
+          $(this).data('didi-action', params);
         })
         me.params.page_num = 1;
         me.refresh();

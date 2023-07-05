@@ -1163,18 +1163,17 @@ dd.render = function(options) {
     return field;
   }
 
-  var redirect = function(field)
+  var redirect = function(field, obj)
   {
     if (!$.isPlainObject(field)) field = { url: field };
     dd.replaceVars(field,field);
     var url = field.url;
     if ((!url || field.query) && field.target === '_blank') {
       url = me.processor +'/?action=action';
-      field = $.extend({key: options.key}, field);
-      var exclude = ['action', 'desc', 'html', 'id', 'name', 'page_id', 'query', 'selector','tag', 'target','text', 'type', 'template']
-      for (var key in field) {
-        var val = field[key];
-        if ($.isPlainObject(val) || $.isArray(val) || exclude.indexOf(key) >= 0 || val === undefined) continue;
+      var params = $.extend({key: options.key}, {key: field.key, path: field.path}, obj.data("didi-action"));
+      for (var key in params) {
+        var val = params[key];
+        if ($.isPlainObject(val) || $.isArray(val) || val === undefined) continue;
         url += '&'+key+'='+encodeURIComponent(val);
       }
     }
@@ -1215,7 +1214,7 @@ dd.render = function(options) {
         case 'page': $.showPage($.extend({processor: me.processor}, field)); return;
         case 'dialog': $.showDialog(field.url, $.extend({key: field.key, processor: me.processor}, params[0])); return;
         case 'close_dialog': $.closeDialog(obj); break;
-        case 'redirect': redirect(field); break;
+        case 'redirect': redirect(field, obj); break;
         case 'post':
           var url = field.url? field.url: field.path;
           params = serverParams('action', url, {key: field.key});
