@@ -65,7 +65,7 @@ datatable:
 
   fields:
     - type: none
-    - default: { span: 1, filter: yes, data: false}
+    - default: { span: 1, data: false}
 
   propagated_events: []
   trap: [reload]
