@@ -1,5 +1,7 @@
 ## YAML Template.
 ---
+all:
+  filter_sql: 1=1
 
 add_user:
   desc: Add a new user into the system
@@ -24,6 +26,7 @@ audit_trail:
 
 blank:
   name: " "
+  filter_sql: _col_ = ""
 
 calculate_days:
   type: calculate_period
@@ -195,6 +198,19 @@ last_name:
   desc: Your last name or surname as written in your ID book
   valid: name
 
+last_month:
+  filter_sql: >
+    year(_col_) = year(curdate() - interval 1 month)
+    and month(_col_) = month(curdate() - interval 1 month)
+
+last_week:
+  filter_sql: >
+    year(_col_) = year(curdate() - interval 1 week)
+    and week(_col_) = week(curdate() - interval 1 week)
+
+last_year:
+  filter_sql: year(_col_) = year(curdate() - interval 1 year)
+
 latitude:
   desc: Distance north or south from the equator
   valid:
@@ -358,6 +374,19 @@ send_email:
       verify_peer_name: false
       allow_self_signed: true
 
+since_last_month:
+  filter_sql: >
+    year(_col_) >= year(curdate() - interval 1 month)
+    and month(_col_) >= month(curdate() - interval 1 month)
+
+since_last_week:
+  filter_sql: >
+    year(_col_) >= year(curdate() - interval 1 week)
+    and week(_col_) >= week(curdate() - interval 1 week)
+
+since_last_year:
+  filter_sql: year(_col_) >= year(curdate() - interval 1 year)
+
 
 start_date:
   name: Start Date
@@ -376,8 +405,20 @@ system_audit_trail:
   url: /audit_trail/system_list
   access: admin
 
+this_month:
+  filter_sql: year(_col_) = year(curdate()) and month(_col_) = month(curdate())
+
+this_week:
+  filter_sql: year(_col_) = year(curdate()) and week(_col_) = week(curdate())
+
+this_year:
+  filter_sql: year(_col_) = year(curdate())
+
 title:
   desc: A descriptive or distinctive appellation, especially one belonging to a person by right of rank, office, attainment
+
+today:
+  filter_sql: _col_ >= curdate()
 
 twitter:
   src: /twitter.png
@@ -453,3 +494,7 @@ yes_no:
   options:
     - "yes"
     - "no"
+
+
+yesterday:
+  filter_sql: _col_ between curdate() - interval 1 day and curdate() 
