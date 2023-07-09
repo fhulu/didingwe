@@ -216,6 +216,17 @@ dropdown:
     - type: $option
   distinct: yes
 
+dropdown_filter:
+  tag: select
+  text: $options
+  option:
+    tag: option
+    value: $id.filter_sql
+    attr: { value: $id.filter_sql }
+  options:
+    - type: $option
+  distinct: yes
+
 dropdown_collection:
   type: dropdown
   options:
