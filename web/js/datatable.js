@@ -1026,17 +1026,15 @@
       var titles = me.head().find('.titles');
       filter = me.createEditor(titles,'filter').hide();
       var tds = filter.children();
+      var base_path = me.options.path + '/';
       filter.find('.filter-box').bind('keyup cut paste change', dd.debounce(function() {
         var input = $(this);
         me.params.offset = 0;
         var td = input.parent();
-        var input_field = input.data('didi-field');
-        var td_field = td.data('field');
+        var field = td.data('field');
         var index = tds.index(td);
-        var value = input.value();
-        if (input_field.distinct || td_field && td_field.distinct) 
-          value = "=" + value;
-        me.params['f'+index] = value;
+        var path = 'filter' + index + '@' + field.path.replace(base_path, '');
+        me.params[path] = input.value();
 
         // pass over these parameters to any header or footer action
         element.find('.header_actions [action],.footer_actions [action]').each(function() {
