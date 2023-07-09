@@ -333,6 +333,8 @@
         $('<i>').addClass(self.options.title['sort_'+order].join(' ')).appendTo(th);
         self.params.sort = field.number;
         self.params.sort_order = order;
+
+        self.extendActionParams();
         self.refresh();
       });
     },
@@ -1036,18 +1038,7 @@
         var path = 'filter' + index + '@' + field.path.replace(base_path, '');
         me.params[path] = input.value();
 
-        // pass over these parameters to any header or footer action
-        element.find('.header_actions [action],.footer_actions [action]').each(function() {
-          var params = dd.copy(me.params);
-
-          // exclude parameter size and path, header and footer action may define these
-          delete params.size
-          delete params.path;
-          
-          // overwrite current action params
-          params = $.extend({}, $(this).data('didi-action'), params);
-          $(this).data('didi-action', params);
-        })
+        me.extendActionParams();
         me.params.page_num = 1;
         me.refresh();
       }, me.options.search_delay))
@@ -1057,6 +1048,22 @@
       return filter;
     },
 
+    extendActionParams: function() {
+      var me = this;
+      // pass over these parameters to any header or footer action
+      me.element.find('.header_actions [action],.footer_actions [action]').each(function() {
+        var params = dd.copy(me.params);
+
+        // exclude parameter size and path, header and footer action may define these
+        delete params.size
+        delete params.path;
+        
+        // overwrite or extend current action params
+        params = $.extend({}, $(this).data('didi-action'), params);
+        $(this).data('didi-action', params);
+      })      
+    },
+     
     showFilter: function()
     {
       var head = this.head()
