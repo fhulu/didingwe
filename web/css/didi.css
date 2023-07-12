@@ -95,6 +95,7 @@
 .didi.border[class*=border-width-],.didi.hover-border:hover[class*=border-width-] { border-style:solid }
 .didi.borderless,.didi.border-less { border-top-width:0;border-bottom-width:0;border-left-width:0;border-right-width:0}
 .didi.border-collapse{border-collapse: collapse;}
+.didi.border-merged{border-collapse: separate; border-spacing: 0px} /* subst for border-collapse when it doesnt show borders */
 .didi.border-box{box-sizing: border-box;}
 .didi.content-box{box-sizing: content-box;}
 .didi.no-border-left[class*=border-width-]{ border-left-style: none }
@@ -102,6 +103,7 @@
 .didi.no-border-top[class*=border-width-]{ border-left-style: none }
 .didi.no-border-bottom[class*=border-width-]{ border-right-style: none }
 .didi.no-x-divider+.didi.no-x-divider[class*=border-width-]{border-left-style: none; border-right-style: none}
+
 
 /* border divider */
 .didi.hdivider+.didi.hdivider{border-left-style:solid}
