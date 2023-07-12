@@ -324,6 +324,7 @@
     bindSort: function(th, field)
     {
       var self = this;
+      if (self.loading) return;
       th.click(function() {
         th.siblings().attr('sort','').children().remove();
         var order = 'asc';
@@ -357,12 +358,12 @@
         var th = $('<th></th>').setClass(classes).appendTo(tr);
         th.toggle(dd.visible(field));
         th.data('field', field);
+        if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
+        th.html(field.name || dd.toTitleCase(id));
         if (id === 'actions') {
           field.filter = false;
           continue;
         }
-        if ($.isArray(field.name)) field.name = field.name[field.name.length-1];
-        th.html(field.name || dd.toTitleCase(id));
         if (self.hasFlag('sortable')) {
           if (id === self.params.sort)
             th.attr('sort', self.params.sort_order);
@@ -696,16 +697,7 @@
         props = this.options[action];
       if (!props || $.isEmptyObject(props))
         return $('');
-      var div = $('<span>');
-      if (props.name === undefined) props.name = dd.toTitleCase(action);
-      div.html(props.name);
-      div.attr('title', props.desc);
-      div.attr('action', action);
-      if (props.class)
-        div.setClass(props.class);
-      if (props.icon) {
-        $('<' + props.icon.tag + '>').setClass(props.icon.class).appendTo(div);
-      }
+      var div = this.options.render.create(props);
       props.id = action;
       this.bindAction(div, props, sink, path);
       return div;
@@ -1030,6 +1022,7 @@
       var tds = filter.children();
       var base_path = me.options.path + '/';
       filter.find('.filter-box').bind('keyup cut paste change', dd.debounce(function() {
+        if (me.loading) return;
         var input = $(this);
         me.params.offset = 0;
         var td = input.parent();

@@ -44,8 +44,12 @@ datatable:
   flags: []
   position: top
   filter:
+    type: container
     name: ""
+    attr: { action: filter}
     desc: Filter by specific columns
+    contents: [ $label, $icon]
+    label: { derive: [name] }
     icon:
       tag: i
       class: [didi fa-solid fa-filter]
@@ -53,8 +57,12 @@ datatable:
       type: input
       class: [didi border border-width-thin tallest widest inherit-width border-collapse] 
   clear_filter:
+    type: container
     name: ""
+    attr: { action: clear_filter}
     desc: Clear all current filters
+    contents: [ $label, $icon]
+    label: { derive: [name] }
     icon:
       tag: i
       class: [didi fa-solid fa-filter-circle-xmark]

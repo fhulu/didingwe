@@ -1,5 +1,6 @@
 actioner:
   class: [pad-tiny]
+  
 
 big_text:
   type: plain_text
@@ -18,7 +19,7 @@ control:
       ^pad-(left|right|top|bottom|x|y)$: [^pad]
     
 datatable:
-  class: [border-collapse]
+  class: [border-merged]
   title: { class: [bold left-text, pad-tiny,font-small]}
   body: { class: [widest,font-small] }
   slide: { class: [border-bottom, top-right ] }
