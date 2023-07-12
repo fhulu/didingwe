@@ -1224,7 +1224,10 @@ dd.render = function(options) {
           me.sink.find(".error").remove();
           me.sink.find(".in-error").unsetClass('in-error').trigger('clear-error');
           obj.trigger('posting', [params]);
+          var disabled = obj.prop('disabled');
+          obj.prop('disabled', true);
           $(selector).json(me.processor, params, function(result) {
+            obj.prop('disabled', disabled);
             trigger_post_result(result);
             me.respond(result, obj, event);
           });
