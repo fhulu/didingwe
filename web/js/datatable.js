@@ -891,10 +891,12 @@
         var val = data[id];
         if (id == 'style')
           this.setRowStyles(tr, val);
+        var td = this.getCellById(tr, id);
+        if (!td.exists()) continue;
         else if (id == 'actions')
-          this.createRowActions(this.getCellById(tr, id), val);
+          this.createRowActions(td, val);
         else 
-          this.setCellValue(this.getCellById(tr, id), val);
+          this.setCellValue(td, val);
       }
     },
 
