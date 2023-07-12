@@ -387,6 +387,8 @@ since_last_week:
 since_last_year:
   filter_sql: year(_col_) >= year(curdate() - interval 1 year)
 
+since_yesterday:
+  filter_sql: _col_ >= curdate() - interval 1 day
 
 start_date:
   name: Start Date
