@@ -597,7 +597,6 @@ dd.render = function(options) {
     if (field.key === undefined) field.key = options.key;
     var values = $.extend({}, this.types, field);
     var matches = dd.getMatches(field.html, /\$(\w+)/g);
-    var subitem_count = 0;
     var has_child = false;
     for (var i = 0; i< matches.length; ++i) {
       var code = matches[i];
@@ -611,7 +610,8 @@ dd.render = function(options) {
         if (this.types[code] !== undefined)
           value = $.merge($.merge([], this.types[code]), value);
         this.expandFields(field, code, value);
-        subitem_count += this.createItems(obj, field, code, value);
+        this.createItems(obj, field, code, value);
+        has_child = true;
         continue;
       }
 
